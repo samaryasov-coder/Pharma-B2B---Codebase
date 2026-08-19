@@ -1,0 +1,44 @@
+name: Auto Deploy Test Stands
+
+on:
+  push:
+    branches:
+      - main
+      - test/arkadiy
+      - test/sergey
+      - test/ivan
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Select target folder
+        id: select_folder
+        run: |
+          if [[ "${GITHUB_REF##*/}" == "main" ]]; then
+            echo "folder=/var/www/pharmab2b/httpdocs" >> $GITHUB_OUTPUT
+          elif [[ "${GITHUB_REF##*/}" == "test/arkadiy" ]]; then
+            echo "folder=/var/www/pharmab2b/test-arkadiy" >> $GITHUB_OUTPUT
+          elif [[ "${GITHUB_REF##*/}" == "test/sergey" ]]; then
+            echo "folder=/var/www/pharmab2b/test-sergey" >> $GITHUB_OUTPUT
+          elif [[ "${GITHUB_REF##*/}" == "test/ivan" ]]; then
+            echo "folder=/var/www/pharmab2b/test-ivan" >> $GITHUB_OUTPUT
+          else
+            echo "Unknown branch: ${GITHUB_REF##*/}"
+            exit 1
+          fi
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            cd ${{ steps.select_folder.outputs.folder }}
+            git pull
+            php wa-system/cli.php clearCache
