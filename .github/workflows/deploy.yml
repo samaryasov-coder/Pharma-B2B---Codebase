@@ -1,4 +1,4 @@
-name: Auto Deploy Test Stands
+name: Deploy Pharmab2b
 
 on:
   push:
@@ -8,29 +8,52 @@ on:
       - test/sergey
       - test/ivan
 
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   deploy:
+    name: Deploy ${{ github.ref_name }}
+
     runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    permissions:
+      contents: read
 
-      - name: Select target folder
-        id: select_folder
+    steps:
+
+      - name: Select deployment target
+        id: deploy
+        shell: bash
         run: |
-          if [[ "${GITHUB_REF##*/}" == "main" ]]; then
-            echo "folder=/var/www/pharmab2b/httpdocs" >> $GITHUB_OUTPUT
-          elif [[ "${GITHUB_REF##*/}" == "test/arkadiy" ]]; then
-            echo "folder=/var/www/pharmab2b/test-arkadiy" >> $GITHUB_OUTPUT
-          elif [[ "${GITHUB_REF##*/}" == "test/sergey" ]]; then
-            echo "folder=/var/www/pharmab2b/test-sergey" >> $GITHUB_OUTPUT
-          elif [[ "${GITHUB_REF##*/}" == "test/ivan" ]]; then
-            echo "folder=/var/www/pharmab2b/test-ivan" >> $GITHUB_OUTPUT
-          else
-            echo "Unknown branch: ${GITHUB_REF##*/}"
-            exit 1
-          fi
+          set -euo pipefail
+
+          case "$GITHUB_REF_NAME" in
+
+            main)
+              echo "folder=/var/www/pharmab2b/httpdocs" >> "$GITHUB_OUTPUT"
+              ;;
+
+            test/arkadiy)
+              echo "folder=/var/www/pharmab2b/test-arkadiy" >> "$GITHUB_OUTPUT"
+              ;;
+
+            test/sergey)
+              echo "folder=/var/www/pharmab2b/test-sergey" >> "$GITHUB_OUTPUT"
+              ;;
+
+            test/ivan)
+              echo "folder=/var/www/pharmab2b/test-ivan" >> "$GITHUB_OUTPUT"
+              ;;
+
+            *)
+              echo "ERROR: Unknown branch: $GITHUB_REF_NAME"
+              exit 1
+              ;;
+          esac
+
+          echo "branch=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -38,7 +61,43 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
+          script_stop: true
+
           script: |
-            cd ${{ steps.select_folder.outputs.folder }}
-            git pull
+            set -e
+
+            DEPLOY_DIR="${{ steps.deploy.outputs.folder }}"
+            BRANCH="${{ steps.deploy.outputs.branch }}"
+
+            echo "========================================"
+            echo "DEPLOY START"
+            echo "Branch: $BRANCH"
+            echo "Folder: $DEPLOY_DIR"
+            echo "========================================"
+
+            cd "$DEPLOY_DIR"
+
+            echo "Current directory:"
+            pwd
+
+            echo "Current branch:"
+            git branch --show-current
+
+            echo "Fetching latest changes..."
+            git fetch origin "$BRANCH"
+
+            echo "Switching to branch..."
+            git checkout "$BRANCH"
+
+            echo "Resetting to origin/$BRANCH..."
+            git reset --hard "origin/$BRANCH"
+
+            echo "Current commit:"
+            git log -1 --oneline
+
+            echo "Clearing Webasyst cache..."
             php wa-system/cli.php clearCache
+
+            echo "========================================"
+            echo "DEPLOY SUCCESS"
+            echo "========================================"
