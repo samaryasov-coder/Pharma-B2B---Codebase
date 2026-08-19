@@ -15,7 +15,6 @@ concurrency:
 jobs:
   deploy:
     name: Deploy ${{ github.ref_name }}
-
     runs-on: ubuntu-latest
 
     permissions:
@@ -56,12 +55,11 @@ jobs:
           echo "branch=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
 
       - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          script_stop: true
 
           script: |
             set -e
@@ -80,9 +78,6 @@ jobs:
             echo "Current directory:"
             pwd
 
-            echo "Current branch:"
-            git branch --show-current
-
             echo "Fetching latest changes..."
             git fetch origin "$BRANCH"
 
@@ -91,6 +86,16 @@ jobs:
 
             echo "Resetting to origin/$BRANCH..."
             git reset --hard "origin/$BRANCH"
+
+            CURRENT_BRANCH="$(git branch --show-current)"
+
+            if [ "$CURRENT_BRANCH" != "$BRANCH" ]; then
+              echo "ERROR: Expected branch '$BRANCH', got '$CURRENT_BRANCH'"
+              exit 1
+            fi
+
+            echo "Current branch:"
+            git branch --show-current
 
             echo "Current commit:"
             git log -1 --oneline
