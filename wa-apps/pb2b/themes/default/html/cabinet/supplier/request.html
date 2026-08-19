@@ -1,0 +1,187 @@
+{assign var="request_status" value=$request->getStatus()}
+
+<div class="cabinet-container js-cabinet-page" data-page="request" data-id="{$request.data.id}">
+    <div class="title">
+        <a class="button secondary icon-only small" hx-get="/cabinet/supplier/accreditation/#customer_requests">
+            <svg><use href="#icon-chevron-left"></use></svg>
+        </a>
+        Условия одобрения №{$request.data.procedure_code|default:' 00-00-000000'} ({$company_reviewer->getFullName()})
+    </div>
+        <div class="grid gap24">
+        {if $company_reviewer.id}
+            <div class="flexbox gap12">
+                <div class="documents-container">
+                    {foreach $request_items as $index => $item}
+                        {assign var="item_status" value=$item->getStatus()}
+                        {assign var="file_link" value=$item->getProviderFileLink()|default:null}
+                        {assign var="file" value=null}
+                        {if $file_link}
+                            {assign var="file" value=$file_link->getFile()}
+                        {/if}
+                        <div class="document-card" data-doc data-id="{$item.id}"
+                         data-state='
+                             {strip}
+                             {
+                                "requestStatus": "{*$request.data.status.code*}",
+                                "itemStatus": "{*$item.status.code*}",
+                                "comment": "{$item.data.provider_comment}",
+                                "status": {$item->canUploadFromProvider()|json_encode},
+                                "file": {if $file}
+                                    {
+                                        "name": "{$file_link.data.filename|default:null|escape:'json'}",
+                                        "size": "{$file.data.size}"
+                                    }
+                                {else}
+                                    null
+                                {/if}
+                            }
+                            {/strip}
+                        '>
+                            <div class="document-card-content">
+                                <div class="content-section">
+                                    <span class="indicator"></span>
+                                    <span class="numb">{$index + 1}.</span>
+                                </div>
+
+                                <div class="content-body">
+                                    <div class="reviewer-content">
+                                        <div class="content-title">
+                                            <span class="text-p2">{$item.data.reviewer_name}</span>
+                                            <span class="status badge medium {$item_status->type()}">{$item_status->name()}</span>
+                                        </div>
+
+                                        {if $item.data.reviewer_comment}
+                                            <div class="comment-block">
+                                                <span class="comment-title">Комментарий к требованию</span>
+                                                <span class="comment-text">{$item.data.reviewer_comment}</span>
+                                            </div>
+                                        {/if}
+                                    </div>
+                                    <div class="provider-content">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="document-card-footer">
+                                <a class="button ghost" target="_blank" href="/api/common/docflow/request/template/download?id={$item.id}">
+                                    <svg><use href="#icon-arrow-down-tray"></use></svg>
+                                    Скачать шаблон
+                                </a>
+                                <div class="footer-actions"></div>
+                            </div>
+                        </div>
+                    {/foreach}
+                </div>
+
+                <div class="right-panel">
+                    <div class="section-item">
+                        <div class="section-item-head">
+                            <div class="section-item-info">
+                                <div class="item-info-block">
+                                    <span class="title text-l1">Информация о запросе</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="section-item-content">
+                            <div class="item-block">
+                                <span class="field text-p2">Наименование компании</span>
+                                <span class="text-l1 primary-900 font-weight-semibold">{$company_reviewer->getFullName()}</span>
+                            </div>
+                            <div class="item-block">
+                                <span class="field text-p2">Дата создания</span>
+                                <span class="text-h4">{$request.data.create_datetime|date_format:"%d.%m.%Y"}</span>
+                            </div>
+                            <div class="item-block">
+                                <span class="field text-p2">Конечная дата рассмотрения</span>
+                                <span class="text-h4">{$request.data.expires_datetime|date_format:"%d.%m.%Y"|default:'-'}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {if $request->canSubmitFromProvider()}
+                        <div class="section-item">
+                            <div class="section-item-head">
+                                <div class="section-item-info">
+                                    <div class="item-info-block request-actions">
+                                        <span class="title">
+                                            Действия
+                                            <span class="badge small {$request_status->type()}">{$request_status->name()}</span>
+                                        </span>
+                                        <span class="des">Перед отправкой убедитесь, что все документы загружены</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="section-item-content">
+                                <div class="actions">
+                                    <button class="button secondary cancel-request">Отменить</button>
+                                    <button class="button primary submit-request">Отправить</button>
+                                </div>
+                            </div>
+                        </div>
+                    {elseif $request->canCancelFromProvider()}
+                        <div class="section-item">
+                            <div class="section-item-head">
+                                <div class="section-item-info">
+                                    <div class="item-info-block request-actions">
+                                        <span class="title">
+                                            Заявка отправлена
+                                            <span class="badge small {$request_status->type()}">{$request_status->name()}</span>
+                                        </span>
+                                        <span class="des">В данный момент нельзя редактировать либо отменять отправленные документы. Дождитесь ответа от покупателя.</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="section-item-content">
+                                <div class="actions">
+                                    <button class="button large destruct-light cancel-request">Отозвать заявку</button>
+                                </div>
+                            </div>
+                        </div>
+                    {/if}
+                </div>
+            </div>
+        {else}
+
+        {/if}
+    </div>
+</div>
+
+
+<style>
+    .actions{
+        display: flex;
+        gap: 16px;
+    }
+    .actions > * {
+        flex: 1;
+    }
+
+    .item-info-block.request-actions .title{
+        display: flex;
+        font: var(--text-font-h3);
+        justify-content: space-between;
+        align-items: center;
+    }
+    .item-info-block.request-actions .des{
+        font: var(--text-font-p1);
+        color: var(--gray-500);
+        font-weight: var(--font-weight-regular);
+    }
+
+
+    .cabinet-container .section-item-content{
+        grid-template-rows: unset;
+        grid-auto-flow: unset;
+    }
+
+    .cabinet-container .company-info .section-item-content {
+        padding: 0;
+    }
+
+    .cabinet-container .right-panel{
+        display: grid;
+        gap: 16px;
+        width: 100%;
+        max-width: 370px;
+        height: fit-content;
+    }
+
+</style>

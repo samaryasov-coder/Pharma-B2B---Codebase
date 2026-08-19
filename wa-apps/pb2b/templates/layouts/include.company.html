@@ -1,0 +1,16 @@
+<div class="pb2b-sidebar-block mt0 pt0 pb0">
+    <a href="#/company/edit/" class="button w100"><i class="fas fa-plus"></i> Добавить компанию</a>
+    
+</div>
+<div class="pb2b-sidebar-block mt5 pt0 pb0">
+    <a href="#/company/" class="button w100"><i class="fas fa-list"></i> Посмотреть все компании</a>
+</div>
+
+
+{if !empty($sidebar_filters.company)}
+    <div class="pb2b-sidebar-block mt15 pt0 pb0">
+        <form class="js-sidebar-filters-form" data-namespace="company">
+            {include file="../includes/include.sidebarFilters.html" filters=$sidebar_filters.company namespace="company"}
+        </form>
+    </div>
+{/if}

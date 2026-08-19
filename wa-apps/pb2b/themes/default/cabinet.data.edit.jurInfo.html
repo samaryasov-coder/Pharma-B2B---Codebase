@@ -1,0 +1,79 @@
+<div id="dialog" data-title="Юридическая информация" class="form-container">
+
+    <div class="content">
+        <div class="alert info show">
+            <div class="alert-content">
+                <div class="alert-icon"><i class="fas fa-info-circle"></i></div>
+                <span class="alert-title text-l2 fw-semibold">Внимание</span>
+                <span class="alert-message text-p3 fw-regular">Изменение юридических данных может потребовать повторной проверки и повлиять на участие в процедурах</span>
+            </div>
+        </div>
+        <form id="form-data-edit" class="form" action="/cabinet/company-data/save/">
+
+            <div class="input-wrap required">
+                <label class="input-label" for="inn">ИНН компании</label>
+                <div class="input-box">
+                    <input id="inn" name="company[inn]" type="text" class="input" placeholder="Введите ИНН" value="{$company.data.inn|escape}">
+                </div>
+                <span class="input-hint">После указания ИНН данные о компании загрузятся автоматически</span>
+            </div>
+
+            <div class="input-wrap required">
+                <label class="input-label" for="name">Наименование</label>
+                <div class="input-box">
+                    <input id="name" name="company[name]" type="text" class="input" placeholder="Введите наименование компании" value="{$company.data.name|escape}">
+                </div>
+                <span class="input-hint"></span>
+            </div>
+
+            <div class="input-wrap required">
+                <label class="input-label" for="kpp">КПП</label>
+                <div class="input-box">
+                    <input id="kpp" name="company[kpp]" type="text" class="input" placeholder="Введите КПП компании" value="{$company.data.kpp|escape}">
+                </div>
+                <span class="input-hint"></span>
+            </div>
+
+            <div class="input-wrap required">
+                <label class="input-label" for="ogrn">ОГРН</label>
+                <div class="input-box">
+                    <input id="ogrn" name="company[ogrn]" type="text" class="input" placeholder="Укажите ОГРН компании" value="{$company.data.ogrn|escape}">
+                </div>
+                <span class="input-hint"></span>
+            </div>
+
+            <div class="input-wrap required">
+                <label class="input-label" for="ofc">Организационная форма компании</label>
+                <select id="ofc" name="company[ofc]" class="input">
+                    <option value="" disabled selected hidden>Выберите из списка</option>
+                    <option value="ooo">Общество с ограниченной ответственностью</option>
+                    <option value="odo">Общество с дополнительной ответственностью</option>
+                    <option value="oao">Открытое акционерное общество</option>
+                    <option value="zao">Закрытое акционерное общество</option>
+                </select>
+                <span class="input-hint"></span>
+            </div>
+
+        </form>
+    </div>
+
+    <div class="form-actions">
+        <button class="button primary large" type="submit" form="form-data-edit">Сохранить</button>
+    </div>
+</div>
+
+<style>
+    .modal{
+        width: 100% !important;
+        max-width: 1100px;
+    }
+
+    .form-container .alert{
+        display: block;
+        position: absolute;
+        width: 100%;
+        border-radius: 0;
+        padding: 12px 24px;
+        margin: 0;
+    }
+</style>

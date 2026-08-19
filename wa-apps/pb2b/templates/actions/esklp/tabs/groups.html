@@ -1,0 +1,9 @@
+<table class="zebra">
+    <tbody>
+    {foreach $includes.groups as $group}
+        <tr>
+            <td><a href="#/esklp/groupEdit/id={$group.id|escape}">{$group.name|escape}</a></td>
+        </tr>
+    {/foreach}
+    </tbody>
+</table>

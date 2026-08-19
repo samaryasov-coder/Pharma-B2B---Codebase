@@ -1,0 +1,35 @@
+
+    <button class="button gray js-client-contact-add">Добавить контакт</button>
+    <div class="js-client-contacts">
+        {foreach $includes.contacts as $i => $c}
+        <div class="fields-group js-client-contact-item">
+            
+            <div class="field">
+                <div class="name">ФИО</div>
+                <div class="value">
+                    <input type="text" name="data[contacts][{$i}][name]" value="{$c.name|default:''|escape}" class="w100">
+                </div>
+            </div>
+            <div class="field">
+                <div class="name">Должность</div>
+                <div class="value">
+                    <input type="text" name="data[contacts][{$i}][post]" value="{$c.post|default:''|escape}" class="w100">
+                </div>
+            </div>
+            <div class="field">
+                <div class="name">Телефон</div>
+                <div class="value">
+                    <input type="text" name="data[contacts][{$i}][phone]" value="{$c.phone|default:''|escape}" class="w100">
+                </div>
+            </div>
+            <div class="field">
+                <div class="name">E-mail</div>
+                <div class="value">
+                    <input type="text" name="data[contacts][{$i}][email]" value="{$c.email|default:''|escape}" class="w100">
+                </div>
+            </div>
+            <button type="button" class="button red smallest mt15 js-client-contact-remove">Удалить</button>
+        </div>
+        {/foreach}
+    </div>
+

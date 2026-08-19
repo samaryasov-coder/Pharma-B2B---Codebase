@@ -1,0 +1,173 @@
+<div class="cabinet-container js-cabinet-page" data-page="data">
+    <div class="title">Данные компании</div>
+    <div class="content">
+        <ul class="tabs vertical">
+            <li data-tab="data" class="tab-btn">
+                <a href="#data">Информация о компании</a>
+            </li>
+            <li data-tab="signatures" class="tab-btn">
+                <a href="#signatures">Подписи</a>
+            </li>
+            <li data-tab="roles" class="tab-btn">
+                <a href="#roles">Роли</a>
+            </li>
+            <li data-tab="employees" class="tab-btn">
+                <a href="#employees">Сотрудники</a>
+            </li>
+        </ul>
+        <div class="tab-content" data-tab="data">
+            <div class="tabs_container">
+                <span class="section__title">Информация о компании</span>
+                <div class="section-item">
+                    <div class="section-item-head">
+                        <div class="section-item-info">
+                            <span class="logo">
+                                <svg><use href="#icon-office"></use></svg>
+                            </span>
+                            <div class="item-info-block">
+                                <span class="title">{$company.data.name|escape}</span>
+                                <span class="des">Необходимо добавить</span>
+                            </div>
+                        </div>
+                        <span class="button secondary edit-block" data-section="logo">
+                            <svg><use href="#icon-edit"></use></svg>
+                        </span>
+                    </div>
+                </div>
+                <div class="section-item">
+                    <div class="section-item-head">
+                        <div class="item-block">
+                            <span class="title">Юридическая информация</span>
+                            <span class="des">Юридически значимые данные компании, используемые в договорах и процедурах</span>
+                        </div>
+                        <span class="button secondary edit-block" data-section="jurInfo">
+                            <svg><use href="#icon-edit"></use></svg>
+                        </span>
+                    </div> 
+                    <div class="section-item-content">
+                        <div class="content__block">
+                            <span class="field">Наименование компании</span>
+                            <span class="value">{$company.data.name|escape}</span>
+                        </div>
+                        <div class="content__block">
+                            <span class="field">Организационно-правовая форма</span>
+                            <span class="value">Необходимо добавить</span>
+                        </div>
+                        <div class="content__block">
+                            <span class="field">ИНН</span>
+                            <span class="value">{$company.data.inn|escape}</span>
+                        </div>
+                        <div class="content__block">
+                            <span class="field">КПП</span>
+                            <span class="value">{$company.data.kpp|escape}</span>
+                        </div>
+                        <div class="content__block">
+                            <span class="field">ОГРН</span>
+                            <span class="value">{$company.data.ogrn|escape}</span>
+                        </div>
+                        <div class="content__block">
+                            <span class="field">Юридический адрес</span>
+                            <span class="value">{$company.data.jur_address|escape}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="section-item">
+                    <div class="section-item-head">
+                        <div class="section-item-info">
+                            <div class="item-info-block">
+                                <span class="title">Контактные данные компании</span>
+                                <span class="des">Используются для связи с компанией в рамках процедур, договоров и уведомлений системы</span>
+                            </div>
+                        </div>
+                        <span class="button secondary edit-block" data-section="contactInfo">
+                            <svg><use href="#icon-edit"></use></svg>
+                        </span>
+                    </div>
+                    <div class="section-item-content">
+                        <div class="content__block">
+                            <span class="field">Основной E-mail</span>
+                            <span class="value">{$company.data.registry_email|escape}</span>
+                        </div>
+                        <div class="content__block">
+                            <span class="field">Основной номер телефона</span>
+                            <span class="value">{$company.data.phone|escape}</span>
+                        </div>
+                        <div class="content__block">
+                            <span class="field">Веб-сайт</span>
+                            <span class="value">{$company.data.site|escape}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flexbox gap16">
+                    <div class="section-item">
+                        <div class="section-item-head">
+                            <div class="section-item-info">
+                                <div class="item-info-block">
+                                    <span class="title">Контактное лицо компании</span>
+                                    <span class="des">Оперативный контакт по текущим вопросам и взаимодействию в процедурах</span>
+                                </div>
+                            </div>
+                            <span class="button secondary edit-block" data-section="contactPerson">
+                                <svg><use href="#icon-edit"></use></svg>
+                            </span>
+                        </div>
+                        <div class="section-item-content">
+                            <div class="content__block">
+                                <span class="field">ФИО</span>
+                                <span class="value">{$company.data.contact_person|escape}</span>
+                            </div>
+                            <div class="content__block">
+                                <span class="field">Основной номер телефона</span>
+                                <span class="value">{$company.data.phone|escape}</span>
+                            </div>
+                            <div class="content__block">
+                                <span class="field">E-mail</span>
+                                <span class="value">{$company.data.registry_email|escape}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-item">
+                        <div class="section-item-head">
+                            <div class="section-item-info">
+                                <div class="item-info-block">
+                                    <span class="title">Отвественное лицо</span>
+                                    <span class="des">Лицо, ответственное за взаимодействие с платформой и получение официальных уведомлений</span>
+                                </div>
+                            </div>
+                            <span class="button secondary edit-block" data-section="responsiblePerson">
+                                <svg><use href="#icon-edit"></use></svg>
+                            </span>
+                        </div>
+                        <div class="section-item-content">
+                            <div class="content__block">
+                                <span class="field">ФИО</span>
+                                <span class="value">{$contact.name|escape}</span>
+                            </div>
+                            <div class="content__block">
+                                <span class="field">E-mail</span>
+                                <span class="value">{$contact.email[0].value|default:''|escape}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class=" tab-content" data-tab="signatures">
+            <div class="tabs_container">
+                <span class="section__title">Сигнатуресы</span>
+            </div>
+        </div>
+        <div class=" tab-content" data-tab="roles">
+            <div class="tabs_container">
+                <span class="section__title">Ролесы</span>
+            </div>
+        </div>
+        <div class=" tab-content" data-tab="employees">
+            <div class="tabs_container">
+                <span class="section__title">Эмплоесы</span>
+            </div>
+        </div>
+
+    </div>
+</div>

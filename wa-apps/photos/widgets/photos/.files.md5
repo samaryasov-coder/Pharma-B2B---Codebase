@@ -1,0 +1,14 @@
+8c788cc317fafade86e7dcaeeaf3c8a4 *css/photoWidget.css
+61edbe8f2be352e59518b0b7cd6439c7 *img/photos.png
+a1fad6fd0daa19a35b67dfdf43c956ed *js/photoWidget.js
+a285da79a1cf95556e4eb1fd40059097 *lib/.htaccess
+e17c7bff29c4a2a101dec335fa05b209 *lib/config/build.php
+1eccd6a1b7f864050359573df106d221 *lib/config/widget.php
+ca02e0a1671f6e19533e985c36214363 *lib/photosPhotos.widget.php
+a1751e1f10a3b96b05d0401c97e72008 *locale/.htaccess
+c6c3e108d3c52aeab8dc011a0ff3c29a *locale/en_US/LC_MESSAGES/photos_widget_photos.mo
+83029f4001c0934b3eeb9adf54a7fd4f *locale/en_US/LC_MESSAGES/photos_widget_photos.po
+7a05847b4a32486d700b4924b0431845 *locale/ru_RU/LC_MESSAGES/photos_widget_photos.mo
+ccba3d569f7e33221c3fa83d886da319 *locale/ru_RU/LC_MESSAGES/photos_widget_photos.po
+a285da79a1cf95556e4eb1fd40059097 *templates/.htaccess
+dda21ca9123f59f0d40d6f676b58de43 *templates/Default.html

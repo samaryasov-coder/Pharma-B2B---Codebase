@@ -1,0 +1,32 @@
+<div class="dialog pb2b-dialog--xl js-company-category-dialog" data-company-id="{$object.id|escape}">
+    <div class="dialog-background"></div>
+    <div class="dialog-body">
+        <a href="#" class="dialog-close js-close-dialog"><i class="fas fa-times"></i></a>
+        <div class="dialog-block">
+            <header class="dialog-header">
+                <h1>Добавление классификаторов</h1>
+                <span class="hint">Компания &laquo;{$object.name|escape}&raquo;</span>
+            </header>
+            <div class="dialog-content">
+                <div class="js-menu-items js-categories fhierarchical-tree fhierarchical-tree-noroot">
+                    <div class="js-company-category-tree">
+                        {if !empty($categories_tree)}
+                            {include $app_path|cat:'/templates/includes/include.tree.html' 
+                                items=$categories_tree 
+                                type='company-category' 
+                                item_url='#'
+                                newposition_class='fhierarchical-newposition-company-category' 
+                                item_class='fhierarchical-item-company-category' 
+                                show_checkboxes=1
+                                selected_checkboxes = $selected_category_ids}
+                        {/if}
+                    </div>
+                </div>
+            </div>
+            <footer class="dialog-footer">
+                <button type="button" class="button green js-company-category-save">Сохранить</button>
+                <button type="button" class="js-close-dialog button light-gray">Закрыть</button>
+            </footer>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,105 @@
+<div class="dialog pb2b-dialog js-docflow-defaults-dialog">
+    <div class="dialog-background"></div>
+    <div class="dialog-body">
+        <a href="#" class="dialog-close js-close-dialog"><i class="fas fa-times"></i></a>
+        <div class="dialog-block">
+            <form class="form fields js-docflow-defaults-add-form" action="?module=docflow&action=templateDefaultAddUpload" method="post" enctype="multipart/form-data">
+                <header class="dialog-header">
+                    <h1>Добавление документа</h1>
+                </header>
+                <div class="dialog-content">
+                    <div class="field">
+                        <div class="name">Название документа</div>
+                        <div class="value required">
+                            <input type="text" class="w100" name="doc_name" required>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="name">Комментарий</div>
+                        <div class="value">
+                            <input type="text" class="w100" name="doc_comment" placeholder="Необязательно">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="name">Тип компании поставщика</div>
+                        <div class="value">
+                            <div class="wa-select w100">
+                                <select name="company_type_id" class="w100">
+                                    {foreach $company_types as $ct}
+                                        <option value="{$ct.id|escape}">{$ct.name|escape}</option>
+                                    {/foreach}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="name">Файл-образец</div>
+                        <div id="pb2b_docflow_default_fileupload">
+                            <div class="upload">
+                                <label class="link">
+                                    <i class="fas fa-file-upload"></i>
+                                    <span>Выберите файл</span>
+                                    <input name="file" type="file" autocomplete="off" required>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="value">
+                            <span class="js-docflow-defaults-add-msg form-message" style="display:none;"></span>
+                        </div>
+                    </div>
+                </div>
+                <footer class="dialog-footer">
+                    <input type="submit" class="button green" value="Сохранить">
+                    <button type="button" class="button light-gray js-close-dialog">Закрыть</button>
+                </footer>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    $(document).off('submit.pb2bDocflowDefaultAdd').on('submit.pb2bDocflowDefaultAdd', '.js-docflow-defaults-add-form', function(e) {
+        e.preventDefault();
+
+        var $form = $(this);
+        var $msg = $form.find('.js-docflow-defaults-add-msg');
+        $msg.hide().removeClass('danger success');
+
+        var fd = new FormData(this);
+        $.ajax({
+            url: $form.attr('action'),
+            type: 'POST',
+            data: fd,
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            success: function(r) {
+                var d = (r && r.status === 'ok' && r.data) ? r.data : null;
+                if (!d) {
+                    $msg.addClass('danger').text('Ошибка ответа сервера').show();
+                    return;
+                }
+                if (d.error) {
+                    $msg.addClass('danger').text(d.message || 'Ошибка').show();
+                    return;
+                }
+
+                if (typeof wa_pro_dialog !== 'undefined' && wa_pro_dialog) {
+                    wa_pro_dialog.close();
+                }
+                if (typeof $.pb2b !== 'undefined' && $.pb2b.settings && $.pb2b.settings.dispatchSettings) {
+                    $.pb2b.settings.dispatchSettings(true);
+                } else {
+                    window.location.reload();
+                }
+            },
+            error: function() {
+                $msg.addClass('danger').text('Ошибка запроса').show();
+            }
+        });
+    });
+})();
+</script>

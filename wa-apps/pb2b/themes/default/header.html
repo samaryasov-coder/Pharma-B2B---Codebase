@@ -1,0 +1,60 @@
+<header class="header">
+    <svg style="display:none;">
+        <defs>
+            <g id="icon-mobile-nav"><path d="M32.5 16.5C32.7761 16.5 33 16.7239 33 17C33 17.2761 32.7761 17.5 32.5 17.5H11.5C11.2239 17.5 11 17.2761 11 17C11 16.7239 11.2239 16.5 11.5 16.5H32.5Z" fill="#0B4780"/><path d="M32.5 21.5C32.7761 21.5 33 21.7239 33 22C33 22.2761 32.7761 22.5 32.5 22.5H17.5C17.2239 22.5 17 22.2761 17 22C17 21.7239 17.2239 21.5 17.5 21.5H32.5Z" fill="#0B4780"/><path d="M32.5 26.5C32.7761 26.5 33 26.7239 33 27C33 27.2761 32.7761 27.5 32.5 27.5H11.5C11.2239 27.5 11 27.2761 11 27C11 26.7239 11.2239 26.5 11.5 26.5H32.5Z" fill="#0B4780"/></g>
+            <g id="icon-profile"><path d="M13 2C19.0751 2 24 6.92487 24 13C24 19.0751 19.0751 24 13 24C6.92487 24 2 19.0751 2 13C2 6.92487 6.92487 2 13 2Z" fill="#CCD9E3" stroke="#CCD9E3" stroke-width="2.5"/><circle cx="13.0001" cy="10.8333" r="4.33333" fill="#0B4780"/><path d="M13.0002 16.25C15.9392 16.25 18.4877 17.6831 19.7465 19.7785C19.8044 19.875 19.7867 19.9984 19.705 20.0758C17.9575 21.7324 15.5982 22.75 13.0002 22.75C10.4023 22.75 8.04301 21.7324 6.29549 20.0758C6.21379 19.9984 6.19607 19.875 6.25404 19.7785C7.51282 17.6831 10.0613 16.25 13.0002 16.25Z" fill="#0B4780"/></g>
+        </defs>
+    </svg>
+
+
+    <div class="header__container container">
+        <a href="/" class="header__logo">
+            <img src="{$wa_theme_url}img/icons/favicon.svg" alt="PharmaB2B">
+        </a>
+
+        <nav class="header__nav">
+            <ul class="header__nav-pages">
+                <li><a href="/start/">Начало работы</a></li>
+                <li><a href="/supplier/">Поставщикам</a></li>
+                <li><a href="/buyer/">Покупателям</a></li>
+                <li><a href="/tariff/">Тарифы</a></li>
+                <li><a href="/training/">Обучение</a></li>
+                <li><a href="/info/">О площадке</a></li>
+            </ul>
+        </nav>
+
+        <div class="header__actions">
+            <div class="header__action-pc-nav">
+                {if $wa->user()->isAuth()}
+                    <a href="/cabinet/" class="btn btn--primary">
+                        <span class="btn__text">Личный кабинет</span>
+                    </a>
+                    <a class="btn btn--secondary js-logout">
+                        <span class="btn__text">Выход</span>
+                    </a>
+                {else}
+                    <a href="/auth/login/" class="btn btn--primary">
+                        <span class="btn__text">Вход</span>
+                    </a>
+                {/if}
+
+            </div>
+
+
+            <div class="header_action-mobile-nav">
+                <a href="/auth/login/">
+                    <svg class="icon" width="36" height="36" viewBox="0 0 26 26">
+                        <use xlink:href="#icon-profile"></use>
+                    </svg>
+                </a>
+
+                <button class="mobile-nav-toggle" aria-label="Открыть меню">
+                    <svg class="icon" width="60" height="60" viewBox="0 0 45 43">
+                        <use xlink:href="#icon-mobile-nav"></use>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+    </div>
+</header>

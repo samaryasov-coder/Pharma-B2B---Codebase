@@ -1,0 +1,13 @@
+
+User-agent: *
+# wa mailer mailer/*
+Disallow: /mailer/unsubscribe/
+# wa mailer
+
+
+User-agent: *
+# wa shop shop/*
+Disallow: /shop/my/
+Disallow: /shop/checkout/
+# wa shop
+

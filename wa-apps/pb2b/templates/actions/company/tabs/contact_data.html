@@ -1,0 +1,23 @@
+<form class="js-form form fields" action="?module=company&action=saveContacts">
+    {if !empty($object.id)}
+        <input type="hidden" name="id" value="{$object.id|escape}">
+    {/if}
+
+    
+
+    <div class="field">
+        <div class="name">Юридический адрес компании</div>
+        <div class="value">
+            <input type="text" name="data[jur_address]" value="{$object.jur_address|default:''|escape}" class="w100"><br>
+        </div>
+    </div>
+
+    <section class="bottombar pb2b-bottombar">
+        <div class="article width-100">
+            <div class="article-body custom-py-8 flexbox">
+                <input type="submit" class="button" value="Сохранить">
+                <span class="js-form-message form-message red" style="display: none;"></span>
+            </div>
+        </div>
+    </section>
+</form>

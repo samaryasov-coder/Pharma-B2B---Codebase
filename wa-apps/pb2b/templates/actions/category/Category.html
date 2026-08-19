@@ -1,0 +1,14 @@
+<div class="js-menu-items js-categories fhierarchical-tree fhierarchical-tree-noroot">
+    <ul class="menu">
+        <li class="dr ui-draggable" data-type="{$type|default:'page'|escape}" data-id="0">
+            <a class="fhierarchical-item"{$item_action|default:''} data-id="0">
+                <span class="name gray">Классификаторы</span>
+                <strong class="small highlighted count-new"></strong>
+                <span class="count"><i class="w-icon fas fa-plus-circle fhierarchical-inline-item-icon fhierarchical-menu-create mr5" data-parent="0"></i></span>
+            </a>
+            {if !empty($categories_tree)}
+                {include $app_path|cat:'/templates/includes/include.tree.html' items=$categories_tree type='menu' newposition_class='fhierarchical-newposition-menu' item_class='js-popup-drawer fhierarchical-item-menu' item_action=' data-action="?module=category&action=edit"'}
+            {/if}
+        </li>
+    </ul>
+</div>

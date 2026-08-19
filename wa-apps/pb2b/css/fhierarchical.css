@@ -1,0 +1,31 @@
+.fhierarchical-item.fhierarchical-highlighted {background: #ffffe5;}
+.fhierarchical-newposition {height: 0; padding: 0 !important; margin: 0 !important; transition: 0.2s all;}
+.fhierarchical-newposition.fhierarchical-ready {height: 5px;}
+.fhierarchical-newposition.fhierarchical-highlighted {border-top: 3px solid lightgray;}
+.fhierarchical-tree .dr.ui-draggable-dragging {z-index: 9; white-space: nowrap; background: #ffffe5; padding: 5px;}
+.fhierarchical-tree .dr.ui-draggable-dragging .counters {display: none;}
+.fhierarchical-tree .dr.ui-draggable-dragging .count {display: none;}
+.fhierarchical-tree ul li.dr:last-child {padding-bottom: 0 !important; margin-bottom: 0 !important;}
+.fhierarchical-tree .overhanging.rarr {transform: rotate(270deg);}
+.fhierarchical-tree .fa-empty {opacity: 0;}
+.fhierarchical-tree-noroot > ul > .fhierarchical-newposition:first-child {border: none !important; height: 0 !important;}
+.fhierarchical-tree-noroot > ul > .fhierarchical-newposition:last-child {border: none !important; height: 0 !important;}
+.fhierarchical-inline-item-icon {opacity: 0; height: 0.9em; width: 0.9em;}
+.fhierarchical-item:hover .fhierarchical-inline-item-icon {opacity: 1;}
+a.fhierarchical-item-menu svg.fa-file {
+    color: grey;
+}
+.js-wa-pro-tree-item.wa-pro-tree-highlighted {background: #ffffe5;}
+.js-wa-pro-tree-new-position {height: 0; padding: 0 !important; margin: 0 !important; transition: 0.2s all;}
+.js-wa-pro-tree-new-position.js-wa-pro-tree-ready {height: 5px;}
+.js-wa-pro-tree-new-position.wa-pro-tree-highlighted {border-top: 3px solid lightgray;}
+.js-wa-pro-tree .js-wa-pro-dr.ui-draggable-dragging {z-index: 9; white-space: nowrap; background: #ffffe5; padding: 5px;}
+.js-wa-pro-tree .js-wa-pro-dr.ui-draggable-dragging .counters {display: none;}
+.js-wa-pro-tree .js-wa-pro-dr.ui-draggable-dragging .count {display: none;}
+.js-wa-pro-tree ul li.js-wa-pro-dr:last-child {padding-bottom: 0 !important; margin-bottom: 0 !important;}
+.js-wa-pro-tree .overhanging.rarr {transform: rotate(270deg);}
+.js-wa-pro-tree .fa-empty {opacity: 0;}
+.js-wa-pro-tree-no-root > ul > .js-wa-pro-tree-new-position:first-child {border: none !important; height: 0 !important;}
+.js-wa-pro-tree-no-root > ul > .js-wa-pro-tree-new-position:last-child {border: none !important; height: 0 !important;}
+.wa-pro-tree-inline-item-icon {opacity: 0; height: 0.9em; width: 0.9em;}
+.js-wa-pro-tree-item:hover .wa-pro-tree-inline-item-icon {opacity: 1;}

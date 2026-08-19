@@ -1,0 +1,42 @@
+<div class="drawer meeting__q-draw">
+    <div class="drawer-background"></div>
+    <div class="drawer-body fields vertical">
+        <a href="#" class="drawer-close js-close-drawer"><i class="fas fa-times"></i></a>
+        {if empty($object.id)}
+            <div class="drawer-block">
+                <header class="drawer-header"><h2>Ошибка получения идентификатора карты</h2></header>
+            </div>
+        {else}
+            <form class="js-form drawer-block" action="?module=category&action=save">
+                <header class="drawer-header"><h2>Редактирование этапа</h2></header>
+                <div class="drawer-content custom-mt-24 custom-pr-8">
+                    {if !empty($object.id)}
+                        <input type="hidden" name="id" value="{$object.id|escape}">
+                    {/if}
+                    <div class="field">
+                        <div class="name">Название</div>
+                        <div class="value">
+                            <label>
+                                <input class="w100" type="text" name="data[name]" value="{$object.name|default:''|escape}">
+                            </label>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="name">Описание</div>
+                        <div class="value">
+                            <label>
+                                <textarea class="w100" name="data[description]">{$object.description|default:''|escape}</textarea>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <footer class="js-row drawer-footer" data-id="{$object.id|escape}">
+                    {include $app_path|cat:'/templates/includes/include.message.html'}
+                    <button class="js-popup-confirm button red float-right" data-success="Удалить" data-message="Подтвердите удаление классификатора &laquo;{$object.name|escape}&raquo;" data-action="categoryDelete" data-params="id={$object.id|escape}">Удалить</button>
+                    <input type="submit" class="button green" value="Сохранить">
+                    <button class="js-close-drawer button light-gray">Отмена</button>
+                </footer>
+            </form>
+        {/if}
+    </div>
+</div>

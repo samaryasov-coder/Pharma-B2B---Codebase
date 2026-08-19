@@ -1,0 +1,22 @@
+<h1 class="mb5">{if empty($object.id)}Новая группа{else}группа &laquo;{$object.name|escape}&raquo;{/if}</h1>
+{if !empty($object.id)}
+    {assign var=default_tab value=$includes.options.default_tab|default:'common_group'}
+    <div class="js-tabs" data-default-tab="{$default_tab|escape}" data-param="tab">
+        <ul class="tabs js-tabs-controls">
+            {foreach $includes.tabs.items|default:[] as $key => $tab}
+                <li data-tab="{$key|escape}" class="{if $key==$default_tab}selected{/if}">
+                    <a href="#"><span>{$tab.name|escape}</span></a>
+                </li>
+            {/foreach}
+        </ul>
+        <div class="js-tabs-panels mt10">
+            {foreach $includes.tabs.items|default:[] as $key => $tab}
+                <div data-tab="{$key|escape}" {if $key!=$default_tab}style="display:none"{/if}>
+                    {include file="./tabs/`$key`.html" inline}
+                </div>
+            {/foreach}
+        </div>
+    </div>
+{else}
+    {include file="./tabs/common_group.html" inline}
+{/if}

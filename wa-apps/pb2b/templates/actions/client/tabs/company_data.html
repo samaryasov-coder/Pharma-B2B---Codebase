@@ -1,0 +1,146 @@
+
+    <div class="field">
+        <div class="name">Название</div>
+        <div class="value">
+            <input type="text" name="data[name]" value="{$object.name|default:''|escape}" class="w100"><br>
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="name">Тип</div>
+        <div class="value">
+
+            <div>
+                <span class="switch js-wa-switch" id="switch-buyer-{$object.id|default:'new'}">
+                    <input type="checkbox"
+                        id="demo-switch-buyer-{$object.id|default:'new'}"
+                        name="data[buyer]"
+                        value="1"
+                        {if $object.buyer|default:0==1}checked{/if}>
+                </span>
+                <label for="demo-switch-buyer-{$object.id|default:'new'}">Покупатель</label>
+                </label>
+            </div>
+            
+            <div class="mt10">
+                <span class="switch js-wa-switch" id="switch-supplier-{$object.id|default:'new'}">
+                    <input type="checkbox"
+                        id="demo-switch-supplier-{$object.id|default:'new'}"
+                        name="data[supplier]"
+                        value="1"
+                        {if $object.supplier|default:0==1}checked{/if}>
+                </span>
+                <label for="demo-switch-supplier-{$object.id|default:'new'}">Поставщик</label>
+                </label>
+            </div>
+
+        </div>
+    </div>
+    
+    <div class="field">
+        <div class="name">ИНН</div>
+        <div class="value">
+            <div class="flexbox middle">
+                <div class="wide">
+                    <input type="text" name="data[inn]" value="{$object.inn|default:''|escape}" class="w100 js-inn">
+                </div>
+                <!-- <button href="javascript:void(0)" class="button gray ml10 js-dadata-fill"
+                   data-url="?module=client&action=dadata">
+                    Заполнить из DaData
+                </button> -->
+            </div>
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="name">КПП</div>
+        <div class="value">
+            <input type="text" name="data[kpp]" value="{$object.kpp|default:''|escape}" class="w100"><br>
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="name">ОГРН</div>
+        <div class="value">
+            <input type="text" name="data[ogrn]" value="{$object.ogrn|default:''|escape}" class="w100"><br>
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="name">Юридический адрес</div>
+        <div class="value">
+            <input type="text" name="data[jur_address]" value="{$object.jur_address|default:''|escape}" class="w100"><br>
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="name">E-mail</div>
+        <div class="value">
+            <input type="text" name="data[registry_email]" value="{$object.registry_email|default:''|escape}" class="w100">
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="name">Телефон</div>
+        <div class="value">
+            <input type="text" name="data[phone]" value="{$object.phone|default:''|escape}" class="w100">
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="name">Веб-сайт</div>
+        <div class="value">
+            <input type="text" name="data[site]" value="{$object.site|default:''|escape}" class="w100">
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="name">Дата последнего контакта</div>
+        <div class="value">
+            <input type="date" name="data[last_contact_datetime]" value="{$object.last_contact_datetime|default:''|escape}" class="w100">
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="name">Комментарий</div>
+        <div class="value">
+            <textarea name="data[comment]" class="w100" rows="4">{$object.comment|default:''|escape}</textarea>
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="name">Банк</div>
+        <div class="value">
+            <input type="text" name="data[bank]" value="{$object.bank|default:''|escape}" class="w100">
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="name">БИК</div>
+        <div class="value">
+            <input type="text" name="data[bik]" value="{$object.bik|default:''|escape}" class="w100">
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="name">р/с</div>
+        <div class="value">
+            <input type="text" name="data[rs]" value="{$object.rs|default:''|escape}" class="w100">
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="name">к/с</div>
+        <div class="value">
+            <input type="text" name="data[ks]" value="{$object.ks|default:''|escape}" class="w100">
+        </div>
+    </div>
+
+    <!-- <section class="bottombar pb2b-bottombar">
+        <div class="article width-100">
+            <div class="article-body custom-py-8 flexbox">
+                <input type="submit" class="button" value="Сохранить">
+                <span class="js-form-message form-message red" style="display: none;"></span>
+            </div>
+        </div>
+    </section> -->

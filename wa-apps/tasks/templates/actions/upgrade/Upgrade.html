@@ -1,0 +1,194 @@
+<style>
+
+    .t-premium-appicon { position: relative; z-index: 10; width: 9rem; height: 9rem; margin: 0 auto; }
+    .t-premium-appicon .t-icon-tasks { display: block; width: 9rem; height: 9rem; background: url('{$wa_url}wa-apps/tasks/img/tasks.svg') no-repeat center / 8rem; }
+    .t-premium-appicon .t-icon-star { position: absolute; bottom: 1rem; right: 0.5rem; transform: translate(0, 5px); background-color: var(--background-color-blank); border-radius: 50%; padding: 0.5rem; width: 1.75rem; height: 1.75rem; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; box-shadow: 0 0.125rem 0.5rem rgba(0,0,0,0.2); }
+    .t-premium-feature { border-radius: 0.75rem; background: var(--background-color-blank); margin-bottom: 1.5rem; padding: 1.5rem 2rem; }
+    .t-premium-feature.halfwidth { width: 40%; margin-bottom: 0; padding-bottom: 0.5rem; }
+    .t-premium-feature.halfwidth h3 { font-size: 1.25rem; }
+    .t-premium-feature img,
+    .t-premium-feature video { max-width: 100%; }
+
+    @media screen and (max-width: 760px) {
+        .t-premium-feature.halfwidth { width: 100%; }
+    }
+
+</style>
+
+{$_is_premium = $wa->tasks->isPremium()}
+{$_is_cloud = $wa->tasks->isCloud()}
+{$_premium_pricing = $wa->tasks->getPremiumPricing()}
+{if $_is_cloud}
+    {$_upgrade_url = '[`https://www.webasyst.com/my/hosting/`]'}
+{else}
+    {$_upgrade_url = '[`https://www.webasyst.com/my/buy/upgrade-to-premium/tasks/`]'|cat:'?domain='|cat:str_replace('http://','',str_replace('https://','',$wa->domainUrl()))}
+{/if}
+
+{capture "getpremiumbutton"}
+{if !$_is_premium}
+<figure class="box align-center t-upgrade-ad">
+    <a href="{$_upgrade_url}" class="button rounded purple largest t-upgrade-button custom-mr-0" target="_blank">[`Upgrade to premium`]</a>
+    <h4>
+        {if !empty($_premium_pricing.compare_price)}<strike class="gray">{$_premium_pricing.compare_price}</strike>{/if}
+        {if $_is_cloud}
+            [`All inclusive in the cloud`]
+        {else}
+            {$_premium_pricing.price}
+        {/if}
+    </h4>
+    <p class="width-60 width-100-mobile custom-mx-auto small">
+        {if $_is_cloud}
+            [`In Webasyst Cloud, simply upgrade to the <b>Premium</b> plan and get all premium features at once with no extra purchase required.`]
+        {else}
+            [`Per-server license for the entire company. Unlimited users, all premium features, free updates forever.`]
+        {/if}
+        {if !$_is_cloud && date('Y-m-d') <= '2026-08-31'}
+            <br><br>
+            [`Promocode`] <code><b>SUMMER26</b></code> <strong class="text-red">-15% / {date('Y.m')}</strong>
+        {/if}
+    </p>
+</figure>
+{/if}
+{/capture}
+
+{function name="_render_feature" _p=[] _is_premium_license=false _halfwidth=false _is_free_feature=false}
+<div class="card t-premium-feature{if $_halfwidth} halfwidth{/if}">
+    <div class="flexbox space-12 wrap-mobile">
+        <div class="wide">
+            <h3>
+                {if !$_is_free_feature}<i class="fas fa-star {if empty($_p.eta)}text-yellow{else}text-light-gray{/if} custom-mr-4"></i>{/if}
+                {$_p.title}
+            </h3>
+        </div>
+        <div>
+            {if empty($_p.eta)}
+                <span class="nowrap badge {if $_is_premium_license}green{else}purple{/if}"><i class="fas fa-check"></i> {if !$_is_free_feature}{if $_is_premium_license}[`Enabled`]{else}[`Premium only`]{/if}{/if}</span>
+            {elseif trim($_p.eta)}
+                <span class="nowrap badge {$_p.eta_class|default:'light-gray'}"><i class="fas fa-clock"></i> {$_p.eta}</span>
+            {/if}
+        </div>
+    </div>
+    <div class="small custom-mt-16{if $_is_premium} hidden{/if}">{if !empty($_p.body)}{$_p.body}{/if}</div>
+</div>
+{/function}
+
+<div class="article">
+
+    <main class="article-body">
+
+        <article class="t-upgrade-content">
+
+            <div class="t-premium-appicon">
+                <span class="t-icon-tasks"></span>
+                {if !$_is_premium}<span class="t-icon-star"><i class="fas fa-star text-yellow"></i></span>{/if}
+            </div>
+
+            {$_premium_stuff = []}
+
+            {$_premium_stuff[] = [
+              'title' => '[`Repeating tasks`]',
+              'body' => '[`Automate your workflow with re-occuring tasks that resume either on completion instantly or on each due date in the background. Set up once, and track the progress in a long term with no hassle.`]'
+            ]}
+
+            {$_premium_stuff[] = [
+              'title' => '[`Write with AI`]'|cat:' <i class="icon webasyst-magic-wand-ai custom-ml-4"></i>',
+              'body' => '[`Boost your performance and save significant amounts of time.`]'|cat:' [`Write and spellcheck task content with just few clicks. Powered by Webasyst AI.`]'|cat:'<br><br> <video loop="" muted="" autoplay="" playsinline=""><source src="https://www.webasyst.ru/wa-data/public/updates/products/landing/01/1/7341.webasyst-ai-tri-kp.mp4" type="video/mp4"></video>'
+            ]}
+
+            {$_premium_stuff[] = [
+              'title' => '[`Gantt chart`]',
+              'body' => '[`Visualize working progress based on scopes/milestones.`]'|cat:' [`When multiple scopes and projects are in the works at the same time, the right way to keep them on track becomes a necessity.`]'
+            ]}
+
+            {$_premium_stuff[] = [
+              'title' => '[`Task types`]',
+              'body' => '[`Specify any custom task type list: dev, bug, feature, story, epic, lead, whatever.`]'
+            ]}
+
+            {$_premium_stuff[] = [
+              'title' => '[`Custom fields`]',
+              'body' => '[`Configure custom task fields based on a task type.`]'
+            ]}
+
+            {$_premium_stuff[] = [
+              'title' => '[`Reports & visuals`]',
+              'body' => '[`Track  working progress with CFD and LTDC charts, task completion tables, more.`]'
+            ]}
+
+            {$_premium_stuff[] = [
+              'title' => '[`Limited access & user roles`]',
+              'body' => '[`With the basic version, you can invite your clients to your Webasyst backend using the free Team app and grant full access to a specific project. With premium, more sophisticated in-project access rights option will be available, such as view, comment, and follow specific tasks only.`]'
+            ]}
+
+            {$_premium_stuff[] = [
+              'title' => '[`Project summary private links`]',
+              'body' => '[`Showcase project & its tasks current status to your client via a private link (Teamwork app frontend). View only access with no need to sign up and get extra access to your Webasyst backend.`]'
+            ]}
+
+            {$_premium_stuff[] = [
+              'title' => '[`Project templates`]',
+              'eta' => '[`Later`]',
+              'body' => '[`Quickly start new projects with a pre-defined set of template-based tasks & workflows.`]'
+            ]}
+            {$_premium_stuff[] = [
+              'title' => '[`Per-task time tracking`]',
+              'eta' => '[`Later`]',
+              'body' => '[`Track working time within an individual task (in integration with the Status app).`]'
+            ]}
+
+            {$_features_delivered = 0}
+            {$_features_pending = 0}
+            {foreach $_premium_stuff as $_p}
+                {if empty($_p.eta)}
+                    {$_features_delivered = $_features_delivered + 1}
+                {else}
+                    {$_features_pending = $_features_pending + 1}
+                {/if}
+            {/foreach}
+
+
+            {if $_is_premium}
+
+                <h1 class="top-padded align-center">[`You are all set!`]</h1>
+                <p class="small align-center">
+                    [`Thank you for being a premium user and for supporting the project.`]<br>
+                    [`With premium, you are among the first to have access to all features.`]<br>
+                    <a class="bold" href="[`https://www.webasyst.com/store/app/tasks/`]" target="_blank">[`https://www.webasyst.com/store/app/tasks/`]</a>
+                </p>
+
+                {if $wa->installer && method_exists($wa->installer, 'reviewWidget')}
+                    <div style="max-width: 300px;" class="custom-my-24 custom-mx-auto">
+                        {$wa->installer->reviewWidget('app/tasks', ['is_inline' => true])}
+                    </div>
+                {/if}
+
+            {else}
+
+                <h1 class="top-padded align-center width-66 custom-mx-auto custom-mb-24 width-100-mobile">
+                    [`Automate, accelerate, customize, be more productive`]
+                </h1>
+
+            {/if}
+
+            {$smarty.capture.getpremiumbutton}
+
+            {foreach $_premium_stuff as $_p}
+                {_render_feature _p=$_p _is_premium_license=$_is_premium}
+            {/foreach}
+            <p class="align-center gray small">[`All scheduled features will be delivered as free updates via Installer.`]</p>
+
+            {$smarty.capture.getpremiumbutton}
+
+
+
+        </article>
+
+    </main>
+
+</div>
+
+<script type="text/javascript">
+    (function(){
+        $.tasks.setTitle('[`Premium`]');
+    }());
+</script>

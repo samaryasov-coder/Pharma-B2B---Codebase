@@ -1,0 +1,140 @@
+{strip}
+<h2 class="mb16">{$page.name|escape}</h2>
+<p class="hint mb16">
+    Файлы хранятся в одном наборе приложения. У каждой позиции в данных файла задаётся название для шаблона, комментарий и тип компании поставщика (как в шаблоне покупателя).
+    На карточке компании-покупателя можно добавить весь перечень или только часть (все / только для организаций / только для ИП).
+</p>
+
+<div class="box fields mb25">
+    <h3 class="mb12">Добавить позицию в стандартный перечень</h3>
+    <form class="js-docflow-defaults-add-form" action="?module=settings&action=docflowDefaultAdd" method="post" enctype="multipart/form-data">
+        <div class="field">
+            <div class="name">Название документа</div>
+            <div class="value required">
+                <input type="text" class="w100" name="doc_name" required>
+            </div>
+        </div>
+        <div class="field">
+            <div class="name">Комментарий</div>
+            <div class="value">
+                <input type="text" class="w100" name="doc_comment" placeholder="Необязательно">
+            </div>
+        </div>
+        <div class="field">
+            <div class="name">Тип компании поставщика</div>
+            <div class="value">
+                <select name="company_type_id" class="w100">
+                    <option value="">Все типы</option>
+                    {if !empty($company_types)}
+                        {foreach $company_types as $ct}
+                            <option value="{$ct.id|escape}">{$ct.name|escape}</option>
+                        {/foreach}
+                    {/if}
+                </select>
+            </div>
+        </div>
+        <div class="field">
+            <div class="name">Файл-образец</div>
+            <div class="value required">
+                <input type="file" name="file" required>
+            </div>
+        </div>
+        <div class="field">
+            <div class="value">
+                <button type="submit" class="button green">Загрузить</button>
+                <span class="js-docflow-defaults-add-msg form-message" style="display:none;margin-left:12px;"></span>
+            </div>
+        </div>
+    </form>
+</div>
+
+<h3 class="mb12">Текущий перечень</h3>
+{if !empty($defaults_documents)}
+    <table class="zebra">
+        <thead>
+            <tr>
+                <th>Название</th>
+                <th>Тип</th>
+                <th>Комментарий</th>
+                <th>Файл</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {foreach $defaults_documents as $d}
+                <tr>
+                    <td>{$d.doc_name|escape}</td>
+                    <td>{$d.company_type_name|escape}</td>
+                    <td>{$d.doc_comment|escape}</td>
+                    <td>
+                        {if !empty($d.file_id)}
+                            <a href="?module=files&action=download&file_id={$d.file_id|escape}">Скачать</a>
+                            <span class="hint">{$d.original_filename|escape}</span>
+                        {/if}
+                    </td>
+                    <td>
+                        <button type="button" class="button light-gray smallest js-docflow-default-delete" data-file-id="{$d.file_id|escape}">Удалить</button>
+                    </td>
+                </tr>
+            {/foreach}
+        </tbody>
+    </table>
+{else}
+    <p class="hint">Позиции ещё не добавлены.</p>
+{/if}
+
+<script>
+(function() {
+    var $form = $('.js-docflow-defaults-add-form');
+    $form.on('submit', function(e) {
+        e.preventDefault();
+        var $msg = $('.js-docflow-defaults-add-msg');
+        $msg.hide().removeClass('danger success');
+        var fd = new FormData(this);
+        $.ajax({
+            url: $form.attr('action'),
+            type: 'POST',
+            data: fd,
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            success: function(r) {
+                var d = (r && r.status === 'ok' && r.data) ? r.data : null;
+                if (!d) {
+                    $msg.addClass('danger').text('Ошибка ответа сервера').show();
+                    return;
+                }
+                if (d.error) {
+                    $msg.addClass('danger').text(d.message || 'Ошибка').show();
+                    return;
+                }
+                if (typeof $.pb2b !== 'undefined' && $.pb2b.settings && $.pb2b.settings.dispatchSettings) {
+                    $.pb2b.settings.dispatchSettings(true);
+                } else {
+                    window.location.reload();
+                }
+            },
+            error: function() {
+                $msg.addClass('danger').text('Ошибка запроса').show();
+            }
+        });
+    });
+    $(document).off('click.pb2bDocflowDefDel').on('click.pb2bDocflowDefDel', '.js-docflow-default-delete', function() {
+        if (!confirm('Удалить позицию из стандартного перечня?')) return;
+        var id = $(this).data('file-id');
+        $.post('?module=settings&action=docflowDefaultDelete', { file_id: id }, function(r) {
+            var d = (r && r.status === 'ok' && r.data) ? r.data : null;
+            if (!d || d.error) {
+                alert((d && d.message) ? d.message : 'Ошибка');
+                return;
+            }
+            if (typeof $.pb2b !== 'undefined' && $.pb2b.settings && $.pb2b.settings.dispatchSettings) {
+                $.pb2b.settings.dispatchSettings(true);
+            } else {
+                window.location.reload();
+            }
+        }, 'json');
+    });
+})();
+</script>
+{/strip}

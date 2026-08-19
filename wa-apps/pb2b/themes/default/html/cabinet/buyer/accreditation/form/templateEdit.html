@@ -1,0 +1,51 @@
+<div id="dialog" data-title="Редактировать документ">
+
+    <form id="template_upload" class="form content" action="/api/buyer/docflow/template/update/">
+        <input name="template[item_id]" type="hidden" value="{$template.data.id|escape}">
+
+        <div class="input-wrap">
+            <label class="input-label" for="name">Наименование документа</label>
+            <div class="input-box">
+                <input id="name" name="template[name]" type="text" class="input" placeholder="Введите название документа" value="{$template.data.name|escape}">
+            </div>
+            <span class="input-hint"></span>
+        </div>
+
+        <div class="input-wrap">
+            <label class="input-label">Шаблон документа</label>
+            <div class="file-upload-container">
+                <div class="dropzone js-file-upload" data-name="file" data-file-name="{$file.data.filename|default:''|escape}" data-file-size="{$file.data.size|default:''|escape}">
+                    <div class="dz-message">
+                        <div class="icon square">
+                            <svg><use href="#icon-file-upload"></use></svg>
+                        </div>
+                        <div class="text">
+                            <span class="title"><span class="highlight">Нажмите сюда</span> или перетащите файл для загрузки файлов</span>
+                            <div class="des">
+                                <span>Поддерживаемый формат: doc, pdf</span>
+                                <span>Макс. размер файлов: 10 MB </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <span class="input-hint"></span>
+        </div>
+
+
+        <div class="input-wrap">
+            <label class="input-label" for="comment">Комментарий</label>
+            <div class="textarea-box">
+                <textarea id="comment" name="template[comment]" class="input" maxlength="200" placeholder="Введите комментарий">{$template.data.comment|escape}</textarea>
+                <span class="char-counter">0/200</span>
+            </div>
+            <span class="input-hint"></span>
+        </div>
+
+    </form>
+
+    <div class="form-actions">
+        <button class="button secondary large modal-cancel">Отмена</button>
+        <button class="button primary large" type="submit" form="template_upload">Сохранить</button>
+    </div>
+</div>

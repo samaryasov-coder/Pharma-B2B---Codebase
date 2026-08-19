@@ -1,0 +1,39 @@
+<button class="button js-popup mt25" 
+    data-action="?module=company&action=accreditationFilesAdd" 
+    data-params="id={$object.id|default:0}&template_id={$includes.docflowTemplateAccreditation.id|default:0}">
+    Добавить документ
+</button>
+
+
+{if !empty($includes.docflowTemplateAccreditation) && !empty($includes.docflowTemplateAccreditation.items)}
+    <table class="zebra mt25">
+        <thead>
+            <tr>
+                <th>Название</th>
+                <th>Тип компании</th>
+                <th>Комментарий</th>
+                <th>Файл</th>
+            </tr>
+        </thead>
+        <tbody>
+            {foreach $includes.docflowTemplateAccreditation.items as $item}
+                <tr>
+                    <td>{$item.name|default:''|escape}</td>
+                    <td>{$item.company_type_name|default:'Все типы'|escape}</td>
+                    <td>{$item.comment|default:''|escape}</td>
+                    <td>
+                        {if !empty($item.file_id)}
+                            <a class="nowrap" href="?module=files&action=download&file_id={$item.file_id|escape}">
+                                Скачать
+                            </a>
+                        {else}
+                            <span class="hint">Нет файла</span>
+                        {/if}
+                    </td>
+                </tr>
+            {/foreach}
+        </tbody>
+    </table>
+{else}
+    <div class="hint">Документы не добавлены</div>  
+{/if}

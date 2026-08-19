@@ -1,0 +1,3192 @@
+( function($) {
+
+    var TabToggle = ( function($) {
+
+        TabToggle = function(options) {
+            var that = this;
+
+            // DOM
+            that.$wrapper = options["$wrapper"];
+
+            // CONST
+            that.toggle_selector = ( options["toggle_class"] || ".js-toggle[data-id]" );
+            that.content_selector = ( options["content_class"] || ".js-content[data-id]" );
+            that.active_toggle_class = ( options["active_toggle_class"] || "is-active" );
+            that.onChange = ( typeof options["onChange"] === "function" ? options["onChange"] : function() {});
+            that.onBeforeTabChange = ( typeof options["onBeforeTabChange"] === "function" ? options["onBeforeTabChange"] : function() {});
+
+            // DYNAMIC VARS
+
+            // INIT
+            that.init();
+        };
+
+        TabToggle.prototype.init = function() {
+            var that = this;
+
+            var onChange = ($toggle, toggle_id) => {
+                renderToggles($toggle);
+                var $content = renderContent(toggle_id);
+                that.onChange($toggle, $content);
+            };
+            that.$wrapper.on("click", that.toggle_selector, function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                var $toggle = $(this),
+                    toggle_id = $toggle.data("id");
+
+                if (!toggle_id || $toggle.hasClass(that.active_toggle_class)) {
+                    return false;
+                }
+
+                const _onChange = () => onChange($toggle, toggle_id);
+                const result = that.onBeforeTabChange();
+                if (typeof result?.then === 'function') {
+                    result.then(_onChange);
+                } else if (result !== false) {
+                    _onChange();
+                }
+            });
+
+            function renderToggles($toggle) {
+                that.$wrapper.find(that.toggle_selector).each( function() {
+                    var $_toggle = $(this);
+                    if ($toggle[0] === $_toggle[0]) {
+                        $_toggle.addClass(that.active_toggle_class);
+                    } else {
+                        $_toggle.removeClass(that.active_toggle_class);
+                    }
+                });
+            }
+
+            function renderContent(toggle_id) {
+                let $result = null;
+                const $contents = that.$wrapper.find(that.content_selector).hide();
+                const $cur_content = $contents.filter(`[data-id="${toggle_id}"]`);
+                if ($cur_content.length) {
+                    $result = $cur_content;
+                } else {
+                    $result = $contents.last();
+                }
+                $result.show();
+                return $result;
+            }
+        };
+
+        return TabToggle;
+
+    })(jQuery);
+
+    var Chart = ( function($) {
+
+        Chart = function(options) {
+            var that = this;
+
+            //
+
+            // DOM
+            that.$wrapper = options["$wrapper"];
+            that.$chart = options["$chart"];
+            that.node = that.$chart[0];
+            that.d3node = d3.select(that.node);
+            if (!that.node) {
+                return;
+            }
+
+            // DATA
+            that.charts = options["data"];
+            that.scope = options["scope"];
+            that.data = getData(that.charts);
+
+            // VARS
+            that.margin = {
+                top: 6,
+                right: 6,
+                bottom: 28,
+                left: 70
+            };
+            that.area = getArea(that.node, that.margin);
+
+            // DYNAMIC VARS
+            that.svg = false;
+            that.x = false;
+            that.y = false;
+            that.xDomain = false;
+            that.yDomain = false;
+            that.svgLine = false;
+            that.svgArea = null;
+
+            // INIT
+            that.initGraph();
+        };
+
+        Chart.prototype.initGraph = function() {
+            var that = this,
+                graphArea = that.area;
+
+            that.initCore();
+
+            that.svg = that.d3node
+                .append("svg")
+                .attr("width", graphArea.outer_width)
+                .attr("height", graphArea.outer_height);
+
+            that.renderBackground();
+
+            that.renderAxis();
+
+            $.each(that.data, function(index, data) {
+                that.renderChart(data, index);
+            });
+        };
+
+        Chart.prototype.initCore = function() {
+            var that = this,
+                data = that.data,
+                graphArea = that.area;
+
+            var x = that.x = d3.time.scale().range([0, graphArea.inner_width]);
+            var y = that.y = d3.scale.linear().range([graphArea.inner_height, 0]);
+
+            that.xDomain = getTimeDomain();
+            that.yDomain = getValueDomain();
+
+            x.domain(that.xDomain);
+            y.domain(that.yDomain);
+
+            that.svgLine = d3.svg.line()
+                .interpolate("linear")
+                .x(function(d) { return x(d.date); })
+                .y(function(d) { return y(d.value); });
+
+            that.svgArea = d3.svg.area()
+                .interpolate("linear")
+                .x( function(d) {
+                    return x(d.date);
+                })
+                .y( function(d) {
+                    return y(d.value + d.y0);
+                })
+                .y0( function(d) { return y(d.y0); });
+
+            function getValueDomain() {
+                var min = d3.min(data, function(chart) {
+                    return d3.min(chart, function(point) {
+                        return point.value;
+                    });
+                });
+                if (min > 0) {
+                    min = 0;
+                }
+                var max = d3.max(data, function(chart) {
+                    return d3.max(chart, function(point) {
+                        return (point.value);
+                    });
+                });
+
+                if (min === max) { max += 1; }
+
+                return [min, max];
+            }
+
+            function getTimeDomain() {
+                var min, max,
+                    points_length = data[0].length,
+                    first_point = data[0][0].date,
+                    second_point = (data[0][1]||data[0][0]).date,
+                    last_point = data[0][points_length-1].date;
+
+                min = new Date( first_point.getTime() );
+                max = new Date( last_point.getTime() );
+
+                return [min, max];
+            }
+        };
+
+        Chart.prototype.renderChart = function(data, index) {
+            var that = this;
+
+            var chart = that.charts[index];
+
+            var group = that.svg.append("g")
+                .attr("class", "s-chart-group " + ( chart.class ? chart.class : "" ))
+                .attr("transform", "translate(" + that.margin.left + "," + that.margin.top + ")")
+                .datum(data);
+
+            var area = group.append("path")
+                .attr("class", "s-chart-area")
+                .attr("d", that.svgArea(data) );
+
+            var line = group.append("path")
+                .attr("class", "s-chart-line")
+                .attr("d", that.svgLine(data) );
+
+            if (chart.points) {
+                var divider_group = group.append("g")
+                    .attr("class", "s-divider-group");
+
+                var divider = divider_group.append("line")
+                    .attr("class", "s-divider")
+                    .attr("x1", that.x(that.scope.current_date))
+                    .attr("x2", that.x(that.scope.current_date))
+                    .attr("y1", that.y(that.yDomain[0]))
+                    .attr("y2", that.y(that.yDomain[1]));
+
+                var points_group = group.append("g")
+                    .attr("class", "s-points-group");
+
+                $.each(data, function(i, point_data) {
+                    var point = points_group.append("line")
+                        .attr("class", "s-chart-point")
+                        .attr("x1", that.x(point_data.date))
+                        .attr("y1", that.y(point_data.value))
+                        .attr("x2", that.x(point_data.date))
+                        .attr("y2", that.y(point_data.value))
+                        .on("mouseover", function() {
+                            that.scope.$wrapper.trigger("point_mouseover", [point.node(), point_data, chart]);
+                        })
+                        .on("mouseout", function() {
+                            that.scope.$wrapper.trigger("point_mouseout", [point.node(), point_data, chart]);
+                        });
+                });
+            }
+        };
+
+        Chart.prototype.renderBackground = function() {
+            var that= this,
+                width = that.area.inner_width,
+                height = that.area.inner_height,
+                y_ticks = 5,
+                i;
+
+            var background = that.svg.append("g")
+                .attr("class", "background")
+                .attr("transform", "translate(" + that.margin.left + "," + that.margin.top + ")");
+
+            background.append("rect")
+                .attr("width", width)
+                .attr("height", height);
+
+            for (i = 0; i <= y_ticks; i++) {
+                var y_val = 1 + (height - 2) / y_ticks * i;
+                background.append("line")
+                    .attr("x1", 1)
+                    .attr("x2", width)
+                    .attr("y1", y_val)
+                    .attr("y2", y_val)
+                ;
+            }
+        };
+
+        Chart.prototype.renderAxis = function() {
+            var that = this,
+                x = that.x,
+                y = that.y,
+                svg = that.svg;
+
+            var xAxis = d3.svg.axis()
+                .scale(x)
+                .orient("bottom")
+                .ticks(5);
+
+            var yAxis = d3.svg.axis()
+                .scale(y)
+                .innerTickSize(2)
+                .orient("right")
+                .tickValues( getValueTicks(6, that.yDomain) )
+                .tickFormat(function(d) { return d + ""; });
+
+            // Render Осей
+            var axis = svg.append("g")
+                .attr("class","axis");
+
+            axis.append("g")
+                .attr("transform","translate(2," + that.margin.top + ")")
+                .attr("class","y")
+                .call(yAxis);
+
+            axis.append("g")
+                .attr("class","x")
+                .attr("transform","translate(" + that.margin.left + "," + (that.area.outer_height - that.margin.bottom ) + ")")
+                .call(xAxis);
+
+            function getValueTicks(length, domain) {
+                var min = domain[0],
+                    max = ( domain[1] || 1 ),
+                    delta = (max - min) + 1,
+                    period = delta/(length - 1),
+                    result = [];
+
+                for (var i = 0; i < length; i++) {
+                    var label = (delta > 10) ? Math.round( i * period ) : (parseInt(  i * period * 10 ) / 10 );
+                    result.push(label);
+                }
+
+                return result.reverse();
+            }
+        };
+
+        return Chart;
+
+        // Получаем размеры для графика
+        function getArea(node, margin) {
+            var width = node.offsetWidth,
+                height = node.offsetHeight;
+
+            return {
+                outer_width: width,
+                outer_height: height,
+                inner_width: width - margin.left - margin.right,
+                inner_height: height - margin.top - margin.bottom
+            };
+        }
+
+        function getData(charts) {
+            var result = [];
+
+            for (var i = 0; i < charts.length; i++) {
+                var chart = charts[i].data || [],
+                    chartData = [];
+
+                for (var j = 0; j < chart.length ; j++) {
+                    var point = chart[j];
+
+                    chartData.push({
+                        date: getDate( point.date ),
+                        value: parseInt( point.value ),
+                        y0: 0
+                    });
+                }
+
+                result.push(chartData);
+            }
+
+            return result;
+
+            function getDate(date_string) {
+                var date_array = date_string.split("-");
+
+                var year = date_array[0],
+                    mount = Math.floor(date_array[1]) - 1,
+                    day = date_array[2];
+
+                return new Date(year, mount, day);
+            }
+        }
+
+    })($);
+
+    var DateTimer = ( function($) {
+
+        DateTimer = function(options) {
+            var that = this;
+
+            // DOM
+            that.$wrapper = options["$wrapper"];
+
+            // CONST
+            that.locales = options["locales"];
+
+            // DYNAMIC VARS
+            that.date = that.$wrapper.data("date");
+
+            // INIT
+            that.init();
+        };
+
+        DateTimer.prototype.init = function() {
+            var that = this;
+
+            var timeout = 0;
+
+            run();
+
+            function runner() {
+                timeout = setTimeout(run, 1000 * 60);
+            }
+
+            function run() {
+                var is_exits = $.contains(document, that.$wrapper[0]);
+                if (is_exits) {
+                    var result = that.setTime();
+                    if (result !== false) { runner(); }
+                }
+            }
+
+            that.$wrapper.data("timer", that);
+        };
+
+        DateTimer.prototype.setTime = function() {
+            var that = this;
+
+            var date_string = that.date;
+            if (date_string) {
+                var target_date = getDate(date_string);
+                var current_date = new Date();
+
+                var delta = target_date - current_date;
+
+                var time = formatTime( Math.abs(delta)),
+                    time_array = [];
+
+                if (time.days) {
+                    time_array.push(time.days + "&nbsp;" + that.locales["days"]);
+                }
+
+                if (time.hours) {
+                    time_array.push(time.hours + "&nbsp;" + that.locales["hours"]);
+                }
+
+                if (time.minutes) {
+                    time_array.push(time.minutes + "&nbsp;" + that.locales["minutes"]);
+                }
+
+                // if (time.seconds) {
+                //     time_array.push(time.seconds + "&nbsp;" + that.locales["seconds"]);
+                // }
+
+                var pattern = that.$wrapper.data("pattern");
+                if (!pattern) {
+                    pattern = that.locales[ (delta > 0 ? "before" : "after" )];
+                }
+
+                var result = (delta > 0 ? pattern.replace("%s", time_array.join(" ")) : "");
+
+                that.render(result);
+            }
+
+            function getDate(date_string) {
+                var date_array = date_string.replace(":", "-").replace(" ", "-").split("-");
+
+                var year = date_array[0],
+                    mount = Math.floor(date_array[1]) - 1,
+                    day = date_array[2],
+                    hour = date_array[3],
+                    minute = date_array[4];
+
+                return new Date(year, mount, day, hour, minute);
+            }
+
+            function formatTime(time) {
+                var second = 1000,
+                    minute = second * 60,
+                    hour = minute * 60,
+                    day = hour * 24,
+                    tail;
+
+                var days = Math.floor(time/day);
+                tail = ( time - days * day );
+                var hours = Math.floor(tail/hour);
+                tail = ( tail - hours * hour );
+                var minutes = Math.floor(tail/minute);
+                tail = ( tail - minutes * minute );
+                var seconds = Math.floor(tail/second);
+
+                return {
+                    days: days,
+                    hours: hours,
+                    minutes: minutes,
+                    seconds: seconds
+                };
+            }
+        };
+
+        DateTimer.prototype.setDate = function(date_string) {
+            var that = this;
+
+            that.date = date_string;
+
+            that.setTime();
+        };
+
+        DateTimer.prototype.render = function(time_string) {
+            var that = this;
+
+            that.$wrapper.html(time_string);
+        };
+
+        return DateTimer;
+
+    })($);
+
+    var BannerRulesSection = ( function($) {
+
+        BannerRulesSection = function(options) {
+            var that = this;
+
+            // DOM
+            that.$wrapper = options["$wrapper"];
+            that.$banners_wrapper = that.$wrapper.find(".js-banners-wrapper");
+            that.$banners_list = that.$banners_wrapper.find(".js-banners-list");
+
+            // CONST
+            that.scope = options["scope"];
+            that.rule_name = options["rule_name"];
+            that.templates = options["templates"];
+            that.urls = options["urls"];
+            that.allowed_styles = options["allowed_styles"] || {};
+            that.locales = options["locales"]|| {};
+            that.promo_id = that.getPromoId();
+
+            // DYNAMIC VARS
+
+            // INIT
+            that.init();
+        };
+
+        BannerRulesSection.prototype.init = function() {
+            var that = this;
+
+            // Add banner
+            that.$wrapper.on("click", ".js-banner-add", function(event) {
+                event.preventDefault();
+
+                var $banner_template = $(that.templates['banner_item_template']).clone();
+                that.$banners_list.prepend($banner_template);
+
+                $banner_template.find(".s-countdown-section").each( function() {
+                    initCountdownSection( $(this) );
+                });
+
+                that.initAiSection($banner_template);
+
+                bannersToggle(true);
+            });
+
+            // Delete banner
+            that.$banners_wrapper.on("click", ".js-banner-delete", function(event) {
+                event.preventDefault();
+                var $self = $(this),
+                    $banner = $self.closest(".js-banner-wrapper"),
+                    image_filename = $self.data('filename'),
+                    cached_image_filename = $.trim($banner.find(".js-image-filename-field").val());
+
+                if (image_filename) {
+                    addRemoveImage(image_filename);
+                }
+                if (cached_image_filename) {
+                    addRemoveCachedImage(cached_image_filename);
+                }
+                $banner.remove();
+                bannersToggle();
+            });
+
+            // Remove preview of old image when user wants to upload new image
+            that.$wrapper.on('change', '.js-image-field', function (e) {
+                var $image_field = $(this),
+                    $banner_wrapper = $image_field.parents('.js-banner-wrapper'),
+                    file = (this.files ? this.files[0] : null);
+
+                that.onImageFieldChange($banner_wrapper, file);
+            });
+
+            that.$wrapper.on("click", ".js-banner-ai-toggle", function(event) {
+                event.preventDefault();
+                that.toggleAiBox($(this).closest(".js-banner-wrapper"));
+            });
+
+            that.$wrapper.on("change", ".js-banner-ai-style", function() {
+                that.updateAiStyleDescription($(this).closest(".js-banner-wrapper"));
+            });
+
+            that.$wrapper.on("click", ".js-banner-ai-generate", function(event) {
+                event.preventDefault();
+                that.generateAiBanner($(this).closest(".js-banner-wrapper"));
+            });
+
+            setNamesAndFields();
+
+            that.$wrapper.find(".s-countdown-section").each( function() {
+                initCountdownSection( $(this) );
+            });
+
+            getBanners().each(function() {
+                that.initAiSection($(this));
+            });
+
+            // Auto Init
+            var banners_count = that.$banners_list.find(".js-banner-wrapper").length;
+            if (!banners_count) {
+                that.$wrapper.find(".js-banner-add:first").trigger("click");
+            }
+
+            function bannersToggle(show) {
+                var empty_class = "is-empty";
+
+                show = ( typeof show === "boolean" ? show : null);
+
+                if (show === null) {
+                    show = !!getBanners().length;
+                }
+
+                if (show) {
+                    that.$banners_wrapper.removeClass(empty_class);
+                } else {
+                    that.$banners_wrapper.addClass(empty_class);
+                }
+
+                setNamesAndFields();
+                ruleRemoveConfirm();
+            }
+
+            function setNamesAndFields() {
+                var $banners = getBanners();
+
+                $.each($banners, function(i, banner) {
+                    var $banner = $(banner),
+                        $banner_fields = $banner.find('[data-name]');
+
+                    $.each($banner_fields, function () {
+                        var $banner_field = $(this),
+                            name = $banner_field.data('name');
+
+                        $banner_field.attr('name', that. rule_name + '[rule_params][banners]['+ i +']' + name);
+                    });
+
+                    initColorPickers($banner);
+                    // TODO: Init datepickers for countdown
+                });
+            }
+
+            function addRemoveImage(filename) {
+                that.$wrapper.append('<input type="hidden" name="'+ that.rule_name +'[rule_params][remove_images][]" value="'+ filename +'" />');
+            }
+
+            function addRemoveCachedImage(filename) {
+                filename = (filename || "").replace(/"/g, "&quot;");
+                if (!filename) {
+                    return;
+                }
+
+                that.$wrapper.append('<input type="hidden" name="'+ that.rule_name +'[rule_params][remove_cached_images][]" value="'+ filename +'" />');
+            }
+
+            function initColorPickers($banner) {
+                if ($banner.data('colorpicker')) {
+                    return false;
+                }
+
+                let inputChange = () => {};
+
+                $banner.find('.js-colorpicker').each(function () {
+                    var $colorpicker_wrapper = $(this).hide(),
+                        $color_field = $colorpicker_wrapper.closest('.value'),
+                        $icon = $color_field.find('.js-toggle-colorpicker'),
+                        $input = $color_field.find(':input');
+
+                    var farbtastic = $.farbtastic($colorpicker_wrapper, setColor);
+                    farbtastic.widgetCoords = function (event) {
+                        var offset = $(farbtastic.wheel).offset();
+                        return { x: (event.pageX - offset.left) - farbtastic.width / 2, y: (event.pageY - offset.top) - farbtastic.width / 2 };
+                    };
+
+                    $icon.css('cursor', 'pointer').click(function() {
+                        $colorpicker_wrapper.slideToggle();
+                    });
+
+                    setColor($input.val() || '#ffffff');
+
+                    $input.on('change keyup', function() {
+                        $icon.css('background', $input.val());
+                        farbtastic.setColor($input.val());
+                    });
+
+                    setTimeout(() => {
+                        inputChange = () => $input.trigger('change');
+                    }, 1000);
+
+                    function setColor(color) {
+                        $icon.css('background', color);
+                        farbtastic.setColor(color);
+                        $input.val(color);
+                        inputChange();
+                    }
+                });
+
+                $banner.data('colorpicker', 1);
+            }
+
+            // :TODO need to include Pick
+            // function initColorPickersSun($banner) {
+
+            //   if ($banner.data('colorpicker')) {
+            //       return false;
+            //   }
+
+            //   $banner.find('.js-colorpicker').each(function () {
+            //       var $colorpicker_wrapper = $(this).hide(),
+            //           $icon = $colorpicker_wrapper.closest('.value').find('.icon svg'),
+            //           $input = $colorpicker_wrapper.closest('.value').find(':input');
+
+            //       // var farbtastic = $.farbtastic($colorpicker_wrapper, setColor);
+            //       // farbtastic.widgetCoords = function (event) {
+            //       //     var offset = $(farbtastic.wheel).offset();
+            //       //     return { x: (event.pageX - offset.left) - farbtastic.width / 2, y: (event.pageY - offset.top) - farbtastic.width / 2 };
+            //       // };
+
+            //       const colorPicker = Pickr.create({
+            //         el: $colorpicker_wrapper,
+            //         theme: 'classic',
+            //         swatches: [
+            //           '#ed2509',
+            //           '#22d13d',
+            //           '#1a9afe',
+            //           '#f3c200',
+            //           '#ff6c00',
+            //           '#7256ee',
+            //           '#996e4d',
+            //           '#ff7a99',
+            //           '#fff',
+            //           '#000',
+            //           '#89a',
+            //           'rgba(0, 20, 65, 0.2)',
+            //           '#568',
+
+            //         ],
+            //         appClass: 'wa-pcr-app small',
+            //         lockOpacity: false,
+            //         position: 'bottom-middle',
+            //         useAsButton: true,
+            //         default: defaultColor,
+            //         components: {
+            //           palette: true,
+            //           hue: true,
+            //           interaction: {
+            //             input: true,
+            //             save: true
+            //           }
+            //         },
+            //         i18n: {
+            //           'btn:save': 'OK',
+            //         }
+            //       })
+            //       // .on('change', (pickr) => {
+            //       //   const color_hex = getColorPicker(pickr);
+            //       //   setColor(color_hex, true)
+
+            //       // })
+            //       .on('save', (color, pickr) => {
+            //         $codeColor.val(getColorPicker(color).toLowerCase());
+            //         pickr.hide();
+
+            //       })
+            //       // .on('hide', (pickr) => {
+            //       //   let color_hex = $codeColor.val();
+            //       //   if (!color_hex) {
+            //       //     color_hex = initColor;
+            //       //   }
+            //       //   setColor(color_hex)
+            //       //   pickr.setColor(color_hex);
+            //       //   $codeColor.trigger('change');
+
+            //       //   pickr.destroyAndRemove();
+            //       // });
+
+            //       $icon.css('cursor', 'pointer').click(function() {
+            //           $colorpicker_wrapper.slideToggle();
+            //       });
+
+            //       setColor($input.val() || '#ffffff');
+
+            //       $input.on('change keyup', function() {
+            //           $icon.css('color', $input.val());
+            //           farbtastic.setColor($input.val());
+            //       });
+
+            //       function setColor(color) {
+            //           $icon.css('color', color);
+            //           farbtastic.setColor(color);
+            //           $input.val(color);
+            //       }
+            //   });
+
+            //   $banner.data('colorpicker', 1);
+            // }
+
+            function ruleRemoveConfirm() {
+                var $section = that.scope.$wrapper.find(".js-rules-section");
+
+                var banners_count = that.$banners_list.find(".js-banner-wrapper").length;
+                if (banners_count > 0) {
+                    return false;
+                }
+
+                var $confirm_template = $(that.templates["banner_confirm_dialog"]).clone();
+                $.waDialog({
+                    html: $confirm_template[0],
+                    onOpen: function($dialog, dialog_instance) {
+                        $dialog.on('click', '.js-submit', function () {
+                            var $rule = that.$banners_wrapper.closest(".s-rule-section"),
+                                rule_id = $rule.data('id');
+
+                            if (rule_id) {
+                                $rule.find(".js-delete-rule").trigger("click", [{
+                                    force: true
+                                }]);
+                            } else {
+                                $rule.find(".js-cancel-edit-rule").trigger("click", [{
+                                    force: true
+                                }]);
+                            }
+
+                            dialog_instance.close();
+                        });
+                    }
+                });
+            }
+
+            function getBanners() {
+                return that.$banners_wrapper.find(".js-banner-wrapper");
+            }
+
+            function renderErrors() {
+
+            }
+
+            function initCountdownSection($countdown_section) {
+                var $timer = $countdown_section.find(".js-date-timer"),
+                    $inputs = $countdown_section.find(".s-hidden input"),
+                    $enable_field = $countdown_section.find(".js-countdown-toggle");
+
+                var $countdown_datepicker = $countdown_section.find(".js-datepicker"),
+                    $countdown_hours = $countdown_section.find(".js-hours"),
+                    $countdown_minutes = $countdown_section.find(".js-minutes"),
+                    $start_datepicker_section = that.scope.$wrapper.find('input[name="promo[start_date]"]').closest(".s-datetime-section"),
+                    $start_datepicker = $start_datepicker_section.find(".js-datepicker"),
+                    $start_time = that.scope.$wrapper.find('input[name="promo[start_time]"]');
+
+                var active_class = "is-extended";
+
+                // Toggle
+                $enable_field.on("change", function(event) {
+                    var is_active = $enable_field.is(":checked");
+                    if (is_active) {
+                        $inputs.removeAttr("disabled");
+                        $countdown_section.addClass(active_class);
+                        setDatepicker();
+                    } else {
+                        $inputs.attr("disabled", true);
+                        $countdown_section.removeClass(active_class);
+                    }
+                });
+
+                // init Timer
+                if ($timer.length) {
+                    var date_timer = new DateTimer({
+                        $wrapper: $timer,
+                        locales: that.scope.locales
+                    });
+
+                    var $date_field = $countdown_section.find(".js-date"),
+                        $hour_field = $countdown_section.find(".js-hours"),
+                        $minute_field = $countdown_section.find(".js-minutes");
+
+                    $countdown_section.on("change", function() {
+                        var date = $date_field.val(),
+                            hour = $hour_field.val(),
+                            minute = $minute_field.val();
+
+                        if (!date) { return; }
+                        if (!hour) { hour = "00"; }
+                        if (!minute) { minute = "00"; }
+
+                        var date_time = date + "-" + hour + "-" + minute;
+
+                        date_timer.setDate(date_time);
+                    });
+                }
+
+                // init DatePickers
+                that.$wrapper.find(".s-datepicker-wrapper").each( function() {
+                    initDatePicker( $(this) );
+                });
+
+                function setDatepicker() {
+                    var is_countdown_set = $countdown_datepicker.val();
+                    if (!is_countdown_set) {
+                        var start_date = $start_datepicker.val();
+                        if (start_date) {
+                            $countdown_datepicker.datepicker("setDate", start_date).trigger("change");
+                        }
+                    }
+
+                    var start_time = $start_time.val(),
+                        hours = "",
+                        minutes = "";
+
+                    if (start_time) {
+                        var time = start_time.split(":");
+                        hours = time[0];
+                        minutes = time[1];
+                    }
+
+                    var is_hours_set = $countdown_hours.val();
+                    if (!is_hours_set && hours) {
+                        $countdown_hours.val(hours);
+                    }
+
+                    var is_minutes_set = $countdown_minutes.val();
+                    if (!is_minutes_set && minutes) {
+                        $countdown_minutes.val(minutes);
+                    }
+                }
+            }
+        };
+
+        BannerRulesSection.prototype.initAiSection = function($banner) {
+            var that = this;
+
+            if (!$banner || !$banner.length || $banner.data("ai-initialized")) {
+                return;
+            }
+
+            $banner.data("ai-initialized", 1);
+            that.updateAiStyleDescription($banner);
+        };
+
+        BannerRulesSection.prototype.getPromoId = function() {
+            var that = this,
+                $promo_id = that.scope && that.scope.$wrapper
+                    ? that.scope.$wrapper.find('input[name="promo[id]"]')
+                    : $();
+
+            return $.trim($promo_id.val() || "");
+        };
+
+        BannerRulesSection.prototype.toggleAiBox = function($banner, show) {
+            var $box = $banner.find(".js-banner-ai-box");
+
+            if (show === undefined) {
+                show = !$box.is(":visible");
+            }
+
+            $box.stop(true, true)[show ? "slideDown" : "slideUp"](200);
+        };
+
+        BannerRulesSection.prototype.updateAiStyleDescription = function($banner) {
+            var that = this,
+                $style = $banner.find(".js-banner-ai-style"),
+                $description = $banner.find(".js-banner-ai-style-description"),
+                style_id = that.getSelectedAiStyle($banner),
+                style = that.allowed_styles[style_id] || {};
+
+            if (style_id && $style.val() !== style_id) {
+                $style.val(style_id);
+            }
+
+            $description.text(style.description || "");
+        };
+
+        BannerRulesSection.prototype.getAvailableAiStyles = function() {
+            var that = this,
+                result = {};
+
+            $.each(that.allowed_styles || {}, function(style_id, style) {
+                if (style_id !== "auto") {
+                    result[style_id] = style;
+                }
+            });
+
+            return result;
+        };
+
+        BannerRulesSection.prototype.getSelectedAiStyle = function($banner) {
+            var that = this,
+                available_styles = that.getAvailableAiStyles(),
+                $style = $banner.find(".js-banner-ai-style"),
+                style_id = $.trim($style.val() || "");
+
+            if (style_id && available_styles[style_id]) {
+                return style_id;
+            }
+
+            $.each(available_styles, function(id) {
+                style_id = id;
+                return false;
+            });
+
+            return style_id;
+        };
+
+        BannerRulesSection.prototype.getAiPrompt = function($banner) {
+            return $.trim($banner.find(".js-banner-ai-prompt").val() || "");
+        };
+
+        BannerRulesSection.prototype.hasAiSourceData = function($banner) {
+            return !!(this.getAiPrompt($banner) || this.getSourceImageFilename($banner) || this.getSelectedImageFile($banner));
+        };
+
+        BannerRulesSection.prototype.getSelectedImageFile = function($banner) {
+            var $field = $banner.find(".js-image-field");
+
+            return ($field[0] && $field[0].files ? $field[0].files[0] : null);
+        };
+
+        BannerRulesSection.prototype.onImageFieldChange = function($banner, file) {
+            var that = this,
+                $image_wrapper = $banner.find(".js-image-wrapper"),
+                $image_preview = $banner.find(".js-image-preview"),
+                cached_filename = $.trim($banner.find(".js-image-filename-field").val());
+
+            that.clearAiError($banner);
+            if (cached_filename) {
+                that.markCachedImageForCleanup(cached_filename);
+            }
+            $banner.find(".js-image-filename-field").val("");
+
+            if (!file) {
+                $image_preview.hide().removeAttr("src");
+                return;
+            }
+
+            if (window.FileReader) {
+                var reader = new FileReader();
+                reader.onload = function(event) {
+                    $image_preview.attr("src", event.target.result).show();
+                    $image_wrapper.show();
+                };
+                reader.readAsDataURL(file);
+            } else {
+                $image_wrapper.show();
+            }
+        };
+
+        BannerRulesSection.prototype.generateAiBanner = function($banner) {
+            var that = this,
+                $button = $banner.find(".js-banner-ai-generate"),
+                $magic_wand_img = $button.find(".webasyst-magic-wand-ai"),
+                $loading = $banner.find(".js-banner-ai-loading"),
+                source_options = null,
+                image_style = that.getSelectedAiStyle($banner),
+                image_prompt = that.getAiPrompt($banner);
+
+            if (!$button.length || $button.prop("disabled")) {
+                return false;
+            }
+
+            that.clearAiError($banner);
+            that.toggleAiBox($banner, true);
+
+            if (!image_style) {
+                that.renderAiError($banner, that.locales['select_banner_style']);
+                return false;
+            }
+
+            if (!that.hasAiSourceData($banner)) {
+                that.renderAiError($banner, that.locales['specify_source']);
+                return false;
+            }
+
+            $button.prop("disabled", true);
+            $magic_wand_img.addClass('shimmer');
+            $loading.show();
+
+            that.prepareAiSourceImage($banner).done(function(options) {
+                source_options = options || {};
+
+                $.ajax({
+                    url: that.urls["ai_generate_banner"],
+                    type: "post",
+                    dataType: "json",
+                    data: {
+                        promo_id: that.getPromoId(),
+                        image_style: image_style,
+                        image_prompt: image_prompt,
+                        source_image_filename: source_options.source_image_filename || "",
+                        delete_source_cache: source_options.delete_source_cache ? 1 : 0
+                    }
+                }).done(function(response) {
+                    var data = (response && response.data ? response.data : null);
+                    if (response && response.status === "ok" && data && data.file_name && data.image_url) {
+                        that.applyGeneratedImage($banner, data);
+                    } else {
+                        that.renderAiError($banner, that.getAiErrorText(response));
+                    }
+                }).fail(function() {
+                    if (source_options && source_options.delete_source_cache && source_options.source_image_filename) {
+                        that.markCachedImageForCleanup(source_options.source_image_filename);
+                    }
+                    that.renderAiError($banner, "Service temporarily unavailable. Please try again later.");
+                }).always(function() {
+                    $button.prop("disabled", false);
+                    $magic_wand_img.removeClass('shimmer');
+                    $loading.hide();
+                });
+            }).fail(function(error_text) {
+                that.renderAiError($banner, error_text || "Service temporarily unavailable. Please try again later.");
+                $button.prop("disabled", false);
+                $magic_wand_img.removeClass('shimmer');
+                $loading.hide();
+            });
+        };
+
+        BannerRulesSection.prototype.prepareAiSourceImage = function($banner) {
+            var that = this,
+                deferred = $.Deferred(),
+                file = that.getSelectedImageFile($banner);
+
+            if (!file) {
+                deferred.resolve({
+                    source_image_filename: that.getSourceImageFilename($banner),
+                    delete_source_cache: false
+                });
+                return deferred.promise();
+            }
+
+            that.uploadImageFile(file).done(function(response) {
+                if (response && response.status === "ok" && response.data && response.data.file_name) {
+                    deferred.resolve({
+                        source_image_filename: response.data.file_name,
+                        delete_source_cache: true
+                    });
+                } else {
+                    deferred.reject(that.getAiErrorText(response));
+                }
+            }).fail(function() {
+                deferred.reject("Service temporarily unavailable. Please try again later.");
+            });
+
+            return deferred.promise();
+        };
+
+        BannerRulesSection.prototype.getSourceImageFilename = function($banner) {
+            var cached_filename = $.trim($banner.find(".js-image-filename-field").val()),
+                original_filename = $.trim($banner.find(".js-banner-url-field").val());
+
+            return cached_filename || original_filename || "";
+        };
+
+        BannerRulesSection.prototype.applyGeneratedImage = function($banner, data) {
+            var $image_wrapper = $banner.find(".js-image-wrapper"),
+                $image_preview = $banner.find(".js-image-preview"),
+                current_cached_filename = $.trim($banner.find(".js-image-filename-field").val());
+
+            if (current_cached_filename && current_cached_filename !== data.file_name) {
+                this.markCachedImageForCleanup(current_cached_filename);
+            }
+            $banner.find(".js-image-field").val("");
+            $banner.find(".js-image-filename-field").val(data.file_name);
+
+            $image_preview.attr("src", data.image_url).show();
+            $image_wrapper.show();
+        };
+
+        BannerRulesSection.prototype.markCachedImageForCleanup = function(filename) {
+            var that = this;
+
+            filename = $.trim(filename);
+            if (!filename) {
+                return;
+            }
+
+            if (that.$wrapper.find('input[name="' + that.rule_name + '[rule_params][remove_cached_images][]"][value="' + filename.replace(/"/g, '\\"') + '"]').length) {
+                return;
+            }
+
+            that.$wrapper.append('<input type="hidden" name="' + that.rule_name + '[rule_params][remove_cached_images][]" value="' + $("<div>").text(filename).html() + '" />');
+        };
+
+        BannerRulesSection.prototype.uploadImageFile = function(file) {
+            var data = new FormData();
+            data.append("image", file);
+
+            return $.ajax({
+                url: this.urls["image_upload_controller"],
+                data: data,
+                type: "post",
+                iframe: true,
+                dataType: "json",
+                cache: false,
+                contentType: false,
+                processData: false
+            });
+        };
+
+        BannerRulesSection.prototype.getAiErrorHtml = function(value) {
+            var container, fragment, result;
+
+            if (!value) {
+                return "";
+            }
+
+            container = document.createElement("div");
+            container.innerHTML = String(value);
+            fragment = document.createDocumentFragment();
+
+            appendNodes(container.childNodes, fragment);
+
+            result = document.createElement("div");
+            result.appendChild(fragment);
+
+            return result.innerHTML;
+
+            function appendNodes(nodes, target) {
+                Array.prototype.forEach.call(nodes, function(node) {
+                    appendNode(node, target);
+                });
+            }
+
+            function appendNode(node, target) {
+                var element, href, protocol;
+
+                if (!node) {
+                    return;
+                }
+
+                if (node.nodeType === 3) {
+                    appendTextWithBreaks(node.textContent, target);
+                    return;
+                }
+
+                if (node.nodeType !== 1) {
+                    return;
+                }
+
+                if (node.tagName === "BR") {
+                    target.appendChild(document.createElement("br"));
+                    return;
+                }
+
+                if (node.tagName === "A") {
+                    href = node.getAttribute("href") || "";
+
+                    if (href) {
+                        href = href.trim();
+                        protocol = "";
+
+                        if (!/^(\/|#)/.test(href)) {
+                            try {
+                                protocol = new URL(href, window.location.origin).protocol;
+                            } catch (e) {
+                                protocol = "";
+                            }
+                        }
+
+                        if (/^(\/|#)/.test(href) || protocol === "http:" || protocol === "https:") {
+                            element = document.createElement("a");
+                            element.setAttribute("href", href);
+                            element.setAttribute("target", "_blank");
+                            element.setAttribute("rel", "noopener noreferrer");
+                            appendNodes(node.childNodes, element);
+                            target.appendChild(element);
+                            return;
+                        }
+                    }
+                }
+
+                appendNodes(node.childNodes, target);
+            }
+
+            function appendTextWithBreaks(text, target) {
+                var parts;
+
+                if (!text) {
+                    return;
+                }
+
+                parts = String(text).split(/\r?\n/);
+
+                parts.forEach(function(part, index) {
+                    if (index > 0) {
+                        target.appendChild(document.createElement("br"));
+                    }
+
+                    if (part) {
+                        target.appendChild(document.createTextNode(part));
+                    }
+                });
+            }
+        };
+
+        BannerRulesSection.prototype.clearAiError = function($banner) {
+            $banner.find(".js-banner-ai-error").hide().empty();
+        };
+
+        BannerRulesSection.prototype.renderAiError = function($banner, text) {
+            $banner.find(".js-banner-ai-error").html(this.getAiErrorHtml(text)).show();
+        };
+
+        BannerRulesSection.prototype.getAiErrorText = function(response) {
+            if (response && $.isArray(response.errors) && response.errors.length) {
+                if (response.errors[0] && response.errors[0].text) {
+                    return response.errors[0].text;
+                }
+            }
+
+            return "Service temporarily unavailable. Please try again later.";
+        };
+
+        BannerRulesSection.prototype.onSubmit = function() {
+            var that = this;
+
+            var deferred = $.Deferred();
+
+            var image_count = 0,
+                image_failed = 0;
+
+            that.$wrapper.find(".js-image-field").each( function() {
+                var $field = $(this),
+                    $banner = $field.closest(".js-banner-wrapper");
+
+                var file = (this.files ? this.files[0] : null);
+                if (file) {
+                    image_count += 1;
+
+                    that.uploadImageFile(file).then( function(response) {
+                        if (response.status === "ok") {
+                            $banner.find('.js-image-filename-field').val(response.data["file_name"]);
+                        } else {
+                            renderErrors("error", response);
+                            image_failed += 1;
+                        }
+                        image_count -= 1;
+                        watcher();
+                    }, function(state) {
+                        renderErrors(state);
+                        image_failed += 1;
+                        image_count -= 1;
+                        watcher();
+                    });
+                }
+            });
+
+            if (!image_count) {
+                deferred.resolve();
+            }
+
+            return deferred.promise();
+
+            function watcher() {
+                if (image_count === 0) {
+                    if (image_failed > 0) {
+                        deferred.reject();
+                    } else {
+                        deferred.resolve();
+                    }
+                }
+            }
+
+            function renderErrors(state, errors) {
+                console.log( state, errors );
+            }
+        };
+
+        BannerRulesSection.prototype.renderErrors = function(errors) {
+            var that = this;
+
+            var $rule = that.$wrapper.closest(".s-rule-section"),
+                $banners = that.$wrapper.find(".js-banners-list .js-banner-wrapper"),
+                $field = null;
+
+            var focus_top_array = [];
+
+            $.each(errors, function(i, error) {
+                var $banner = $($banners[error.rule_data.banner_id]);
+                if (!$banner.length) {
+                    focus_top_array.push($rule.offset().top);
+                    renderError(error.text, $rule, $rule.find("> .js-section-footer"));
+
+                } else {
+                    switch (error.rule_data.error_code) {
+                        case "invalid_banner_file":
+                            $field = $banner.find(".s-fields-wrapper .js-image-field");
+                            focus_top_array.push($field.offset().top);
+                            renderError(error.text, $field, $field.closest(".value"));
+                            break;
+                        case "countdown_invalid":
+                            $field = $banner.find(".s-countdown-section .js-date");
+                            var $wrapper = $field.parent().find(".js-datepicker");
+
+                            focus_top_array.push($wrapper.offset().top);
+
+                            renderError(error.text, $wrapper, $field.closest(".s-hidden"));
+                            break;
+                        default:
+                            focus_top_array.push($rule.offset().top);
+                            renderError(error.text, $rule, $rule.find("> .js-section-footer"));
+                            break;
+                    }
+                }
+            });
+
+            return {
+                focus_top: Math.min.apply(null, focus_top_array)
+            };
+
+            function renderError(error_text, $field, $error_wrapper) {
+                var $error = $("<div class=\"s-error-message state-error-hint\" />").text(error_text);
+                var error_class = "state-error";
+
+                if ($field) {
+                    if (!$field.hasClass(error_class)) {
+                        $field.addClass(error_class);
+
+                        if ($error_wrapper) {
+                            $error_wrapper.append($error);
+                        } else {
+                            $error.insertAfter($field);
+                        }
+
+                        $field
+                            .trigger("error")
+                            .on("change keyup", removeFieldError);
+                    }
+                }
+
+                function removeFieldError() {
+                    $field.removeClass(error_class);
+                    $error.remove();
+
+                    $field.off("change keyup", removeFieldError);
+                }
+            }
+        };
+
+        return BannerRulesSection;
+
+    })(jQuery);
+
+    var Promo = ( function($) {
+
+        Promo = function(options) {
+            var that = this;
+
+            // DOM
+            that.$wrapper = options["$wrapper"];
+            that.$form = that.$wrapper.find("form:first");
+            that.$submit_button = that.$wrapper.find(".js-submit-button");
+
+            that.$window = $(window);
+
+            // CONST
+            that.current_date = getDate(options["current_date_string"]);
+            that.active_tab = options["active_tab"];
+            that.promo_id = options["promo_id"];
+            that.promo_options = options["promo_options"];
+            that.rule_types = options["rule_types"];
+            that.event_names = {
+                rule_cancel: "wa-promo-rule-cancel",
+                rule_delete: "wa-promo-rule-delete"
+            };
+
+            that.templates = options["templates"];
+            that.locales = options["locales"];
+            that.urls = options["urls"];
+
+            // DYNAMIC VARS
+            that.rule_sections = {};
+            that.chart_data = options["chart_data"];
+            that.is_changed = false;
+            that.is_tool_changed = false;
+
+            // INIT
+            that.init();
+        };
+
+        Promo.prototype.init = function() {
+            var that = this;
+
+            that.initClone();
+            that.initDelete();
+            that.initOptionsSection();
+            that.initRulesSection();
+            that.initTabs();
+            that.initSubmit();
+            that.initEditName();
+            that.initClose();
+            $.skeletonLoader.onLoadedContent(function () {
+              that.initChartSection();
+            })
+
+            that.$wrapper.on("change", function(e) {
+                that.changeSubmit(!!$(e.target).closest('.s-tabs-section').length);
+            });
+
+            that.initOrders();
+            that.initCosts();
+
+            var ready_promise = that.$wrapper.data("ready");
+            ready_promise.resolve(that);
+            that.$wrapper.trigger("ready", that);
+        };
+
+        Promo.prototype.initClone = function() {
+            var that = this,
+                $clone_confirm_template = $(that.templates["clone_confirm"]).clone(),
+                is_locked = false;
+
+            if (!that.promo_id) {
+                return false;
+            }
+
+            that.$wrapper.on('click', '.js-promo-clone', function () {
+                var $icon = $(this).find('.icon16'),
+                    href = that.urls["clone_promo"],
+                    data = {promo_id: that.promo_id};
+
+                if (is_locked) {
+                    return false;
+                }
+
+                is_locked = true;
+
+                $.waDialog({
+                    html: $clone_confirm_template.clone()[0],
+                    onOpen: function($dialog, dialog_instance) {
+                        // Submit confirm
+                        $dialog.on('click', '.js-submit', function () {
+                            $icon.removeClass('split').removeClass('yes').removeClass('no').addClass('loading');
+
+                            $.post(href, data, function (response) {
+                                if (response.status === "ok") {
+                                    $icon.removeClass('loading').addClass('yes');
+                                    var href = that.urls["edit_promo"].replace("%id%", response.data.id);
+                                    $.shop.marketing.content.load(href);
+                                } else {
+                                    $icon.removeClass('loading').addClass('no');
+                                }
+
+                                is_locked = false;
+                                dialog_instance.close();
+                            });
+                        });
+                    },
+                    onClose: function() {
+                        is_locked = false;
+                    }
+                });
+            });
+        };
+
+        Promo.prototype.initDelete = function() {
+            var that = this,
+                $delete_confirm_template = $(that.templates["delete_confirm"]).clone(),
+                is_locked = false;
+
+            if (!that.promo_id) {
+                return false;
+            }
+
+            that.$wrapper.on('click', '.js-promo-delete', function () {
+                var $icon = $(this).find('.icon16'),
+                    href = that.urls["delete_promo"],
+                    data = {promo_id: that.promo_id};
+
+                if (is_locked) {
+                    return false;
+                }
+
+                is_locked = true;
+                $.waDialog({
+                    html: $delete_confirm_template[0],
+                    onOpen: function($dialog, dialog_instance) {
+                        // Submit confirm
+                        $dialog.on('click', '.js-submit', function () {
+                            $icon.removeClass('delete').removeClass('yes').removeClass('no').addClass('loading');
+
+                            $.post(href, data, function (response) {
+                                if (response.status === "ok") {
+                                    $icon.removeClass('loading').addClass('yes');
+                                    var href = that.urls["marketing_url"];
+                                    $.shop.marketing.content.load(href);
+                                } else {
+                                    $icon.removeClass('loading').addClass('no');
+                                }
+
+                                is_locked = false;
+                                dialog_instance.close();
+                            });
+                        });
+                    },
+                    onClose: function() {
+                        is_locked = false;
+                    }
+                });
+            });
+        };
+
+        Promo.prototype.initOrders = function() {
+            var that = this;
+
+            // DOM
+            var $window = $(window),
+                $orders_section = that.$wrapper.find(".js-orders-section"),
+                $table = null;
+
+            // DYNAMIC VARS
+            var pages = 1;
+            var page = 0;
+            var is_loaded = false;
+            var is_locked = false;
+
+            that.$wrapper.on("init_promo_orders", function() {
+                init();
+            });
+
+            $window.on("scroll", scrollWatcher);
+            function scrollWatcher() {
+                var is_exist = $.contains(document, $orders_section[0]),
+                    is_done = (page === pages);
+
+                if (is_loaded) {
+                    if (is_exist && !is_done) {
+                        onScroll();
+                    } else {
+                        $window.off("scroll", scrollWatcher);
+                    }
+                }
+            }
+
+            return {
+                init: init
+            };
+
+            function onScroll() {
+                var scroll_top = $window.scrollTop(),
+                    section_bottom = $orders_section.offset().top + $orders_section.outerHeight(),
+                    is_visible = $orders_section.is(":visible");
+
+                if (is_visible && scroll_top >= section_bottom - $window.height()) {
+                    if (is_loaded && !is_locked) {
+                        is_locked = true;
+
+                        load()
+                            .then( function(html) {
+                                $table.append(html);
+                            })
+                            .always( function() {
+                                is_locked = false;
+                            });
+                    }
+                }
+            }
+
+            function init() {
+                is_loaded = false;
+                is_locked = true;
+                page = 0;
+                $orders_section.hide();
+
+                load()
+                    .always( function() {
+                        is_locked = false;
+                    })
+                    .then( function(html) {
+                        $orders_section.show().html(html);
+
+                        var $_table = $orders_section.find("table");
+                        if ($_table.length) {
+                            $table = $_table;
+
+                            pages = $table.data("pages");
+                        }
+
+                        is_loaded = true;
+                    });
+            }
+
+            function load() {
+                page += 1;
+
+                var href = that.urls["orders"],
+                    data = {
+                        promo_id: that.promo_id,
+                        page: page
+                    };
+
+                var $loading = $('<span><i class="fas fa-spinner fa-spin loading"/></span>');
+
+                $orders_section.after($loading);
+
+                return $.post(href, data)
+                        .always( function() {
+                            $loading.remove();
+                        });
+            }
+        };
+
+        Promo.prototype.initCosts = function() {
+            var that = this;
+
+            // DOM
+            var $costs_section = that.$wrapper.find(".js-costs-section");
+
+            // DYNAMIC VARS
+            var is_loaded = false,
+                is_locked = false;
+
+            that.$wrapper.on("init_promo_costs", function() {
+                init();
+            });
+
+            return {
+                init: init
+            };
+
+            function init() {
+                is_loaded = false;
+                is_locked = true;
+                $costs_section.hide();
+
+                load()
+                    .always( function() {
+                        is_locked = false;
+                    })
+                    .then( function(html) {
+                        $costs_section.show().html(html);
+                        is_loaded = true;
+                    });
+            }
+
+            function load() {
+                var href = that.urls["costs"],
+                    data = {
+                        promo_id: that.promo_id
+                    };
+
+                var $loading = $('<span><i class="fas fa-spinner fa-spin loading"/></span>');
+
+                $costs_section.after($loading);
+
+                return $.post(href, data)
+                        .always( function() {
+                            $loading.remove();
+                        });
+            }
+        };
+
+        Promo.prototype.initChartSection = function() {
+            var that = this;
+
+            var $chart_section = that.$wrapper.find(".s-chart-section"),
+                $chart = $chart_section.find(".js-chart");
+
+            new Chart({
+                $wrapper: $chart_section,
+                $chart: $chart,
+                scope: that,
+                data: that.chart_data
+            });
+
+            initHints();
+
+            function initHints() {
+                var $wrapper = $chart_section.find(".js-hint-wrapper");
+
+                that.$wrapper.on("point_mouseover", function(event, point, data, chart) {
+                    var value_visibility = true;
+                    if (that.current_date && that.current_date < data.date && data.value <= 0) {
+                        value_visibility = false;
+                    }
+
+                    var html = that.templates["hint"]
+                        .replace("%date%", dateToString(data.date))
+                        .replace("%value%", $.shop.marketing.formatPrice(data.value) )
+                        .replace("%value_style%", value_visibility ? "" : "display: none;" );
+
+                    toggle(html);
+
+                    var point_offset = $(point).offset(),
+                        chart_section_offset = $chart_section.offset(),
+                        wrapper_w = $wrapper.outerWidth(),
+                        wrapper_h = $wrapper.outerHeight(),
+                        indent = 10;
+
+                    $wrapper.css({
+                        top: point_offset.top - chart_section_offset.top - wrapper_h - indent,
+                        left: point_offset.left - chart_section_offset.left - (wrapper_w/2)
+                    });
+                });
+
+                that.$wrapper.on("point_mouseout", function(event) {
+                    toggle(null);
+                });
+
+                function toggle(html) {
+                    var active_class = "is-shown";
+
+                    if (html) {
+                        $wrapper.html(html).addClass(active_class);
+                    } else {
+                        $wrapper.removeClass(active_class).html("");
+                    }
+                }
+
+                function dateToString(date) {
+                    var day = date.getDate();
+                    day = ( day < 10 ) ? "0" + day : day;
+
+                    var month = parseInt( date.getMonth() ) + 1;
+                    month = ( month < 10 ) ? "0" + month : month;
+
+                    var year = date.getFullYear();
+
+                    return [day, month, year].join(".");
+                }
+            }
+        };
+
+        Promo.prototype.initOptionsSection = function() {
+            var that = this;
+
+            // DOM
+            var $root_section = that.$wrapper.find(".s-options-section");
+
+            // EVENTS
+
+            that.$wrapper.find(".s-datetime-section").each( function() {
+                var $datetime_section = $(this),
+                    $timer = $datetime_section.find(".js-date-timer");
+
+                if ($timer.length) {
+                    var $date_field = $datetime_section.find(".s-datepicker-wrapper input:hidden"),
+                        $time_field = $datetime_section.find(".s-time-wrapper input");
+
+                    $datetime_section.on("change", function() {
+                        var date = $date_field.val(),
+                            time = $time_field.val();
+
+                        if (!date) { return; }
+                        if (!time) { time = "00:00"; }
+
+                        var date_time = date + "-" + time.replace(":", "-");
+
+                        var timer = $timer.data("timer");
+                        timer.setDate(date_time);
+                    });
+                }
+            });
+
+            // INIT
+
+            initDateTimers();
+            initDatePickers();
+            initStorefrontsSection();
+            initStatusSection();
+
+            // FUNCTIONS
+
+            function initStorefrontsSection() {
+                var $storefronts_section = $root_section.find(".s-storefronts-section"),
+                    $js_storefront_mass_field = $storefronts_section.find('.js-storefront-mass-field'),
+                    $storefronts_mass_toggle = $storefronts_section.find(".js-storefront-mass-toggle"),
+                    $counter = $storefronts_section.closest('.field').find(".js-counter");
+
+                var $storefronts = $storefronts_section.find(".js-storefront-toggle"),
+                    storefronts_count = $storefronts.length;
+
+                $storefronts_section.on("change", ".js-storefront-toggle", function(event) {
+                    var count = $storefronts_section.find(".js-storefront-toggle:checked").length;
+                    if (count < storefronts_count) {
+                        $storefronts_mass_toggle.prop("checked", false);
+                    } else {
+                        $storefronts_mass_toggle.prop("checked", true);
+                    }
+                    $js_storefront_mass_field.data('storefront-count', count);
+                    $counter.text(count);
+                });
+
+                $storefronts_section.on("change", ".js-storefront-group-field", function() {
+                    $('.js-storefront-toggle').change();
+                    if ($(this).hasClass('js-storefront-mass-field')) {
+                        $storefronts_section.find('.js-storefront-list').removeClass('hidden');
+                    } else {
+                        $storefronts_section.find('.js-storefront-list').addClass('hidden');
+                    }
+                    $counter.text($(this).data('storefront-count'));
+                });
+
+                $("#js-storefront-switch").waSwitch({
+                    change: function(active, wa_switch) {
+                      const storefrontAllRadio = $('.js-storefront-all-field');
+                      const storefrontMassRadio = $('.js-storefront-mass-field');
+                      if (active) {
+                        storefrontMassRadio.trigger('click');
+                        $('.js-storefront-hint').hide();
+                      } else {
+                        storefrontAllRadio.trigger('click');
+                        $('.js-storefront-hint').show();
+                      }
+                     }
+                });
+
+                $storefronts_mass_toggle.on("change", function(event) {
+                    var $toggle = $(this),
+                        is_checked = $toggle.is(":checked");
+
+                    $storefronts.prop("checked", is_checked);
+                    $storefronts.first().trigger("change");
+                });
+            }
+
+            function initStatusSection() {
+                var $section = $root_section.find(".js-status-section"),
+                    $checkbox = $section.find(".s-checkbox");
+
+                $section.on("click", ".js-stop-status", function(event) {
+                    event.preventDefault();
+                    toggle(false);
+                });
+
+                $section.on("click", ".js-restore-status", function(event) {
+                    event.preventDefault();
+                    toggle(true);
+                });
+
+                function toggle(enabled) {
+                    var disabled_class = "is-disabled";
+
+                    if (enabled) {
+                        $section.removeClass(disabled_class);
+                        $checkbox.prop("checked", true).trigger("change");
+                    } else {
+                        $section.addClass(disabled_class);
+                        $checkbox.prop("checked", false).trigger("change");
+                    }
+                }
+            }
+
+            function initDatePickers() {
+                var $section = $root_section.find(".s-datepicker-wrapper");
+
+                $section.each( function() {
+                    initDatePicker($(this));
+                });
+
+                validateStartFinish();
+
+                function validateStartFinish() {
+                    var $start_field = $root_section.find(".js-start-date"),
+                        $finish_field = $root_section.find(".js-finish-date");
+
+                    $start_field.on("change", function() {
+                        var $field = $(this),
+                            value = $.trim( $field.val() ),
+                            date = null;
+
+                        if (value) {
+                            var is_valid = checkDate(value);
+                            if (is_valid) {
+                                date = $field.datepicker("getDate");
+                            }
+                        }
+
+                        $finish_field.datepicker("option", "minDate", date);
+                    });
+
+                    $finish_field.on("change", function() {
+                        var $field = $(this),
+                            value = $.trim( $field.val() ),
+                            date = null;
+
+                        if (value) {
+                            var is_valid = checkDate(value);
+                            if (is_valid) {
+                                date = $field.datepicker("getDate");
+                            }
+                        }
+
+                        $start_field.datepicker("option", "maxDate", date);
+                    });
+
+                    $start_field.trigger("change");
+                    $finish_field.trigger("change");
+                }
+            }
+
+            function initDateTimers() {
+                $root_section.find(".js-date-timer").each( function() {
+                   var $timer = $(this);
+
+                   var date_timer = new DateTimer({
+                       $wrapper: $timer,
+                       locales: that.locales
+                   });
+                });
+            }
+        };
+
+        Promo.prototype.initTabs = function() {
+            var that = this,
+                $section = that.$wrapper.find(".s-tabs-section");
+
+            new TabToggle({
+                $wrapper: $section,
+                toggle_class: ".js-toggle[data-id],.js-toggle[data-rule-type]",
+                content_selector: ".js-content[data-id]",
+                active_toggle_class: "selected",
+                onBeforeTabChange: function() {
+                    if (that.is_tool_changed) {
+                        return that.showConfirm('tool').then(() => {
+                            that.$form.find('[name="delete_rules[]"]').remove();
+                            that.is_tool_changed = false;
+                            if (!that.is_changed) {
+                                that.$submit_button.addClass("green").removeClass("yellow");
+                            }
+                        });
+                    }
+                },
+                onChange: function($active_toggle, $active_content) {
+                    var id = $active_toggle.data("id"),
+                        $link = $active_toggle.find("a");
+
+                    if ($link.length) {
+                        var href = $link[0].href;
+                        history.replaceState({
+                            reload: true,
+                            content_uri: href
+                        }, null, href);
+                    }
+
+                    const is_rule = !!$active_toggle.data('rule');
+                    if (is_rule) {
+                        const rule_ids = $active_toggle.data('rule-ids');
+                        const is_multiple = Number($active_toggle.data('max-count')) !== 1;
+
+                        const options = [{
+                            rule_type: id,
+                            is_multiple,
+                            rule_ids
+                        }];
+                        that.$wrapper.trigger("init_promo_rule", options);
+                    } else {
+                        switch (id) {
+                            case "orders":
+                                that.$wrapper.trigger("init_promo_orders");
+                                break;
+                            case "costs":
+                                that.$wrapper.trigger("init_promo_costs");
+                                break;
+                        }
+                    }
+                }
+            });
+        };
+
+        Promo.prototype.initRulesSection = function() {
+            var that = this;
+
+            // DOM
+            var $section = that.$wrapper.find(".js-rules-section");
+
+            // VARS
+            var create_iterator = 0;
+            var initial_options = {};
+
+            const createRuleSection = (rule_type, rule_id = null) => {
+                const $clone_rule = $(that.templates["new_rule_template"]);
+                $clone_rule.attr("data-type", rule_type);
+                if (rule_id) {
+                    $clone_rule.attr("data-id", rule_id);
+                } else {
+                    $clone_rule.attr("data-ident", create_iterator);
+                    create_iterator += 1;
+                }
+
+                const $actions = $clone_rule.find('.js-actions');
+                $actions.toggle(!!rule_id);
+
+                return $clone_rule;
+            };
+
+            const loadRules = (rule, options) => {
+                const $rules_section = that.$wrapper.find('.js-rules-section');
+                const $button_add = that.$wrapper.find('.js-create-rule');
+                const ids = rule.rule_ids ? String(rule.rule_ids).split(',') : [];
+
+                $button_add.toggle(!!rule.is_multiple).data('rule-type', rule.rule_type);
+
+                $rules_section.empty();
+                if (ids.length) {
+                    for (const id of ids) {
+                        const $clone_rule = createRuleSection(rule.rule_type, id);
+                        $rules_section.append($clone_rule);
+
+                        rule.rule_id = id;
+
+                        loadTool($clone_rule, rule, options);
+                    }
+                } else {
+                    const $clone_rule = createRuleSection(rule.rule_type);
+                    if (rule.is_multiple) {
+                        $clone_rule.hide();
+                    }
+                    $rules_section.append($clone_rule);
+
+                    rule.rule_ident = $clone_rule.attr('data-ident');
+
+                    loadTool(null, rule, options);
+                }
+            };
+
+            // CREATE
+            that.$wrapper.find(".js-create-rule").on("click", function(event, options) {
+                event.preventDefault();
+                const $link = $(this),
+                    rule_type = $link.data("rule-type"),
+                    $first_rule = $section.find(".s-rule-section:first"),
+                    $clone_rule = createRuleSection(rule_type);
+
+                // set data and render
+                $clone_rule.insertBefore($first_rule);
+
+                $clone_rule.find('.js-actions').show();
+
+                loadTool($clone_rule, { rule_type, rule_ident: $clone_rule.attr('data-ident') }, options);
+
+                that.changeSubmit(true);
+            });
+
+            // REMOVE
+            $section.on("click", ".js-delete-rule", function(event, options) {
+                event.preventDefault();
+
+                var $rule = $(this).closest(".s-rule-section"),
+                    id = $rule.data("id"),
+                    type = $rule.data("type"),
+                    is_locked = $rule.data("is-locked");
+
+                if (!is_locked) {
+                    const removeTool = () => {
+                        $rule.data("is-locked", true).trigger(that.event_names["rule_delete"], [$rule]).remove();
+                        var $input = $('<input type="hidden" name="delete_rules[]">').val(id);
+                        $section.after($input);
+
+                        that.changeSubmit(true);
+                        if (that.rule_types[type] && that.rule_types[type].max_count === 1) {
+                            loadRules({ rule_type: type });
+                        }
+                    };
+                    if (options && options.force) {
+                        removeTool();
+                    } else {
+                        $.waDialog.confirm({
+                            title: that.locales["rule_delete_confirm"],
+                            success_button_title: $_('Delete'),
+                            success_button_class: 'danger',
+                            cancel_button_title: $_('Cancel'),
+                            cancel_button_class: 'light-gray',
+                            onSuccess: removeTool
+                        });
+                    }
+                }
+            });
+
+            // CANCEL
+            $section.on("click", ".js-cancel-edit-rule", function(event) {
+                event.preventDefault();
+
+                const $rule = $(this).closest(".s-rule-section");
+
+                $rule.trigger(that.event_names["rule_cancel"], [$rule]).data("id");
+                $rule.remove();
+
+                that.$window.trigger('resize');
+            });
+
+            if (that.promo_options && that.promo_options["action"] === "associate" && that.promo_options.products_hash) {
+                that.active_tab = 'custom_price';
+
+                initial_options = { products_hash: that.promo_options.products_hash };
+
+                setTimeout( function () {
+                    that.changeSubmit(true);
+                    $(window).scrollTop($section.offset().top);
+                }, 20);
+            }
+
+            that.$wrapper.on("init_promo_rule", (e, rule) => {
+                loadRules(rule, initial_options);
+                initial_options = {};
+            });
+
+            // select active tab
+            setTimeout(() => {
+                const $tab = that.$form.find(`.js-toggle-list [data-id="${that.active_tab}"]`);
+                $tab.removeClass('selected').trigger('click');
+            });
+
+            function loadTool($rule, { rule_type, rule_id, rule_ident }, options) {
+                $rule = $rule || that.$wrapper;
+                const $header = $rule.find(".s-section-header:first");
+                const $body = $rule.find(".js-section-body:first");
+                const $loading = $('<span><i class="fas fa-spinner fa-spin loading"/></span>');
+                const dont_save = !options;
+
+                rule_id = (typeof rule_id !== "undefined" ? "" + rule_id : null);
+                rule_ident = (typeof rule_ident !== "undefined" ? "" + rule_ident : null);
+
+                const href = that.urls["edit_rule"],
+                    data = {
+                        options: (options ? options : {})
+                    };
+
+                if (rule_id) {
+                    data["rule_id"] = rule_id;
+                }
+
+                if (rule_type) {
+                    data["rule_type"] = rule_type;
+                }
+
+                if (rule_ident) {
+                    data["options"]["ident"] = rule_ident;
+                }
+
+                $body.empty().append($loading);
+
+                return $.post(href, data)
+                    .always( function() {
+                        $loading.remove();
+                    })
+                    .done( function(html) {
+                        $body.html(html);
+
+                        if (rule_id) {
+                            $header.find('.js-delete-rule').show();
+                        } else {
+                            $header.find('.js-cancel-edit-rule').show();
+                        }
+
+                        if (dont_save) {
+                            setTimeout(() => {
+                                dontSaveTool($rule);
+                            });
+                        }
+                    });
+            }
+
+            function dontSaveTool($rule) {
+                const $body = $rule.find(".js-section-body");
+                const disabled_class = 'disabled';
+                const ignore_required_class = 'ignore-required';
+                $body.addClass(disabled_class);
+
+                const $all_inputs = $body.find(':input');
+                const $inputs = $all_inputs.filter('*:not(button):not(.button)');
+                $.map($inputs, function(el) {
+                    if (el.required) {
+                        el.required = false;
+                        el.classList.add(ignore_required_class);
+                    }
+                    return el;
+                });
+
+                $all_inputs.one('change', () => {
+                    $body.removeClass(disabled_class);
+                    $.map($inputs, function(el) {
+                        if (el.classList.contains(ignore_required_class)) {
+                            el.required = true;
+                            el.classList.remove(ignore_required_class);
+                        }
+                        return el;
+                    });
+                });
+            };
+        };
+
+        Promo.prototype.initSubmit = function() {
+            var that = this,
+                $form = that.$form,
+                is_locked = false;
+
+            that.$submit_button.on("click", function() {
+                that.$wrapper.addClass("with-errors");
+
+                that.$wrapper.find("input:required").each( function() {
+                    var $field = $(this),
+                        is_empty = ($.trim($field.val()).length === 0),
+                        is_visible = $field.is(":visible");
+
+                    if (is_empty && !is_visible) {
+                        $field.trigger("error");
+                    }
+                });
+            });
+
+            $form.on("submit", function(event) {
+                event.preventDefault();
+
+                var $prepare_message = null;
+
+                if (!is_locked) {
+                    var counter = Object.keys(that.rule_sections).length;
+                    if (counter) {
+                        var reject_count = 0,
+                            promises = [];
+
+                        is_locked = true;
+
+                        $prepare_message = $(that.templates["prepare"]);
+                        that.$submit_button.attr("disabled", true);
+                        $prepare_message.insertAfter(that.$submit_button);
+
+                        $.each(that.rule_sections, function(i, rule_section) {
+                            if (typeof rule_section.onSubmit === "function") {
+                                rule_section.onSubmit().then(onSuccess, onReject);
+                            }
+                        });
+
+                    } else {
+                        onSubmit();
+                    }
+                }
+
+                function onSuccess() {
+                    counter -= 1;
+                    watcher();
+                }
+
+                function onReject() {
+                    reject_count += 1;
+                    counter -= 1;
+                    watcher();
+                }
+
+                function watcher() {
+                    if (counter === 0) {
+                        that.$submit_button.attr("disabled", false);
+                        $prepare_message.remove();
+                        is_locked = false;
+
+                        if (!reject_count) {
+                            onSubmit();
+                        } else {
+                            console.log( "REJECT", reject_count );
+                        }
+                    }
+                }
+
+                function onSubmit() {
+                    clearError();
+
+                    var form_data = getData();
+                    if (form_data.errors.length) {
+                        renderErrors(form_data.errors);
+
+                    } else {
+                        is_locked = true;
+
+                        var $promise = $.ajax({
+                            url: that.urls["submit"],
+                            data: form_data.data,
+                            type: "post",
+                            iframe: true,
+                            dataType: 'json',
+                            cache: false,
+                            contentType: false,
+                            processData: false
+                        });
+
+                        var $message = $(that.templates["saving"]);
+                        that.$submit_button.attr("disabled", true);
+                        $message.insertAfter(that.$submit_button);
+
+                        $promise
+                            .always( function() {
+                                is_locked = false;
+                                that.$submit_button.attr("disabled", false);
+                            })
+                            .done( function(response) {
+                                if (response.status === "ok") {
+                                    var href = that.urls["edit_promo"].replace("%id%", response.data.id) + location.search;
+                                    $.shop.marketing.content.load(href).done( function() {
+                                        var $new_button = $("#js-promo-page .js-submit-button");
+                                        if ($new_button.length) {
+                                            var $message = $(that.templates["saved"]);
+                                            $new_button.after($message);
+                                            setTimeout( function() {
+                                                $message.remove();
+                                            }, 2000);
+                                        }
+                                    });
+
+                                } else if (response.errors) {
+                                    renderErrors(response.errors);
+                                    $message.remove();
+                                }
+                            })
+                            .fail( function(state, errors) {
+                                try {
+                                    renderErrors(errors);
+                                } catch(error) {
+
+                                    alert( that.locales["server_error"] );
+
+                                    renderErrors([{
+                                        id: "server_error",
+                                        text: that.locales["server_error"]
+                                    }]);
+
+                                    $(window).scrollTop( that.$wrapper.find(".js-page-errors-wrapper").offset().top );
+                                }
+                                $message.remove();
+                            });
+                    }
+                }
+            });
+
+            function getData() {
+                var result = {
+                        data: new FormData(),
+                        errors: []
+                    },
+                    data = $form.serializeArray();
+
+                data = withChangedRulesOnly(data);
+
+                $.each(data, function(index, item) {
+                    result.data.append(item.name, item.value);
+                });
+
+                return result;
+            }
+
+            function renderErrors(errors) {
+                var result = [];
+
+                var focus_top_array = [];
+
+                $.each(errors, function(i, error) {
+                    var $field = [],
+                        $error_wrapper = null;
+
+                    if (!error.text) {
+                        alert("error");
+                        return true;
+                    }
+
+                    if (error.id) {
+                        switch (error.id) {
+                            case "storefronts":
+                                $field = $error_wrapper = that.$wrapper.find(".s-storefronts-section");
+                                focus_top_array.push($error_wrapper.offset().top);
+                                break;
+                            case "server_error":
+                                $error_wrapper = that.$wrapper.find(".js-page-errors-wrapper");
+                                $field = that.$wrapper;
+                                focus_top_array.push($error_wrapper.offset().top);
+                                break;
+                            case "rule_error":
+                                if (error.rule) {
+                                    var rule_section = (that.rule_sections[error.rule] ? that.rule_sections[error.rule] : null);
+                                    if (rule_section && rule_section.renderErrors && error.rule_data) {
+                                        var response = rule_section.renderErrors([error]);
+                                        if (response && response.focus_top) {
+                                            focus_top_array.push(response.focus_top);
+                                        }
+                                    } else {
+                                        var field_name = error.rule + "[rule_type]";
+                                        var $rule_field = that.$wrapper.find('[name="' + field_name + '"]');
+                                        if ($rule_field.length) {
+                                            var $rule = $rule_field.closest(".s-rule-section");
+                                            $field = $rule;
+                                            $error_wrapper = $rule.find("> .js-section-footer");
+                                            focus_top_array.push($error_wrapper.offset().top);
+                                        } else {
+                                            alert("Rule Error");
+                                        }
+                                    }
+                                } else {
+                                    alert("Rule Error");
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+
+                    } else if (error.name) {
+                        $field = that.$wrapper.find("[name=\"" + error.name + "\"]").first();
+
+                        if ($field.is(":checkbox") || $field.is(":radio")) {
+                            var $_rule = $field.closest(".s-rule-section");
+                            $field = $_rule;
+                            $error_wrapper = $_rule.find("> .js-section-footer");
+                            focus_top_array.push($error_wrapper.offset().top);
+                        } else if ($field.length) {
+                            if ($field.is(':hidden')) {
+                                focus_top_array.push($field.closest('.value').offset().top);
+                            } else {
+                                focus_top_array.push($field.offset().top);
+                            }
+                        } else if (error.text) {
+                            renderError(error.text, that.$submit_button.after(
+                                $("<span class=\"s-error-message state-error-hint custom-ml-4\" />").text(error.text)
+                            ));
+                        }
+                    }
+
+                    if ($field.length) {
+                        error.$field = $field;
+                        renderError(error, $error_wrapper);
+                    }
+
+                    result.push(error);
+                });
+
+                if (focus_top_array.length) {
+                    $("html, body").animate({ scrollTop: Math.min.apply(null, focus_top_array) - 100 }, 500);
+                }
+
+                return result;
+
+                function renderError(error, $error_wrapper) {
+                    var $error = $("<div class=\"s-error-message state-error-hint\" />").text(error.text);
+                    var error_class = "state-error";
+
+                    if (error.$field) {
+                        var $field = error.$field;
+
+                        if (!$field.hasClass(error_class)) {
+                            $field.addClass(error_class);
+
+                            if ($error_wrapper) {
+                                $error_wrapper.append($error);
+                            } else {
+                                $error.insertAfter($field);
+                            }
+
+                            $field
+                                .trigger("error")
+                                .on("change keyup", removeFieldError);
+                        }
+                    }
+
+                    function removeFieldError() {
+                        $field.removeClass(error_class);
+                        $error.remove();
+
+                        $field.off("change keyup", removeFieldError);
+                    }
+                }
+
+            }
+
+            function clearError() {
+                that.$wrapper.find('.s-error-message').remove();
+                that.$wrapper.find('.state-error').removeClass('state-error');
+            }
+
+            function withChangedRulesOnly(data) {
+                const except_data = $form.find('.js-section-body.disabled :input').serializeArray().map(f => f.name);
+                data = data.filter(f => !except_data.includes(f.name));
+                return data;
+            }
+        };
+
+        Promo.prototype.initCouponRulesSection = function(options) {
+            var that = this;
+
+            var $wrapper = options["$wrapper"],
+                $list = $wrapper.find(".s-coupons-list");
+
+            var urls = options["urls"],
+                templates = options["templates"];
+
+            var $field = $wrapper.find(".js-autocomplete");
+            if ($field.length) {
+                initAutocomplete($field);
+            }
+
+            function initAutocomplete($field) {
+                var coupon_ids_string = getCouponIdsString();
+
+                $field.autocomplete({
+                    source: urls["autocomplete"] + coupon_ids_string,
+                    appendTo: $wrapper,
+                    minLength: 0,
+                    focus: function() {
+                        return false;
+                    },
+                    select: function(event, ui) {
+                        addCoupon(ui.item.data);
+                        $field.val("").change();
+                        that.changeSubmit(true);
+                        return false;
+                    }
+                });
+
+                function addCoupon(coupon_data) {
+                    var expire_html = ( coupon_data.expire_datetime_string ? templates["coupon_expire"].replace("%expire%", coupon_data.expire_datetime_string) : "" );
+
+                    var template = templates["coupon"]
+                        .replace(/%coupon_id%/g, coupon_data.id)
+                        .replace("%code%", coupon_data.code)
+                        .replace("%discount%", coupon_data.discount_string)
+                        .replace("%expire%", expire_html);
+
+                    $list.append(template);
+
+                    coupon_ids_string = getCouponIdsString();
+                }
+
+                function getCouponIdsString() {
+                    var coupon_ids = getCouponIds(),
+                        result = "";
+
+                    if (coupon_ids.length) {
+                        $.each(coupon_ids, function(i, id) {
+                            result += "&coupon_id[]=" + id;
+                        });
+                    }
+
+                    return result;
+
+                    function getCouponIds() {
+                        var result = [];
+
+                        $wrapper.find(".s-coupon-wrapper").each( function() {
+                            var $coupon = $(this),
+                                id = $coupon.data("id") + "";
+
+                            if (id.length) {
+                                result.push(id);
+                            }
+                        });
+
+                        return result;
+                    }
+                }
+            }
+        };
+
+        Promo.prototype.initPriceRulesSection = function(options) {
+            var that = this,
+                $section = that.$wrapper.find(".js-rules-section");
+
+            var $wrapper = options["$wrapper"],
+                $products_wrapper = $wrapper.find(".s-products-wrapper"),
+                $list = $products_wrapper.find(".s-products-list"),
+                $templates = options['templates'];
+
+            var urls = options["urls"],
+                locales = options["locales"],
+                rule_name = options["rule_name"];
+
+            var disabled_class = "is-disabled";
+
+            var product_ids = getProductIds();
+
+            var $field = $wrapper.find(".js-autocomplete");
+            if ($field.length) {
+                initAutocomplete($field);
+            }
+
+            initSwitches();
+
+            $products_wrapper.on("click", ".js-delete-product", function(event) {
+                event.preventDefault();
+                var $product = $(this).closest(".s-product-wrapper"),
+                    product_id = $product.data("id");
+
+                var $_products = $products_wrapper.find(".s-product-wrapper[data-id=\"" + product_id + "\"]");
+                $_products.each( function() {
+                    deleteProduct( $(this) );
+                });
+
+                productsToggle();
+
+                ruleRemoveConfirm();
+
+                that.changeSubmit(true);
+            });
+
+            $products_wrapper.on("change", ".js-sku-toggle-checkbox", function(event) {
+                var $checkbox = $(this),
+                    $product = $checkbox.closest(".s-product-wrapper"),
+                    product_id = $product.data("id");
+
+                var is_last = !$products_wrapper.find(".s-product-wrapper[data-id='" + product_id + "'] .js-sku-toggle-checkbox:checked").length;
+                if (is_last) {
+
+                    $checkbox.prop("checked", true).trigger("change");
+
+                    skuRemoveConfirm().then( function() {
+                        var product_id = $product.data("id");
+                        $products_wrapper.find(".s-product-wrapper[data-id=\"" + product_id + "\"] .js-delete-product").first().trigger("click");
+                    });
+
+                } else {
+                    var is_active = $checkbox.is(":checked");
+
+                    $product.find(".s-toggle-wrapper").attr("title", (is_active ? "" : locales["disabled_product"]) );
+
+                    $product.find("input").each( function() {
+                        var $input = $(this);
+
+                        if ($input[0] === $checkbox[0]) {
+                            return true;
+                        }
+
+                        $input.attr("disabled", !is_active);
+
+                        if (is_active) {
+                            $product.removeClass(disabled_class);
+                        } else {
+                            $product.addClass(disabled_class);
+                        }
+                    });
+                }
+            });
+
+            function deleteProduct($product) {
+                var product_id = $product.data("id"),
+                    sku_id = $product.data("sku-id");
+
+                if (sku_id) {
+                    delete product_ids[product_id][sku_id];
+                }
+
+                $product.remove();
+                product_ids = getProductIds();
+            }
+
+            function initAutocomplete($field) {
+                var product_xhr = null;
+
+                $field.autocomplete({
+                    source: urls["autocomplete"],
+                    minLength: 0,
+                    focus: function() {
+                        return false;
+                    },
+                    select: function(event, ui) {
+                        var product_ids = getProductIds(),
+                            product_id = ui.item.id;
+
+                        if (product_id) {
+                            if (!product_ids[product_id]) {
+                                addProduct(product_id);
+                                that.changeSubmit(true);
+
+                            } else {
+                                var $product = $products_wrapper.find(".s-product-wrapper[data-id='" + product_id + "']");
+                                if ($product.length) {
+                                    var highlighted_class = "highlighted";
+                                    $product.addClass(highlighted_class);
+                                    $("html, body").animate( {
+                                        scrollTop: $product.offset().top
+                                    }, 300, function() {
+                                        setTimeout(function() {
+                                            $product.removeClass(highlighted_class);
+                                        }, 2000);
+                                    });
+                                }
+                            }
+                        }
+
+                        $field.val("").change();
+                        return false;
+                    }
+                });
+
+                function addProduct(product_id) {
+                    getProductData(product_id).then( function(response) {
+                        if (response.status === "ok") {
+                            $list.prepend(response.data.html);
+                            product_ids = getProductIds();
+                            productsToggle(true);
+                            initSwitches();
+                        }
+                    });
+                }
+
+                function getProductData(product_id) {
+                    var href = urls["product"],
+                        data = {
+                            "product_id": product_id,
+                            "options[rule_name]": rule_name
+                        };
+
+                    if (product_xhr) {
+                        product_xhr.abort();
+                    }
+
+                    product_xhr = $.post(href, data).always( function() {
+                        product_xhr = null;
+                    });
+
+                    return product_xhr;
+                }
+            }
+
+            function getProductIds() {
+                var result = {};
+
+                $list.find(".s-product-wrapper").each( function() {
+                    var $product = $(this),
+                        product_id = $product.data("id"),
+                        sku_id = $product.data("sku-id");
+
+                    if (sku_id) {
+                        if (!result[product_id]) { result[product_id] = {} }
+                        result[product_id][sku_id] = true;
+                    }
+                });
+
+                return result;
+            }
+
+            function productsToggle(show) {
+                var empty_class = "is-empty";
+
+                show = ( typeof show === "boolean" ? show : null);
+
+                if (show === null) {
+                    show = !!$products_wrapper.find(".s-product-wrapper").length;
+                }
+
+                if (show) {
+                    $products_wrapper.removeClass(empty_class);
+                } else {
+                    $products_wrapper.addClass(empty_class);
+                }
+            }
+
+            function ruleRemoveConfirm() {
+                var products_count = $products_wrapper.find('.s-product-wrapper').length;
+                if (products_count > 0) {
+                    return false;
+                }
+
+                var $confirm_template = $($templates["custom_price_delete_dialog"]).clone();
+                $.waDialog({
+                    html: $confirm_template[0],
+                    onOpen: function($dialog, dialog_instance) {
+                        // Submit confirm
+                        $dialog.on('click', '.js-submit', function () {
+                            var $rule = $products_wrapper.parents(".s-rule-section"),
+                                rule_id = $rule.data('id');
+
+                            $rule.find('.js-delete-rule').trigger('click', [{
+                                force: true
+                            }]);
+
+                            if (rule_id) {
+                                var $input = $('<input type="hidden" name="delete_rules[]">').val(rule_id);
+                                $section.after($input);
+                            }
+
+                            $section.trigger("rule_count_watch");
+                            that.$window.trigger('resize');
+                            dialog_instance.close();
+                        });
+                    }
+                });
+            }
+
+            function skuRemoveConfirm() {
+                var deferred = $.Deferred(),
+                    is_confirm = false;
+
+                var $confirm_template = $($templates["custom_price_confirm_dialog"]).clone();
+                $.waDialog({
+                    html: $confirm_template[0],
+                    onOpen: function($dialog, dialog_instance) {
+                        // Submit confirm
+                        $dialog.on('click', '.js-confirm-action', function () {
+                            is_confirm = true;
+                            dialog_instance.close();
+                        });
+                    },
+                    onClose: function() {
+                        if (is_confirm) {
+                            deferred.resolve();
+                        } else {
+                            deferred.reject();
+                        }
+                    }
+                });
+
+                return deferred.promise();
+            }
+
+            function initSwitches() {
+                var $switches = $wrapper.find(".js-switch");
+
+                $switches.waSwitch();
+            }
+        };
+
+        Promo.prototype.initBannerRulesSection = function(options) {
+            options["scope"] = this;
+            return new BannerRulesSection(options);
+        };
+
+        /**
+         * @param {Object} options
+         * @description Used to register the tools required to save
+         * */
+        Promo.prototype.initRuleSection = function(options) {
+            var that = this;
+
+            var rule_id = (options["rule_id"] || null),
+                rule_ident = (options["rule_ident"] || null);
+
+            if (!rule_id && !rule_ident) {
+                var message_1 = "Error registering tool. Rule Identifier is missing or already used before.";
+                console.log(message_1);
+                alert(message_1);
+                return false;
+            }
+
+            var onSubmit = ( typeof options["onSubmit"] === "function" ? options["onSubmit"] : null);
+            if (!onSubmit) {
+                var message_2 = "Error registering tool. Promise (onSubmit) is required to register a rule.";
+                console.log(message_2);
+                alert(message_2);
+                return false;
+            }
+
+            var $rule = null;
+
+            that.$wrapper.find(".s-rule-section").each( function() {
+                var $_rule = $(this),
+                    _rule_id = $_rule.data("id"),
+                    _rule_ident = $_rule.data("ident");
+
+                _rule_id = (typeof _rule_id !== "undefined" ? "" + _rule_id : null);
+                _rule_ident = (typeof _rule_ident !== "undefined" ? "" + _rule_ident : null);
+
+                if (rule_id && rule_id === _rule_id) {
+                    $rule = $_rule;
+                    return false;
+                } else if (rule_ident && rule_ident === _rule_ident) {
+                    $rule = $_rule;
+                    return false;
+                }
+            });
+
+            // if (!$rule) {
+            //     var message_3 = "Error registering tool. Rule is missing.";
+            //     console.log(message_3);
+            //     alert(message_3);
+            //     return false;
+            // }
+
+            var rule_section_name = (rule_id ? "rules[" + rule_id + "]" : "rules[new][" + rule_ident + "]");
+
+            that.rule_sections[rule_section_name] = {
+                $wrapper: $rule,
+                onSubmit: onSubmit,
+                renderErrors: (typeof options.renderErrors === "function" ? options.renderErrors : null)
+            };
+
+            that.$wrapper
+                .on(that.event_names["rule_cancel"], removeWatcher)
+                .on(that.event_names["rule_delete"], removeWatcher);
+
+            function removeWatcher(event, $deleted_rule) {
+                if ($rule && $rule[0] === $deleted_rule[0]) {
+                    delete that.rule_sections[rule_section_name];
+                    that.$wrapper.off(that.event_names["rule_cancel"], removeWatcher);
+                    that.$wrapper.off(that.event_names["rule_delete"], removeWatcher);
+                }
+            }
+        };
+
+        Promo.prototype.initEditName = function() {
+            var that = this;
+
+            var $wrapper = that.$wrapper.find(".s-page-header .s-title"),
+                $promo_name = $wrapper.find(".js-name-editable"),
+                $field = $wrapper.find(".js-title-field"),
+                $form_title_field = that.$wrapper.find('input[name="promo[name]"]');
+
+            var edit_class = "is-edit";
+
+            $promo_name.on("click", function(event) {
+                event.preventDefault();
+                $wrapper.addClass(edit_class);
+                $field.trigger("focus");
+            });
+
+            $field.on("blur", function() {
+                $wrapper.removeClass(edit_class);
+            });
+
+            $field.on("input", function() {
+                var value = $(this).val();
+                $promo_name.text(value);
+                $form_title_field.val(value);
+            });
+
+            $form_title_field.on("input", function() {
+                var value = $(this).val();
+                $promo_name.text(value);
+                $field.val(value);
+            });
+        };
+
+        Promo.prototype.initClose = function() {
+            var that = this,
+                $wa = $("#wa"),
+                $header = $("#wa-header");
+
+            $wa.on("click", "a", clickWatcher);
+            $header.on("click", "a", clickWatcher); // hack for content router
+
+            function clickWatcher(event) {
+                var is_exist = $.contains(document, that.$wrapper[0]);
+                if (is_exist) {
+                    var is_redirect = (this.href.indexOf(that.urls["backend_url"]) >= 0);
+                    if (is_redirect && (that.is_changed || that.is_tool_changed)) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        var $link = $(this);
+                        that.showConfirm().then(function() {
+                            off();
+                            $link[0].click();
+                        });
+                    }
+                } else {
+                    off();
+                }
+            }
+
+            function off() {
+                $wa.off("click", "a", clickWatcher);
+                $header.off("click", "a", clickWatcher);
+            }
+        };
+
+        Promo.prototype.showConfirm = function (type = 'page') {
+            var that = this,
+                deferred = $.Deferred(),
+                is_confirm = false;
+
+            var $confirm_template = $(that.templates[type === 'tool' ? 'unsaved_tool_data_dialog' : 'unsaved_data_dialog']).clone();
+            $.waDialog({
+                html: $confirm_template[0],
+                onOpen: function($dialog, dialog_instance) {
+                    // Submit confirm
+                    $dialog.on('click', '.js-submit', function () {
+                        is_confirm = true;
+                        dialog_instance.close();
+                    });
+                },
+                onClose: function() {
+                    if (is_confirm) {
+                        deferred.resolve();
+                    } else {
+                        deferred.reject();
+                    }
+                }
+            });
+
+            return deferred.promise();
+        };
+
+        Promo.prototype.changeSubmit = function (is_tool_changed = false) {
+            const that = this;
+            if (is_tool_changed) {
+                that.is_tool_changed = true;
+            } else {
+                that.is_changed = true;
+            }
+            that.$submit_button.removeClass("green").addClass("yellow");
+        };
+
+        return Promo;
+
+    })($);
+
+    //
+
+    function getDate(date_string) {
+        var date_array = date_string.split("-");
+
+        var year = date_array[0],
+            mount = Math.floor(date_array[1]) - 1,
+            day = date_array[2];
+
+        return new Date(year, mount, day);
+    }
+
+    function checkDate(date) {
+        var format = $.datepicker._defaults.dateFormat,
+            is_valid = null;
+
+        try {
+            $.datepicker.parseDate(format, date);
+            is_valid = true;
+        } catch(e) {
+            is_valid = false
+        }
+
+        return is_valid;
+    }
+
+    function initDatePicker($section) {
+        var $input = $section.find(".js-datepicker"),
+            $alt_field = null,
+            alt_field_selector = $input.data("alt");
+
+        var error_class = "error";
+
+        var options = {
+            changeMonth: true,
+            changeYear: true
+        };
+
+        if (alt_field_selector) {
+            $alt_field = $section.find(alt_field_selector);
+            if ($alt_field.length) {
+                options = $.extend(options, {
+                    altField: $alt_field,
+                    altFormat: "yy-mm-dd",
+                    onSelect: () => {
+                        $input.trigger('change');
+                    }
+                });
+            }
+        }
+
+        $input.on("blur change", function() {
+            var $field = $(this),
+                value = $.trim( $field.val() );
+
+            if (value.length) {
+                if (!checkDate(value)) {
+                    $field.val("").addClass(error_class);
+                    if ($alt_field && $alt_field.length) {
+                        $alt_field.val("");
+                    }
+                }
+            } else {
+                if ($alt_field && $alt_field.length) {
+                    $alt_field.val("");
+                }
+            }
+        });
+
+        $input.on("focus keydown", function(event) {
+            var $field = $(this),
+                has_error = $field.hasClass(error_class);
+
+            if (has_error) {
+                $field.removeClass(error_class);
+            }
+        });
+
+        $input.on("keydown", function(event) {
+            var key = event.keyCode,
+                is_enter = ( key === 13 );
+
+            if (is_enter) {
+                event.preventDefault();
+                $(this).trigger("change");
+            }
+        });
+
+        $input.datepicker(options);
+    }
+
+    //
+
+    $.shop.marketing.init.promoPage = function(options) {
+        return new Promo(options);
+    };
+
+})(jQuery);

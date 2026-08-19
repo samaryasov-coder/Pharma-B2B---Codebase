@@ -1,0 +1,73 @@
+{if empty($sidebar_mode)}
+{* Когда показываем в левом сайдбаре в редакторе страниц, то внешние контейнеры рендерить не нужно *}
+<script type="text/javascript">
+    document.title = '[`Site map`] — ' + {json_encode($domain_idn)};
+</script>
+<div class="article site-base">
+    <div class="article-body">
+{/if}
+    {include file="templates/actions/backend/includes/domain_tabs.html" selected='sitemap' inline}
+
+    {if waRequest::get('routing')}
+        {include file="./MapOverviewFlat.inc.html"}
+    {else}
+        {include file="./MapOverviewTree.inc.html"}
+    {/if}
+{if empty($sidebar_mode)}
+    </div>
+</div>
+{/if}
+<script>
+(function() {
+    $("[data-wa-tooltip-content]").waTooltip();
+
+    // sticky add dropdown @see class .s-site-header
+    (function () {
+        const sidebar_mode = {$sidebar_mode|json_encode};
+        const $drawer = $('.site-editor-left-drawer:visible');
+        const $map_tab_link = $('.s-tabs li:first a');
+        const scroll_wrapper = sidebar_mode ? $drawer.find('.drawer-content').get(0) : document;
+        const toggle = document.querySelector('.map-page-dropdown .dropdown-toggle');
+        const tabs = document.querySelector('.s-tabs');
+        let scroll_up = null;
+        let scroll_down = null;
+
+        $('.site-map-toolbar-sticky').css({ top: $('.s-site-header').height() - $('.map-page-dropdown').height() - 1 });
+
+        const showToggleDropdownInTab = function() {
+            let current_position = sidebar_mode ? scroll_wrapper.scrollTop : document.documentElement.scrollTop;
+            if (scroll_down !== null && current_position > scroll_down) {
+                return;
+            } else if (scroll_up !== null && current_position < scroll_up) {
+                return;
+            } else {
+                scroll_up = null;
+                scroll_down = null;
+            }
+
+            if (toggle && tabs) {
+                const toggle_bottom = toggle.getBoundingClientRect().bottom;
+                const tabs_bottom = tabs.getBoundingClientRect().bottom;
+                if (toggle_bottom > tabs_bottom) {
+                    scroll_up = current_position;
+                    $map_tab_link.find('.js-show-addpage-dropdown').remove();
+                } else {
+                    scroll_down = current_position;
+                    $map_tab_link.prepend('<a class="js-show-addpage-dropdown custom-mr-4" href="javascript:void(0)"><i class="fas fa-plus-square"></i></a>');
+                }
+            } else {
+                $(this).off();
+            }
+        };
+
+        $(scroll_wrapper).on('scroll', showToggleDropdownInTab);
+
+        showToggleDropdownInTab();
+
+        $map_tab_link.on('click', '.js-show-addpage-dropdown', (e) => {
+            e.stopPropagation();
+            $('.map-page-dropdown:visible .dropdown-toggle').click();
+        });
+    })();
+})();
+</script>

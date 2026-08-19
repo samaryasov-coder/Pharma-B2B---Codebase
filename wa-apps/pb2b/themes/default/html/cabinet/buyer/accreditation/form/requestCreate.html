@@ -1,0 +1,58 @@
+<div id="dialog" data-title="Запросить документы">
+    <form id="doc-req-upload" class="form content">
+
+        <div class="input-wrap">
+            <label class="input-label" for="select_companies">Наименование компании для отправления запроса</label>
+            <select id="select_companies" name="provider_company_id" class="input"></select>
+            <span class="input-hint"></span>
+        </div>
+
+        <div class="documents-container">
+            <span class="text-p2">Отправляемые документы</span>
+            <div class="input-wrap">
+                <label class="radio">
+                    <input type="radio" name="mode" value="all" checked>
+                    <span class="radiomark"></span>
+                    <span class="input-label">Запросить все документы, которые есть в моем списке</span>
+                </label>
+            </div>
+            <div class="input-wrap">
+                <label class="radio">
+                    <input type="radio" name="mode" value="selected">
+                    <span class="radiomark"></span>
+                    <span class="input-label">Запросить определенные документы из моего списка</span>
+                </label>
+            </div>
+
+            <div class="input-wrap">
+                <label class="input-label" for="select_templates">Выберите документы</label>
+                <select id="select_templates" name="ids[]" class="input"></select>
+                <span class="input-hint"></span>
+            </div>
+        </div>
+
+        <div class="input-wrap">
+            <label class="input-label" for="comment">Текст запроса</label>
+            <div class="textarea-box">
+                <textarea id="comment" name="comment" class="input" maxlength="200" placeholder="Введите комментарий"></textarea>
+                <span class="char-counter">0/200</span>
+            </div>
+            <span class="input-hint"></span>
+        </div>
+
+    </form>
+
+    <div class="form-actions">
+        <button class="button secondary large modal-cancel">Отмена</button>
+        <button class="button primary large" type="submit" form="doc-req-upload">Запросить</button>
+    </div>
+</div>
+
+
+<style>
+    .documents-container{
+        display: grid;
+        gap: 14px;
+        text-align: left;
+    }
+</style>

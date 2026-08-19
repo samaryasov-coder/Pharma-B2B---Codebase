@@ -1,0 +1,242 @@
+{strip}
+<h2 class="mb16">{$page.name|escape}</h2>
+
+{if empty($page.fields)}
+    <p class="hint">В этом разделе пока нет настроек.</p>
+{else}
+    {assign var=has_save_fields value=0}
+    {foreach $page.fields as $code => $f}
+        {if $f.field.tag|default:'input' == 'input' || $f.field.tag|default:'input' == 'textarea'}
+            {assign var=has_save_fields value=1}
+        {/if}
+    {/foreach}
+
+    {if $has_save_fields}
+        <form class="js-form form fields {if $page.form_vertical} vertical{/if}" action="?module=settings&action=save">
+            <input type="hidden" name="type" value="{$type|escape}">
+    {/if}
+
+    <div class="fields vertical">
+        {foreach $page.fields as $code => $f}
+            <div class="field">
+                {if !empty($f.name)}
+                    <div class="name">{$f.name|escape}</div>
+                {/if}
+
+                {if $f.field.tag|default:'input' == 'input'}
+                    <div class="value{if $f.required|default:0} required{/if}">
+                        <input class="w100"
+                               type="{$f.field.type|default:'text'|escape}"
+                               name="settings[{$code|escape}]"
+                               {if $f.field.type|default:'text' == 'checkbox'}
+                                   value="1" {if $values[$code]|default:$f.default|default:''}checked{/if}
+                               {else}
+                                   value="{$values[$code]|default:$f.default|default:''|escape}"
+                               {/if}
+                        >
+                        {if !empty($f.hint)}
+                            <div class="hint">{$f.hint|escape}</div>
+                        {/if}
+                    </div>
+                {elseif $f.field.tag|default:'input' == 'textarea'}
+                    <div class="value{if $f.required|default:0} required{/if}">
+                        <textarea class="w100" name="settings[{$code|escape}]">{$values[$code]|default:$f.default|default:''|escape}</textarea>
+                        {if !empty($f.hint)}
+                            <div class="hint">{$f.hint|escape}</div>
+                        {/if}
+                    </div>
+                {elseif $f.field.tag|default:'input' == 'button'}
+                    <div class="value">
+                        <button type="button"
+                                class="button{if !empty($f.field.class)} {$f.field.class|escape}{/if}"
+                                {if !empty($f.field.action)}data-action="{$f.field.action|escape}"{/if}
+                                {if !empty($f.field.params)}data-params="{$f.field.params|escape}"{/if}>
+                            {$f.field.text|default:$f.name|escape}
+                        </button>
+                        {if !empty($f.hint)}
+                            <div class="hint">{$f.hint|escape}</div>
+                        {/if}
+                    </div>
+                {elseif $f.field.tag|default:'input' == 'fileset_files'}
+                    <div class="value">
+                        <div class="js-settings-fileset-table"
+                             {if !empty($f.field.get_action)}data-get-action="{$f.field.get_action|escape}"{/if}
+                             {if !empty($f.field.delete_action)}data-delete-action="{$f.field.delete_action|escape}"{/if}
+                             {if !empty($f.field.get_params)}data-get-params="{$f.field.get_params|escape}"{/if}
+                             {if !empty($f.field.delete_params)}data-delete-params="{$f.field.delete_params|escape}"{/if}
+                             data-delete-id-param="{$f.field.delete_id_param|default:'file_id'|escape}"
+                             data-empty-text="{$f.field.empty_text|default:'Нет данных'|escape}">
+                            <table class="zebra">
+                                <thead>
+                                    <tr>
+                                        <th>Название</th>
+                                        <th>Тип</th>
+                                        <th>Комментарий</th>
+                                        <th>Файл</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody class="js-settings-fileset-table-body">
+                                    <tr>
+                                        <td colspan="5" class="hint">Загрузка...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        {if !empty($f.hint)}
+                            <div class="hint">{$f.hint|escape}</div>
+                        {/if}
+                    </div>
+                {else}
+                    <div class="value">
+                        <p class="hint">Неподдерживаемый тип поля: {$f.field.tag|default:'input'|escape}</p>
+                    </div>
+                {/if}
+            </div>
+        {/foreach}
+    </div>
+
+    {if $has_save_fields}
+        <section class="bottombar pb2b-bottombar">
+            <div class="article width-100">
+                <div class="article-body custom-py-8 flexbox">
+                    <input type="submit" class="button" value="Сохранить">
+                    <div class="js-form-message form-message" style="display:none;">
+                        <span class="js-form-message-text"></span>
+                    </div>
+                </div>
+            </div>
+        </section>
+        </form>
+    {/if}
+
+    <script>
+    (function() {
+        function escHtml(str) {
+            return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+        }
+
+        function parseQueryParams(raw) {
+            var out = {};
+            var str = String(raw || '').trim();
+            if (!str) {
+                return out;
+            }
+
+            $.each(str.split('&'), function(i, part) {
+                if (!part) {
+                    return;
+                }
+                var p = part.split('=');
+                var key = decodeURIComponent((p[0] || '').replace(/\+/g, ' '));
+                if (!key) {
+                    return;
+                }
+                var value = decodeURIComponent((p.slice(1).join('=') || '').replace(/\+/g, ' '));
+                out[key] = value;
+            });
+
+            return out;
+        }
+
+        function renderFilesetRows($box, items) {
+            var $body = $box.find('.js-settings-fileset-table-body');
+            var emptyText = $box.data('empty-text') || 'Нет данных';
+            if (!items || !items.length) {
+                $body.html('<tr><td colspan="5" class="hint">' + escHtml(emptyText) + '</td></tr>');
+                return;
+            }
+
+            var html = '';
+            $.each(items, function(i, item) {
+                var name = escHtml(item.name || '');
+                var type = escHtml(item.type || '');
+                var comment = escHtml(item.comment || '');
+                var fileCell = '';
+                if (item.download_url) {
+                    fileCell = '<a href="' + escHtml(item.download_url) + '">Скачать</a>';
+                    if (item.file_name) {
+                        fileCell += ' <span class="hint">' + escHtml(item.file_name) + '</span>';
+                    }
+                } else {
+                    fileCell = '<span class="hint">Нет файла</span>';
+                }
+
+                var rowId = parseInt(item.id || item.file_id || 0, 10) || 0;
+                html += '<tr>' +
+                    '<td>' + name + '</td>' +
+                    '<td>' + type + '</td>' +
+                    '<td>' + comment + '</td>' +
+                    '<td>' + fileCell + '</td>' +
+                    '<td><button type="button" class="button light-gray smallest js-settings-fileset-delete" data-id="' + rowId + '">Удалить</button></td>' +
+                '</tr>';
+            });
+
+            $body.html(html);
+        }
+
+        function renderFilesetError($box, message) {
+            var $body = $box.find('.js-settings-fileset-table-body');
+            $body.html('<tr><td colspan="5" class="hint">' + escHtml(message || 'Ошибка загрузки') + '</td></tr>');
+        }
+
+        function loadFilesetTable($box) {
+            var action = $box.data('get-action') || '';
+            if (!action) {
+                renderFilesetError($box, 'Не задан get_action');
+                return;
+            }
+
+            var postData = parseQueryParams($box.data('get-params') || '');
+            $.post(action, postData, function(r) {
+                var d = (r && r.status === 'ok' && r.data) ? r.data : null;
+                if (!d || d.error) {
+                    renderFilesetError($box, (d && d.message) ? d.message : 'Ошибка ответа сервера');
+                    return;
+                }
+                renderFilesetRows($box, d.items || []);
+            }, 'json').fail(function() {
+                renderFilesetError($box, 'Ошибка запроса');
+            });
+        }
+
+        $('.js-settings-fileset-table').each(function() {
+            loadFilesetTable($(this));
+        });
+
+        $(document).off('click.pb2bSettingsFilesetDelete').on('click.pb2bSettingsFilesetDelete', '.js-settings-fileset-delete', function() {
+            if (!confirm('Удалить файл?')) return;
+
+            var $btn = $(this);
+            var $box = $btn.closest('.js-settings-fileset-table');
+            var action = $box.data('delete-action') || '';
+            if (!action) {
+                alert('Не задан delete_action');
+                return;
+            }
+
+            var id = parseInt($btn.data('id'), 10) || 0;
+            if (!id) {
+                alert('Не передан id файла');
+                return;
+            }
+
+            var idParam = $box.data('delete-id-param') || 'file_id';
+            var postData = parseQueryParams($box.data('delete-params') || '');
+            postData[idParam] = id;
+
+            $.post(action, postData, function(r) {
+                var d = (r && r.status === 'ok' && r.data) ? r.data : null;
+                if (!d || d.error) {
+                    alert((d && d.message) ? d.message : 'Ошибка');
+                    return;
+                }
+                loadFilesetTable($box);
+            }, 'json').fail(function() {
+                alert('Ошибка запроса');
+            });
+        });
+    })();
+    </script>
+{/if}
+{/strip}

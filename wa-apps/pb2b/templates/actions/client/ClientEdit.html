@@ -1,0 +1,62 @@
+{if !empty($object.id)}      
+    <span class="hint">id: {$object.id|escape}</span>
+{/if}
+
+<h1 class="mt0">
+    {if empty($object.id)}
+        Новый клиент
+    {else}
+
+        Клиент &laquo;{$object.name|escape}&raquo; 
+
+        {if $object.archive == 0|default:0}
+            <span class="badge small user green">В работе</span>
+        {else}
+            <span class="badge small user yellow">Архив</span>
+        {/if}
+        
+    {/if} 
+</h1>
+
+{if !empty($object.id)}
+    {assign var=default_tab value=$includes.options.default_tab|default:'company_data'}
+    <form class="js-form form fields" action="?module=client&action=save">
+        <input type="hidden" name="id" value="{$object.id|escape}">
+
+        <div class="js-tabs" data-default-tab="{$default_tab|escape}" data-param="tab">
+
+            <ul class="tabs js-tabs-controls">
+                {foreach $includes.tabs.items as $key => $tab}
+                    <li data-tab="{$key|escape}" class="{if $key==$default_tab}selected{/if}">
+                        <a href="#"><span>{$tab.name|escape}</span></a>
+                    </li>
+                {/foreach}
+            </ul>
+
+            <div class="js-tabs-panels mt10">
+                {foreach $includes.tabs.items as $key => $tab}
+                    <div data-tab="{$key|escape}" {if $key!=$default_tab}style="display:none"{/if}>
+                        {include file="./tabs/`$key`.html" inline}
+                    </div>
+                {/foreach}
+            </div>
+
+        </div>
+
+        <section class="bottombar pb2b-bottombar">
+            <div class="article width-100">
+                <div class="article-body custom-py-8 flexbox">
+                    <input type="submit" class="button" value="Сохранить">
+                    <span class="js-form-message form-message red" style="display: none;">
+                        <span class="js-form-message-icons">
+                            <i class="fas fa-check-circle" style="display:none;"></i>
+                        </span>
+                        <span class="js-form-message-text"></span>
+                    </span>
+                </div>
+            </div>
+        </section>
+    </form>
+{else}
+    {include file="./tabs/create.html"}
+{/if}

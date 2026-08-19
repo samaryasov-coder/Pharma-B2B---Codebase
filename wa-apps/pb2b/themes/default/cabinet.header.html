@@ -1,0 +1,303 @@
+<div class="cabinet__header">
+
+    <div class="cabinet__desktop-button">
+        <img src="{$wa_theme_url}img/icons/laptop.svg">
+        <span>Рабочий стол</span>
+    </div>
+
+    <div class="cabinet__menu-wrapper">
+
+        <div class="cabinet__menu cabinet__help">
+            <div class="cabinet__menu-button">
+                <img src="{$wa_theme_url}img/icons/help.svg">
+                <div class="cabinet__menu-list">
+                    <span class="cabinet__menu-title">Помощь</span>
+
+                    <input type="text" placeholder="Поиск">
+
+                    <div class="cabinet__menu-block">
+                        <div class="cabinet__menu-block-title">Статьи по разделу</div>
+                        <a href="#">Создание задачи</a>
+                        <a href="#">Как использовать сообщения, файлы, задачи?</a>
+                        <a href="#">Списки задач</a>
+                        <a href="#">Контроль исполнения</a>
+                    </div>
+
+                    <div class="cabinet__menu-block">
+                        <div class="cabinet__menu-block-title">Справочники</div>
+                        <a href="#">Help на сайте</a>
+                        <a href="#">Обучающие видео</a>
+                        <a href="#">С чего начать</a>
+                    </div>
+
+                    <div class="cabinet__menu-block">
+                        <div class="cabinet__menu-block-title">Техподдержка</div>
+                        <button>задать вопрос</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="cabinet__menu cabinet__user">
+            <div class="cabinet__menu-button">
+                <div class="cabinet__user-avatar">В</div>
+                <div class="cabinet__user-info">
+                    <span>Василий Продаванов</span>
+                    <span>ООО “Сбыт да и только”</span>
+                </div>
+                <img src="{$wa_theme_url}img/icons/arrow.svg" class="cabinet__user-menu-arrow">
+            </div>
+
+            <div class="cabinet__menu-list">
+                <a href="#/settings/"><img src="{$wa_theme_url}img/icons/settings.svg">Настройки</a>
+                <a href="#/balance/">Баланс</a>
+                <form method="post" action="/logout/" id="logout">
+                    <a href="#" onclick="this.closest('form').requestSubmit();">
+                        <img src="{$wa_theme_url}img/icons/exit.svg" alt="">
+                        Выйти
+                    </a>
+                </form>
+
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<style>
+    .cabinet__header {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 20px;
+        position: relative;
+        margin-bottom: 1.2rem;
+    }
+
+    .cabinet__desktop-button {
+        display: flex;
+        gap: 10px;
+        padding: 9px 8px;
+        border: 1px solid #CCD9E3;
+        border-radius: 12px;
+        z-index: 99;
+    }
+
+    .cabinet__menu-wrapper {
+        display: flex;
+        gap: 20px;
+        position: relative;
+        align-items: center;
+    }
+
+    .cabinet__menu {
+        position: relative;
+    }
+
+    .cabinet__menu-button {
+        display: flex;
+        align-items: center;
+        padding: 9px 12px;
+        border: 1px solid #CCD9E3;
+        border-radius: 12px;
+        cursor: pointer;
+        gap: 10px;
+        background: #fff;
+        transition: border-color .2s;
+    }
+
+    .cabinet__menu.open .cabinet__menu-button {
+        border-color: #0F4E86;
+    }
+
+    .cabinet__menu-list {
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        right: 0;
+        top: calc(100%);
+        width: 100%;
+        max-height: 0;
+        opacity: 0;
+        overflow: hidden;
+        background: #fff;
+        border: 1px solid #CCD9E3;
+        border-top: 0;
+        border-radius: 0 0 18px 18px;
+        box-shadow: rgba(0,0,0,0.1) 0 4px 10px;
+        transition: max-height .5s ease, opacity .4s ease;
+        z-index: 10;
+        cursor: auto;
+    }
+
+    .cabinet__menu.open .cabinet__menu-list {
+        max-height: 500px;
+        opacity: 1;
+    }
+
+
+    .cabinet__menu-title {
+        font-weight: 600;
+        font-size: 16px;
+        line-height: 100%;
+        color: #36424D;
+    }
+
+    .cabinet__menu-list input {
+        padding: 8px 12px;
+        border: 1px solid #dcdcdc;
+        border-radius: 8px;
+    }
+
+    .cabinet__menu-block {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .cabinet__menu-block-title {
+        margin-bottom: 4px;
+        font-weight: 500;
+        font-size: 13px;
+        line-height: 100%;
+        text-transform: uppercase;
+        color: #85929E;
+    }
+
+    .cabinet__menu-block a {
+        font-weight: 600;
+        font-size: 14px;
+        line-height: 100%;
+        cursor: pointer;
+        color: #0B4780;
+    }
+
+    .cabinet__menu-block a:hover {
+        text-decoration: underline;
+    }
+
+    .cabinet__menu-block button {
+        padding: 6px 16px;
+        border: none;
+        background: white;
+        color: #0B4780;
+        border-radius: 8px;
+        cursor: pointer;
+        width: fit-content;
+        font-weight: 600;
+        font-size: 12px;
+        line-height: 160%;
+        text-transform: uppercase;
+        box-shadow: 0 0 10px 2px rgba(0, 0, 0, 0.1);
+    }
+    
+    .cabinet__help{
+        position: unset;
+    }
+    .cabinet__help .cabinet__menu-list{
+        padding: 15px;
+        gap: 24px;
+    }
+
+    .cabinet__user-avatar {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 40px;
+        height: 40px;
+        background: #FAAD14;
+        color: #fff;
+        font-size: 18px;
+        font-weight: 500;
+        border-radius: 15px;
+        border: 1.5px solid #fff;
+    }
+
+    .cabinet__user-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .cabinet__user-info span:first-child { font-weight: 600; font-size: 14px; }
+    .cabinet__user-info span:last-child { font-size: 12px; color: #777; }
+
+    .cabinet__user-menu-arrow {
+        margin-left: auto;
+        transition: transform .3s ease;
+    }
+
+    .cabinet__menu.user.open .cabinet__user-menu-arrow {
+        transform: rotate(-180deg);
+    }
+
+
+    .cabinet__user .cabinet__menu-list a {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 18px;
+        font-size: 14px;
+        color: #85929E;
+        font-weight: 600;
+        text-decoration: none;
+        transition: background .2s;
+    }
+    .cabinet__user .cabinet__menu-list a:hover {
+        background: #F6F9FB;
+        color: #36424D;
+    }
+</style>
+
+<script>
+    (function ($) {
+        $.cabinetMenu = {
+            menu: null,
+            menuButton: null,
+            menuClass: null,
+            $logoutForm: null,
+
+            init() {
+                this.menu = $('.cabinet__menu');
+                this.menuButton = $('.cabinet__menu-button');
+                this.menuClass = '.cabinet__menu';
+                this.$logoutForm = $('#logout');
+
+                this.bind();
+            },
+
+            bind() {
+                const self = this;
+
+                this.$logoutForm.fSend({
+                    onSuccess: function (reply){
+                        window.location.href = '/auth/login/';
+                    }
+                });
+
+                self.menuButton.on('click', function(e){
+                    e.stopPropagation();
+                    const list = $(this).closest(self.menuClass);
+                    list.toggleClass('open');
+                });
+
+                // вот спасение
+                self.menu.find('.cabinet__menu-list').on('click', function(e){
+                    e.stopPropagation();
+                });
+
+                $(document).on('click', function(){
+                    self.menu.removeClass('open');
+                });
+            }
+        };
+
+    })(jQuery);
+
+    $(document).ready(function () {
+        $.cabinetMenu.init();
+    });
+</script>
+
+

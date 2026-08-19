@@ -1,0 +1,13 @@
+e0002115bfcc0843db7c703689798efe *img/posts.png
+a285da79a1cf95556e4eb1fd40059097 *lib/.htaccess
+1cbcb6eb0b9838ad0f190ebf49323b55 *lib/blogPosts.widget.php
+e17c7bff29c4a2a101dec335fa05b209 *lib/config/build.php
+42fa29ab6775e9ae0f766ac802cd0246 *lib/config/settings.php
+d89f3730bf87d004628461e6604b39b9 *lib/config/widget.php
+a1751e1f10a3b96b05d0401c97e72008 *locale/.htaccess
+b8a3aed910098ecfcd4fc27b5abb0d69 *locale/en_US/LC_MESSAGES/blog_widget_posts.mo
+6e271402bd4a8a6743371126e9e21dd9 *locale/en_US/LC_MESSAGES/blog_widget_posts.po
+5842558841f3522054ba2197c8b8a878 *locale/ru_RU/LC_MESSAGES/blog_widget_posts.mo
+387c00e0c1437ef518a91f767d13fd2b *locale/ru_RU/LC_MESSAGES/blog_widget_posts.po
+a285da79a1cf95556e4eb1fd40059097 *templates/.htaccess
+8f26aebd8466f5e4bde08b1b49b56db0 *templates/Default.html

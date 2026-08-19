@@ -1,0 +1,25 @@
+
+2026-08-18 23:08:19 188.243.206.255
+cabinet/buyer/accreditation/
+Uncaught exception SmartyException:
+Unable to load template file &#039;templates/actions/frontend/FrontendCabinetAccreditation.html&#039; (0)
+#0 /var/www/pharmab2b/httpdocs/wa-system/view/waSmarty3View.class.php(144): Smarty_Internal_TemplateBase->fetch()
+#1 /var/www/pharmab2b/httpdocs/wa-system/controller/waViewAction.class.php(190): waSmarty3View->fetch()
+#2 /var/www/pharmab2b/httpdocs/wa-system/controller/waViewController.class.php(86): waViewAction->display()
+#3 /var/www/pharmab2b/httpdocs/wa-system/controller/waDefaultViewController.class.php(48): waViewController->executeAction()
+#4 /var/www/pharmab2b/httpdocs/wa-system/controller/waController.class.php(21): waDefaultViewController->execute()
+#5 /var/www/pharmab2b/httpdocs/wa-system/controller/waViewController.class.php(46): waController->run()
+#6 /var/www/pharmab2b/httpdocs/wa-system/controller/waFrontController.class.php(299): waViewController->run()
+#7 /var/www/pharmab2b/httpdocs/wa-system/controller/waFrontController.class.php(197): waFrontController->runController()
+#8 /var/www/pharmab2b/httpdocs/wa-system/controller/waFrontController.class.php(84): waFrontController->execute()
+#9 /var/www/pharmab2b/httpdocs/wa-system/controller/waDispatch.class.php(386): waFrontController->dispatch()
+#10 /var/www/pharmab2b/httpdocs/wa-system/controller/waDispatch.class.php(34): waDispatch->dispatchFrontend()
+#11 /var/www/pharmab2b/httpdocs/wa-system/waSystem.class.php(621): waDispatch->dispatch()
+#12 /var/www/pharmab2b/httpdocs/index.php(7): waSystem->dispatch()
+#13 {main}
+
+2026-08-18 23:23:16 31.134.136.228
+Error 0: Curl error: 6# Could not resolve host: www.webasyst.ru at [https://www.webasyst.ru/download/2.0/updates/?v[blog]=2.1.1.115&v[blog/widgets/comments]=1.1.42413&v[blog/widgets/posts]=1.1.42413&v[crm]=3.4.2.757&v[files]=2.0.3.164&v[files/widgets/uploaded]=1.0.43860&v[hub]=2.2.3.169&v[hub/widgets/comments]=1.0.42413&v[installer]=4.2.0.1151&v[mailer]=2.2.13.170&v[pb2b]=0.0.1.p&v[photos]=2.3.0.121&v[photos/widgets/photos]=1.0.42413&v[shop]=12.6.0.1283&v[shop/plugins/migrate]=2.4.7.36&v[shop/plugins/redirect]=1.2.0.2&v[shop/widgets/customers]=1.2.1.9&v[shop/widgets/kpi]=1.2.1.9&v[shop/widgets/products]=1.1.0.4&v[shop/widgets/sources]=1.1.1.6&v[site]=3.5.4.475&v[tasks]=3.3.1.p&v[team]=2.3.4.246&v[wa-widgets/clock]=1.3.1.6&v[wa-widgets/currencyquotes]=1.5.3.15&v[wa-widgets/news]=1.4.4.13&v[wa-widgets/weather]=1.4.1.8&v[wa-plugins/sms/webasystsms]=1.0.4.10&v[wa-plugins/shipping/courier]=1.5.1.78&v[wa-plugins/shipping/sd]=1.1.1.48&v[wa-plugins/shipping/worldwide]=1.1.6.19&hash=2ead9ad49d18f78cff98d617f6a91d8c&token=6900f281d3b7964ac64f684639026e9e&domain=cGhhcm1hLWIyYi5kdWNrZG5zLm9yZw%3D%3D&signature=eyJwaHAiOiI4LjQuMjQiLCJjIjo4LCJhcGkiOiJmcG0tZmNnaSIsIm9zIjoiTGludXgiLCJyIjoiNi4xMi45MCtkZWIxMy4xLWNsb3VkLWFtZDY0Iiwic3FsX2FkYXB0ZXIiOiJteXNxbGkiLCJzcWwiOiIxMS44LjYifQ%3D%3D&locale=ru_RU]
+
+2026-08-18 23:23:16 31.134.136.228
+Failed getting url: https://www.webasyst.ru/download/3.0/installer/license/?hash=2ead9ad49d18f78cff98d617f6a91d8c&domain=pharma-b2b.duckdns.org&token=6900f281d3b7964ac64f684639026e9e : Curl error 6: Could not resolve host: www.webasyst.ru
