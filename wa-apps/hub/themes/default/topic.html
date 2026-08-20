@@ -1,8 +1,0 @@
-{$wa->csrf()}
-<div id="topic-and-comments">
-    {if !empty($topic_type)}
-        {include file="topic.`$topic_type.type`.html"}
-    {else}
-        {include file="topic.custom.html"}
-    {/if}
-</div>
