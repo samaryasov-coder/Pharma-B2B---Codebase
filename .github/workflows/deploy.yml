@@ -4,9 +4,7 @@ on:
   push:
     branches:
       - main
-      - test/arkadiy
       - test/sergey
-      - test/ivan
 
 concurrency:
   group: deploy-${{ github.ref }}
@@ -34,16 +32,8 @@ jobs:
               echo "folder=/var/www/pharmab2b/httpdocs" >> "$GITHUB_OUTPUT"
               ;;
 
-            test/arkadiy)
-              echo "folder=/var/www/pharmab2b/test-arkadiy" >> "$GITHUB_OUTPUT"
-              ;;
-
             test/sergey)
               echo "folder=/var/www/pharmab2b/test-sergey" >> "$GITHUB_OUTPUT"
-              ;;
-
-            test/ivan)
-              echo "folder=/var/www/pharmab2b/test-ivan" >> "$GITHUB_OUTPUT"
               ;;
 
             *)
