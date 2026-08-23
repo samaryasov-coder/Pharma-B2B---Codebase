@@ -11,6 +11,7 @@
 
 .auth-form{
     position: relative;
+    overflow: hidden;
     display: grid;
     background: white;
     backdrop-filter: blur(40px);

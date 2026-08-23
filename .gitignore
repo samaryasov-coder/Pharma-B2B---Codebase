@@ -12,4 +12,5 @@ wa-sources/
 wa-system/
 wa-widgets/
 .idea/
+/*.php
 *.md5
