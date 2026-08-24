@@ -1,0 +1,620 @@
+{if !empty($company)}
+<div class="company-status-wrapper">
+    <div class="company-card {if $company.data.status}active{else}pending{/if}">
+        <a class="back" href="/">На главную</a>
+        <div class="company-info">
+            <div class="company-name">
+                {$company.data.name}
+            </div>
+
+            <div class="company-meta">
+                ИНН: <span>{$company.data.inn}</span>
+            </div>
+        </div>
+        {if ($company.data.status)}
+            <div class="status-icon">✓</div>
+            <div class="status-title">Ваша компания активна</div>
+            <div class="status-text">Аккаунт успешно активирован. <br> Можно продолжать работу в <a href="/cabinet/">личном кабинете</a></div>
+        {else}
+            <div class="status-icon">⏳</div>
+            <div class="status-title">Компания на данный момент не активна</div>
+
+            <div class="status-text">
+                Дата подачи заявления:
+                <span class="date">{$company.data.create_datetime|wa_date:'humandatetime'}</span>
+            </div>
+        {/if}
+    </div>
+</div>
+<style>
+    .company-status-wrapper{
+        display:flex;
+        justify-content:center;
+        margin-top:60px;
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    }
+
+    .company-card{
+        position: relative;
+        width:440px;
+        padding:30px;
+        border-radius:14px;
+        background:#fff;
+        box-shadow:0 10px 35px rgba(0,0,0,0.08);
+        text-align:center;
+    }
+
+    .company-card.active{
+        border-left:5px solid #4CAF50;
+    }
+
+    .company-card.pending{
+        border-left:5px solid #ff9800;
+    }
+
+    .back{
+        position: absolute;
+        top: 20px;
+        display: flex;
+    }
+
+    .company-info{
+        padding: 15px 30px;
+        border: 3px solid #eee;
+        line-height: 20px;
+        border-radius: 20px;
+        margin: auto;
+        width: fit-content;
+    }
+
+    .company-name{
+        font-size:18px;
+        font-weight:600;
+        color:#222;
+        margin-bottom:4px;
+    }
+
+    .company-meta{
+        font-size:13px;
+        color:#777;
+    }
+
+    .company-meta span{
+        font-weight:600;
+        color:#333;
+    }
+
+
+    .status-icon{
+        font-size:40px;
+        margin: 30px
+    }
+
+    .company-card.active .status-icon{
+        color:#4CAF50;
+    }
+
+    .company-card.pending .status-icon{
+        color:#ff9800;
+    }
+
+    .status-title{
+        font-size:20px;
+        font-weight:600;
+        margin-bottom:10px;
+        line-height: 25px;
+    }
+
+    .status-text{
+        color:#666;
+        font-size:14px;
+        line-height: 20px;
+    }
+
+    .status-text a{
+        color:#3b82f6;
+        text-decoration:none;
+        font-weight: 500;
+    }
+
+    .status-text a:hover{
+        text-decoration:underline;
+    }
+
+    .date{
+        font-weight:600;
+        color:#333;
+    }
+</style>
+{else}
+<div class="multistep-container">
+    <div class="multistep-stages">
+        <div class="step-stage">
+            <span>Данные компании</span>
+        </div>
+        <div class="step-stage">
+            <span>Контактные данные</span>
+        </div>
+        <div class="step-stage">
+            <span>Администрирование</span>
+        </div>
+        <div class="step-stage">
+            <span>Проверка данных</span>
+        </div>
+    </div>
+    <div class="multistep-form">
+        <div class="form-step">
+            <div class="form">
+                <div class="input-wrap required">
+                    <label class="input-label" for="inn">ИНН компании</label>
+                    <div class="input-box">
+                        <input id="inn" name="company[inn]" type="text" class="input" placeholder="Введите ИНН">
+                    </div>
+                    <span class="input-hint">После указания ИНН данные о компании загрузятся автоматически</span>
+                </div>
+                <div class="input-wrap required">
+                    <label class="input-label" for="name">Наименование</label>
+                    <div class="input-box">
+                        <input id="name" name="company[name]" type="text" class="input" placeholder="Введите наименование компании">
+                    </div>
+                    <span class="input-hint"></span>
+                </div>
+                <div class="input-wrap required">
+                    <label class="input-label" for="kpp">КПП</label>
+                    <div class="input-box">
+                        <input id="kpp" name="company[kpp]" type="text" class="input" placeholder="Введите КПП компании">
+                    </div>
+                    <span class="input-hint"></span>
+                </div>
+                <div class="input-wrap required">
+                    <label class="input-label" for="ogrn">ОГРН</label>
+                    <div class="input-box">
+                        <input id="ogrn" name="company[ogrn]" type="text" class="input" placeholder="Укажите ОГРН компании">
+                    </div>
+                    <span class="input-hint"></span>
+                </div>
+                <div class="input-wrap required">
+                    <label class="input-label" for="ofc">Организационная форма компании</label>
+                    <select id="ofc" name="company[ofc]" class="js-select">
+                        {foreach pb2bOrganizationType::cases() as $type}
+                            <option value="{$type->value|default:''|escape}">
+                                {$type->title()|default:''|escape}
+                            </option>
+                        {/foreach}
+                    </select>
+                    <span class="input-hint"></span>
+                </div>
+            </div>
+
+
+
+
+
+            <div class="form-actions">
+                <button class="button primary large js-next-step">Перейти к контактным данным</button>
+            </div>
+        </div>
+        <div class="form-step">
+            <div class="form">
+                <div class="input-wrap required">
+                    <label class="input-label" for="registry_email">Основной E-mail организации</label>
+                    <div class="input-box">
+                        <input id="registry_email" name="company[registry_email]" type="text" class="input" placeholder="Введите свой E-mail">
+                    </div>
+                    <button class="button small outline">+ Добавить резервный E-mail</button>
+                    <span class="input-hint"></span>
+                </div>
+                <div class="input-wrap required">
+                    <label class="input-label" for="phone">Номер телефона</label>
+                    <div class="input-box">
+                        <input id="phone" name="company[phone]" type="text" class="input mask_phone" placeholder="Введите свой номер телефона">
+                    </div>
+                    <button class="button small outline">+ Добавить резервный номер телефона</button>
+                    <span class="input-hint"></span>
+                </div>
+                <div class="input-wrap required">
+                    <label class="input-label" for="contact_person">Контактное лицо</label>
+                    <div class="input-box">
+                        <input id="contact_person" name="company[contact_person]" type="text" class="input" placeholder="Введите имя и фамилию контактного лица организации">
+                    </div>
+                    <span class="input-hint"></span>
+                </div>
+                <div class="input-wrap required">
+                    <label class="input-label" for="site">Веб-сайт</label>
+                    <div class="input-box">
+                        <input id="site" name="company[site]" type="text" class="input" placeholder="Укажите адрес сайта компании">
+                    </div>
+                    <span class="input-hint"></span>
+                </div>
+                <div class="input-wrap required">
+                    <label class="input-label" for="jur_address">Юридический адрес компании</label>
+                    <div class="input-box">
+                        <input id="jur_address" name="company[jur_address]" type="text" class="input" placeholder="Укажите юридический адрес компании">
+                    </div>
+                    <span class="input-hint"></span>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="button secondary large js-prev-step">Назад</button>
+                <button class="button primary large js-next-step">Перейти к администрированию</button>
+            </div>
+        </div>
+        <div class="form-step">
+            <div class="form">
+                <div class="input-wrap required">
+                    <label class="input-label" for="first_name">Имя</label>
+                    <div class="input-box">
+                        <input id="first_name" name="client[first_name]" type="text" class="input" placeholder="Введите имя">
+                    </div>
+                    <span class="input-hint"></span>
+                </div>
+                <div class="input-wrap required">
+                    <label class="input-label" for="last_name">Фамилия</label>
+                    <div class="input-box">
+                        <input id="last_name" name="client[last_name]" type="text" class="input" placeholder="Введите фамилию">
+                    </div>
+                    <span class="input-hint"></span>
+                </div>
+                <div class="input-wrap">
+                    <label class="input-label" for="patronymic">Отчество</label>
+                    <div class="input-box">
+                        <input id="patronymic" name="client[patronymic]" type="text" class="input" placeholder="Введите отчество">
+                    </div>
+                    <span class="input-hint"></span>
+                </div>
+                <div class="input-wrap required">
+                    <label class="input-label" for="email">E-mail для рассылки</label>
+                    <div class="input-box">
+                        <input id="email" name="client[email]" type="text" class="input" placeholder="Укажите E-mail для рассылки">
+                    </div>
+                    <button class="button small outline">+ Добавить резервный E-mail</button>
+                    <span class="input-hint"></span>
+                </div>
+                <div class="input-wrap">
+                    <label class="checkbox">
+                        <input id="agree_reg" name="client[agree_reg]" type="checkbox">
+                        <span class="checkmark"></span>
+                        <label class="input-label" for="agree_reg">Присоединяюсь к регламенту работы системы</label>
+                    </label>
+                </div>
+                <div class="input-wrap">
+                    <label class="checkbox">
+                        <input id="agree_pd" name="client[agree_pd]" type="checkbox">
+                        <span class="checkmark"></span>
+                        <label class="input-label" for="agree_pd">Даю согласие на обработку пероснальных данных для участия в торговых процедурах</label>
+                    </label>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="button secondary large js-prev-step">Назад</button>
+                <button class="button primary large js-next-step">Перейти к проверке</button>
+            </div>
+        </div>
+        <div class="form-step">
+            <div class="form review">
+                <div class="review-list"></div>
+            </div>
+
+            <div class="form-actions">
+                <button class="button secondary large js-prev-step">Назад</button>
+                <button class="button primary large js-submit">Завершить</button>
+            </div>
+        </div>
+        <div style="display: flex; position: absolute;bottom: 5%;">
+            <a href="/">На главную</a>
+        </div>
+    </div>
+</div>
+
+{*
+<div class="custom-select-wrapper">
+    <div class="custom-select">
+        <div class="custom-select-trigger">Выберите опцию</div>
+        <div class="custom-options">
+            <span class="custom-option" data-value="1">Опция 1</span>
+            <span class="custom-option" data-value="2">Опция 2</span>
+            <span class="custom-option" data-value="3">Опция 3</span>
+        </div>
+    </div>
+</div>
+
+<style>
+    .custom-select-wrapper {
+        position: relative;
+        width: 200px;
+        user-select: none;
+    }
+
+    .custom-select {
+        position: relative;
+        display: block;
+        background: #1c1c1c;
+        color: #fff;
+        font-family: sans-serif;
+        border: 1px solid #333;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+    .custom-select-trigger {
+        padding: 10px;
+    }
+
+    .custom-options {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: #2c2c2c;
+        border: 1px solid #333;
+        border-top: none;
+        border-radius: 0 0 6px 6px;
+        display: none;
+        max-height: 150px;
+        overflow-y: auto;
+        z-index: 100;
+    }
+
+    .custom-option {
+        padding: 10px;
+        cursor: pointer;
+    }
+
+    .custom-option:hover {
+        background: #444;
+    }
+</style>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(function(){
+        var $select = $('.custom-select');
+        var $trigger = $select.find('.custom-select-trigger');
+        var $options = $select.find('.custom-option');
+
+        $trigger.on('click', function(e){
+            e.stopPropagation();
+            $select.toggleClass('open');
+            $select.find('.custom-options').slideToggle(150);
+        });
+
+        $options.on('click', function(){
+            var text = $(this).text();
+            $trigger.text(text);
+            $select.removeClass('open');
+            $select.find('.custom-options').slideUp(150);
+        });
+
+        $(document).on('click', function(){
+            $select.removeClass('open');
+            $select.find('.custom-options').slideUp(150);
+        });
+    });
+</script>
+*}
+
+<style>
+    .multistep-container{
+        display: grid;
+        gap: 24px;
+        border: 2px solid var(--gray-200);
+        border-radius: 24px;
+        max-width: 900px;
+        margin: 20px auto;
+    }
+
+    .multistep-stages {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        justify-content: center;
+        padding: 24px;
+    }
+
+    .step-stage {
+        --ss-color: var(--gray-300);
+        --ss-circle-color: var(--gray-300);
+        --ss-border-color: var(--gray-100);
+
+        color: var(--ss-color);
+        font-weight: var(--font-weight-medium);
+        font-size: var(--font-size-l2);
+        line-height: var(--line-height-l1);
+        letter-spacing: var(--letter-spacing-0);
+
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding-top: 7px;
+        width: 100%;
+        max-width: 184px;
+
+        border-top: 4px solid var(--ss-border-color);
+        border-radius: 2px;
+    }
+    .step-stage::before {
+        content: "";
+        width: 14px;
+        height: 14px;
+
+        display: grid;
+        place-items: center;
+
+        border-radius: 50%;
+        border: 1px dashed var(--ss-circle-color);
+        color: #fff;
+        font-size: 8px;
+        font-weight: var(--font-weight-bold);
+        line-height: 1;
+
+        flex-shrink: 0;
+    }
+    .step-stage.active{
+        --ss-color: inherit;
+        --ss-circle-color: #252525;
+    }
+    .step-stage.success{
+        --ss-color: inherit;
+        --ss-circle-color: var(--success-dark);
+        --ss-border-color: var(--success-dark);
+    }
+    .step-stage.success::before {
+        content: "✓";
+        background-color: #2e7d32;
+        border-style: solid;
+    }
+
+    .multistep-form{
+        position: relative;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .form-step{
+        display: none;
+        gap: 24px;
+        width: 100%;
+    }
+    .form-step.active {
+        display: grid;
+        animation: fadeStep .25s ease;
+    }
+
+    .form-step .form{
+        max-width: 550px;
+        width: 100%;
+        margin: 0 auto;
+        display: grid;
+        gap: 24px;
+    }
+    .form-step button{
+        width: fit-content;
+    }
+
+
+    .form-step .form-actions{
+        display: flex;
+        justify-content: right;
+        gap: 12px;
+        padding: 10px;
+        border-top: 1px solid var(--gray-200);
+    }
+
+    .form .review-list{
+        display: flex;
+        flex-direction: column;
+    }
+
+    .review-stage{
+        display: flex;
+        flex-direction: column;
+        text-align: left;
+        gap: 16px;
+        padding: 16px 0;
+        border-bottom: 1px solid var(--gray-200);
+    }
+    .review-stage:first-child{
+        padding-top: 0;
+    }
+    .review-stage:last-child{
+        border: 0;
+    }
+
+    .review-stage-title{
+        margin: 0;
+        font-weight: var(--font-weight-semibold);
+        font-size: var(--font-size-l1);
+        line-height: var(--line-height-l1);
+        letter-spacing: var(--letter-spacing-l1);
+        vertical-align: middle;
+    }
+
+    .review-item{
+        display: grid;
+        gap: 8px;
+    }
+
+    .review-label{
+        font-weight: var(--font-weight-medium);
+        font-size: var(--font-size-l2);
+        line-height: var(--line-height-l1);
+        letter-spacing: var(--letter-spacing-0);
+        color: var(--gray-500);
+    }
+
+    .review-value{
+        font-weight: var(--font-weight-regular);
+        font-size: var(--font-size-p2);
+        line-height: var(--line-height-p1);
+        letter-spacing: var(--letter-spacing-0);
+    }
+
+
+    @keyframes fadeStep {
+        from {
+            opacity: 0;
+            transform: translateY(6px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+
+
+
+
+
+
+
+    .vault-boy {
+        width: 180px;
+        height: 180px;
+        background: url('/wa-apps/pb2b/themes/default/img/good.png') center/contain no-repeat;
+        margin: 0 auto;
+        position: relative;
+    }
+
+    .success-overlay {
+        position: fixed;
+        inset: 0;
+        backdrop-filter: blur(12px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+    }
+
+    .success-content {
+        text-align: center;
+        position: relative;
+    }
+
+    .vault-boy {
+        width: 180px;
+        height: 180px;
+        background-position: center;
+        background-size: contain;
+        background-repeat: no-repeat;
+        margin: 0 auto;
+    }
+
+    .success-text {
+        margin-top: 16px;
+        font-size: 24px;
+        font-weight: bold;
+        line-height: 2rem;
+        color: #fff;
+    }
+</style>
+
+<script>
+    $(function () {
+        $.RegistrationCompany.init();
+    });
+</script>
+
+{/if}

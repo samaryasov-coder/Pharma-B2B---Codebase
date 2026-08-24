@@ -1,0 +1,31 @@
+<div class="content flexbox wrap-mobile">
+	<div class="sidebar flexbox bordered-right bordered-left width-adaptive-wider mobile-friendly" id="pb2b_settings_sidebar">
+        <nav class="sidebar-mobile-toggle">
+            <div class="box align-center">
+                <a href="#"><i class="fas fa-bars"></i> Настройки системы</a>
+            </div>
+        </nav>
+        <div class="sidebar-body">
+            <h5 class="heading mt15">Настройки системы</h5>
+
+            <ul class="menu appls-settings-tab-controls mt25">
+				{foreach $settings as $key => $setting}
+                    {assign var=setting_type value=$setting.type|default:$key}
+					<li>
+						<a href="#/settings/page/type={$setting_type|escape}">
+							<i class="{$setting.icon|default:'fas fa-cog'|escape}"></i>
+							<span>{$setting.name|escape}</span>
+						</a>
+					</li>
+				{/foreach}
+			</ul>
+			
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="article">
+            <div class="article-body pb2b-settings-ajax pb60"></div>
+        </div>
+    </div>
+</div>

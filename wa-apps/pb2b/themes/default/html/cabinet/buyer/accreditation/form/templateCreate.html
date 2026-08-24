@@ -1,0 +1,62 @@
+<div id="dialog" data-title="Добавить документ">
+    <form id="template_upload" class="form content">
+
+        <div class="input-wrap">
+            <label class="text-p2 text-left">Документ добавляется для:</label>
+            <div class="row gap32">
+                {foreach pb2bCompanyType::cases() as $type}
+                    <label class="radio">
+                        <input type="radio" name="template[company_type]" value="{$type->value}" {if $type@first}checked{/if}>
+                        <span class="radiomark"></span>
+                        <span class="input-label">{$type->name()}</span>
+                    </label>
+                {/foreach}
+            </div>
+        </div>
+
+        <div class="input-wrap">
+            <label class="input-label" for="name">Наименование документа</label>
+            <div class="input-box">
+                <input id="name" name="template[name]" type="text" class="input" placeholder="Введите название документа">
+            </div>
+            <span class="input-hint"></span>
+        </div>
+
+        <div class="input-wrap">
+            <label class="input-label">Шаблон документа</label>
+            <div class="file-upload-container">
+                <div class="dropzone js-file-upload" data-name="file">
+                    <div class="dz-message">
+                        <div class="icon square">
+                            <svg><use href="#icon-file-upload"></use></svg>
+                        </div>
+                        <div class="text">
+                            <span class="title"><span class="highlight">Нажмите сюда</span> или перетащите файл для загрузки файлов</span>
+                            <div class="des">
+                                <span>Поддерживаемый формат: doc, pdf</span>
+                                <span>Макс. размер файлов: 10 MB </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <span class="input-hint"></span>
+        </div>
+
+
+        <div class="input-wrap">
+            <label class="input-label" for="comment">Комментарий</label>
+            <div class="textarea-box">
+                <textarea id="comment" name="template[comment]" class="input" maxlength="200" placeholder="Введите комментарий"></textarea>
+                <span class="char-counter">0/200</span>
+            </div>
+            <span class="input-hint"></span>
+        </div>
+
+    </form>
+
+    <div class="form-actions">
+        <button class="button secondary large modal-cancel">Отмена</button>
+        <button class="button primary large" type="submit" form="template_upload">Сохранить</button>
+    </div>
+</div>

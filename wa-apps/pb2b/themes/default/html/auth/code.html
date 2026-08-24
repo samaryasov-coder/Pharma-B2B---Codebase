@@ -1,0 +1,50 @@
+<form class="auth-form auth-otp" action="/code/" method="POST">
+    <a href="/auth/login/" class="auth-form__back button text">
+        <i class="fas fa-chevron-left"></i>
+        <span>Назад</span>
+    </a>
+    <div class="auth-form__body">
+        <div class="auth-form__fields">
+            <span class="text-h1 fw-bold">Код из {$channel|default:''|escape}</span>
+            <span class="hint">Код: 1111</span>
+            <div class="input-wrap">
+                <div class="input-otp">
+                    <input name="code" type="text" inputmode="numeric" maxlength="1" class="input otp-input">
+                    <input name="code" type="text" inputmode="numeric" maxlength="1" class="input otp-input">
+                    <input name="code" type="text" inputmode="numeric" maxlength="1" class="input otp-input">
+                    <input name="code" type="text" inputmode="numeric" maxlength="1" class="input otp-input">
+                    <input name="code" type="text" inputmode="numeric" maxlength="1" class="input otp-input">
+                    <input name="code" type="text" inputmode="numeric" maxlength="1" class="input otp-input">
+                </div>
+                <span class="input-hint"></span>
+            </div>
+        </div>
+
+
+        <div class="auth-form__actions">
+            <div class="auth-form__time text-center" data-timer-seconds="{$rate}" data-timer >
+                <span class="text-p3 fw-regular gray-500">Повторный код можно выслать через: </span>
+                <span class="text-l3 fw-semibold">
+                    <span class="time" data-timer-value>{$rate}</span> сек.
+                </span>
+            </div>
+            <button class="button outline" data-resend>Отправить код повторно</button>
+        </div>
+    </div>
+</form>
+
+<style>
+    .auth-form__actions [data-resend] {
+        display: none;
+    }
+
+    .auth-form__time .time {
+        font-variant-numeric: tabular-nums;
+    }
+</style>
+
+<script>
+    $(function() {
+        $.Auth.Code.init();
+    });
+</script>

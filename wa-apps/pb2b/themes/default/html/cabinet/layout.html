@@ -1,0 +1,246 @@
+{assign var="cabinet_link" value="/cabinet/"|cat:$role}
+
+<!DOCTYPE html>
+<html{if !empty($html_class_array)} class="{join(' ', $html_class_array)}"{/if} lang="{if $wa->locale() == 'ru_RU'}ru{else}en{/if}">
+
+    {$_head_prefix = $wa->globals("headPrefix")}
+
+    <head {if !empty($_head_prefix)}prefix="{$_head_prefix}"{/if}>
+        {include file="`$wa_active_theme_path`/head.html" inline}
+    </head>
+
+    <body hx-boost="true" hx-target=".js-main-content" hx-swap="innerHTML" hx-push-url="true">
+        {include file="img/icons/cabinet/sprite.svg"}
+
+        {if !empty($head_path)}
+            {include file="`$wa_active_theme_path`/$head_path" inline}
+        {/if}
+        <main class="maincontent">
+            <div class="flexbox wrap-mobile" id="wa-app">
+                <div class="pharmab2b-app-sidebar is-pinned " id="js-app-sidebar">
+                    <div class="sidebar flexbox hide-scrollbar overflow-visible hover-is-disabled">
+                        <div class="sidebar-body">
+                            <div class="head">
+                                <a href="/" class="logo">
+                                    <img src="{$wa_theme_url}img/icons/favicon.svg" alt="PharmaB2B">
+                                </a>
+                                <span class="js-edit-sidebar button secondary small s-edit-wrapper">
+                                    <svg><use href="#icon-edit"></use></svg>
+                                </span>
+
+                                <div class="s-toggle-wrapper js-toggle-sidebar">
+                                    <span class="pharmab2b-icon-main icon">
+                                        <i class="fas fa-angle-left left"></i>
+                                        <i class="fas fa-angle-right right"></i>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="menu-wrapper">
+                                <div class="main-menu">
+                                    <ul class="menu">
+                                        {foreach $sidebar_menu[0] as $menu_value}
+                                            <li>
+                                                <a class="item" data-tooltip="{$menu_value.name}" href="{$menu_value.link}" hx-get="{$menu_value.link}">
+                                                    <span class="dot success {if empty($menu_value.notify)}is-hidden{/if}"></span>
+                                                    <div class="item-content">
+                                                        <span class="pharmab2b-icon-main icon">
+                                                            <svg><use href="#{$menu_value.icon}"></use></svg>
+                                                        </span>
+                                                        <div class="item-meta">
+                                                            <span class="pharmab2b-name">{$menu_value.name}</span>
+                                                            {if !empty($menu_value.notify)}
+                                                                <span class="counter primary">{$menu_value.notify}</span>
+                                                            {/if}
+                                                        </div>
+                                                    </div>
+                                                </a>
+                                            </li>
+                                        {/foreach}
+                                    </ul>
+                                </div>
+
+                                <div class="main-menu">
+                                    <span class="state">Управление</span>
+                                    <ul class="menu">
+                                        {foreach $sidebar_menu[1] as $menu_value}
+                                            <li>
+                                                <a class="item" data-tooltip="{$menu_value.name}" href="{$menu_value.link}" hx-get="{$menu_value.link}">
+                                                    <span class="dot success {if empty($menu_value.notify)}is-hidden{/if}"></span>
+                                                    <div class="item-content">
+                                                            <span class="pharmab2b-icon-main icon">
+                                                                <svg><use href="#{$menu_value.icon}"></use></svg>
+                                                            </span>
+                                                        <div class="item-meta">
+                                                            <span class="pharmab2b-name">{$menu_value.name}</span>
+                                                            {if !empty($menu_value.notify)}
+                                                                <span class="counter primary">{$menu_value.notify}</span>
+                                                            {/if}
+                                                        </div>
+                                                    </div>
+                                                </a>
+                                            </li>
+                                        {/foreach}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <div class="sidebar-footer hidden js-overflowing-gradient">
+                            <ul class="menu">
+                                <li>
+                                    <a class="item" href="#">
+                                        <span class="pharmab2b-icon-main icon">
+                                            <img src="">
+                                        </span>
+                                        <span class="pharmab2b-name">Настройки</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="page">
+                    <div class="cabinet-head head">
+                        <div class="input-wrap small">
+                            <div class="input-box">
+                            <span class="input-prefix">
+                                <svg><use href="#icon-search"></use></svg>
+                            </span>
+                                <input id="search" name="search" type="text" class="input" placeholder="Поиск">
+                            </div>
+                        </div>
+
+                        <div class="actions">
+                            <div class="action-buttons">
+                                <button class="head-button button outline small">
+                                    <svg><use href="#icon-message"></use></svg>
+                                </button>
+
+                                <button class="head-button button outline small">
+                                    <svg><use href="#icon-notify"></use></svg>
+                                </button>
+
+                                <div class="menu">
+                                    <button class="button outline small js-popover">
+                                        <svg><use href="#icon-help"></use></svg>Помощь
+                                    </button>
+
+                                    <div class="help-menu-list popover-menu">
+                                        <div class="input-wrap small">
+                                            <div class="input-box">
+                                                <span class="input-prefix">
+                                                    <svg><use href="#icon-search"></use></svg>
+                                                </span>
+                                                <input id="s" name="s" type="text" class="input" placeholder="Поиск">
+                                            </div>
+                                        </div>
+                                        <div class="articles">
+                                            <span class="headline">Статьи по разделу</span>
+                                            <div class="articles-list">
+                                                <span class="article-item">Создание задачи</span>
+                                                <span class="article-item">Как использовать сообщения, файлы, задачи?</span>
+                                                <span class="article-item">Список задач</span>
+                                                <span class="article-item">Контроль исполнения</span>
+                                            </div>
+                                        </div>
+                                        <div class="divider"></div>
+                                        <div class="items">
+                                            <span class="item">
+                                                <svg><use href="#icon-thunder"></use></svg>С чего начать?
+                                            </span>
+                                            <a class="item">
+                                                <svg><use href="#icon-play"></use></svg>Обучающие видео
+                                            </a>
+                                            <a class="item">
+                                                <svg><use href="#icon-headset"></use></svg>Задать вопрос
+                                            </a>
+                                        </div>
+                                        <button class="button secondary small">Попробовать еще раз</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="menu">
+                                <div class="user-menu js-popover">
+                                    <div class="user-container">
+                                        <div class="user-avatar">
+                                            <svg><use href="#icon-office"></use></svg>
+                                        </div>
+                                        <div class="user-info">
+                                            <span class="name">{$contact.name}</span>
+                                            <span class="des">{$company->getFullName()}</span>
+                                        </div>
+                                    </div>
+                                    <svg class="arrow"><use href="#icon-arrow-down"></use></svg>
+                                </div>
+                                <div class="user-menu-list popover-menu">
+                                    {foreach $header_menu as $menu_value}
+                                        <a class="item" hx-get="{$cabinet_link}{$menu_value.link}">
+                                            <svg><use href="#{$menu_value.icon}"></use></svg>{$menu_value.name}
+                                        </a>
+                                    {/foreach}
+                                    <a class="item" href="/">
+                                        <svg><use href="#icon-link"></use></svg>Перейти на сайт
+                                    </a>
+                                    <div class="divider"></div>
+                                    <div class="item js-change-role">
+                                        {if ($role == $ROLE_BUYER)}
+                                            <svg><use href="#icon-cart"></use></svg>Покупатель
+                                        {else if ($role == $ROLE_SUPPLIER)}
+                                            <svg><use href="#icon-truck"></use></svg>Поставщик
+                                        {/if}
+                                        <svg class="chevron"><use href="#icon-chevron-up-down"></use></svg>
+
+                                        <div class="user-role-submenu popover-menu">
+                                            <div class="user-role-item item {if ($role == $ROLE_BUYER)}active{/if}" data-role="{$ROLE_BUYER}">
+                                                <svg><use href="#icon-cart"></use></svg>Покупатель
+                                            </div>
+                                            <div class="user-role-item item {if ($role == $ROLE_SUPPLIER)}active{/if}" data-role="{$ROLE_SUPPLIER}">
+                                                <svg><use href="#icon-truck"></use></svg>Поставщик
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="divider"></div>
+                                    <a class="item js-logout">
+                                        <svg><use href="#icon-exit"></use></svg>Выйти
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <main class="cabinet-content content blank sidebar-pinned">
+                        <div id="htmx-loader" class="htmx-loader">
+                            <svg><use href="#icon-spin"></use></svg>
+                        </div>
+                        <div class="content blank">
+                            <div class="cabinet-article">
+                                <div class="js-main-content" hx-get="" hx-trigger="refresh" hx-push-url="true">
+                                    {$content}
+                                </div>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            </div>
+        </main>
+
+        <script src="{$wa_theme_url}js/cabinet/cabinet.js"></script>
+        {if ($role === $ROLE_BUYER)}
+            <script src="{$wa_theme_url}js/cabinet/buyer.js"></script>
+        {else if ($role === $ROLE_SUPPLIER)}
+            <script src="{$wa_theme_url}js/cabinet/supplier.js"></script>
+        {/if}
+
+        <script>
+            $(document).ready(function() {
+                $.App.init();
+                $.Cabinet.init();
+            });
+        </script>
+    </body>
+</html>
+
+

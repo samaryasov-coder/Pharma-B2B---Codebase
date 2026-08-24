@@ -1,0 +1,25 @@
+<div id="dialog" data-title="Контактное лицо компании">
+    <form id="form-data-edit" class="form content" action="/cabinet/company-data/save/">
+
+        <div class="input-wrap required">
+            <label class="input-label" for="contact_person">ФИО</label>
+            <div class="input-box">
+                <input id="contact_person" name="contact[name]" type="text" class="input" placeholder="Введите имя и фамилию контактного лица организации" value="{$contact.name|escape}">
+            </div>
+            <span class="input-hint"></span>
+        </div>
+
+        <div class="input-wrap required">
+            <label class="input-label" for="registry_email">E-mail</label>
+            <div class="input-box">
+                <input id="registry_email" name="contact[email]" type="text" class="input" placeholder="Введите свой E-mail" value="{$contact.email[0].value|default:''|escape}">
+            </div>
+            <span class="input-hint"></span>
+        </div>
+
+    </form>
+
+    <div class="form-actions">
+        <button class="button primary large" type="submit" form="form-data-edit">Сохранить</button>
+    </div>
+</div>

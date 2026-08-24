@@ -1,0 +1,12 @@
+cae2314211c8f8ca7819d4aee34520ae *css/uploaded.css
+e434d4f0eba899be07e4c3c52c17dd39 *img/uploaded.png
+a1751e1f10a3b96b05d0401c97e72008 *lib/.htaccess
+18030d8e66c024293d8a8b6e5af6830a *lib/config/build.php
+3ab235f3c7733861794e6367f914988c *lib/config/settings.php
+39b9e9a802490c049fb6d5bcb1cbd512 *lib/config/widget.php
+e9ec97be6c327670b602e84d4ba4cd23 *lib/filesUploaded.widget.php
+a1751e1f10a3b96b05d0401c97e72008 *locale/.htaccess
+91838a4ce9364ed5bb6cf8f8a823c111 *locale/ru_RU/LC_MESSAGES/files_widget_uploaded.mo
+5a844a3deefd692c25f427c41a915636 *locale/ru_RU/LC_MESSAGES/files_widget_uploaded.po
+a1751e1f10a3b96b05d0401c97e72008 *templates/.htaccess
+f00afc843c21436eb8b6472f976d520a *templates/Default.html

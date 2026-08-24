@@ -1,0 +1,13 @@
+07b6f2390bd42579f26b7204dc3b3f46 *img/kpi.png
+a1751e1f10a3b96b05d0401c97e72008 *lib/.htaccess
+fe65ca53c51b072487f74d24e9c98222 *lib/config/build.php
+0e5c33f96d65d6a0f37c4528bcd8ea6f *lib/config/settings.php
+7d105d64eb20e7478f4cf3787e8e0715 *lib/config/widget.php
+4933705a151deb11c5246bc3233016cc *lib/shopKpi.widget.php
+a1751e1f10a3b96b05d0401c97e72008 *locale/.htaccess
+138d7a877704d52bebc081684bb1ef7a *locale/en_US/LC_MESSAGES/shop_widget_kpi.mo
+155ba87568d0adaf165efde323122df3 *locale/en_US/LC_MESSAGES/shop_widget_kpi.po
+4d68b47d5f9448f0d2f98887df5a125b *locale/ru_RU/LC_MESSAGES/shop_widget_kpi.mo
+e4064d6b0f8837e28f9672dff29e300f *locale/ru_RU/LC_MESSAGES/shop_widget_kpi.po
+a1751e1f10a3b96b05d0401c97e72008 *templates/.htaccess
+3f0f5422ab6fcdd89e408df4f10f33b5 *templates/Default.html

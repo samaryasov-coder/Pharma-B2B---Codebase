@@ -1,0 +1,314 @@
+<style>
+    .s-create-product-dialog .dialog-body { overflow: auto; min-width: 700px; display: flex; flex-direction: column; }
+    .s-create-product-dialog .dialog-body .dialog-content { flex: auto; min-height: 575px; height: 0 !important; }
+
+    .s-create-product-dialog .field .dropdown > .dropdown-body { min-width: 280px; max-height: 254px; }
+    .s-create-product-dialog .fields .field:not(:first-child) { margin-top: 1.25rem; }
+    .s-create-product-dialog .field textarea[name="product[name]"] { height: 2.375rem; line-height: 1.75em; }
+    .s-create-product-dialog .field textarea { height: auto; }
+    .s-create-product-dialog .field .s-product-status-section:not([data-id="unpublished"]) [data-status-id="unpublished"] { display: none; }
+    .s-create-product-dialog .field .s-qunatity-section .dropdown > .dropdown-toggle { padding-right: 0; }
+    .s-create-product-dialog .field .s-qunatity-section .dropdown > .dropdown-toggle::after { display: none; }
+
+    .upload .photos-container { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .upload .photos-container .photo-container { position: relative; display: flex; }
+    .upload .photos-container .photo-container .photo-remove-icon { position: absolute; top: .25rem; right: 0; background: var(--semi-black); }
+    .upload .photos-container .photo-container > img { width: 7rem; height: 7rem; object-fit: cover; border: 1px solid var(--border-color-soft); border-radius: .5rem; }
+    @media screen and (max-width: 760px) {
+        .s-create-product-dialog .dialog-body { min-width: auto; }
+    }
+</style>
+
+{function name="_render_type_icon" _icon=""}
+    {if !empty($_icon)}
+    <span class="text-gray custom-mr-2">{$wa->shop->getIcon($_icon, 'box')}</span>
+    {/if}
+{/function}
+
+{$sku = $product.skus['-1']}
+{$_sprite_url = "`$wa_url`wa-apps/shop/img/backend/products/product/icons.svg?v=`$wa->version()`"}
+
+<div class="dialog s-create-product-dialog">
+    <div class="dialog-background"></div>
+    <div class="dialog-body">
+        <a href="javascript:void(0)" class="js-close-dialog dialog-close"><i class="fas fa-times"></i></a>
+        <header class="dialog-header">
+            <h1>[`New product`]</h1>
+        </header>
+        <div class="dialog-content">
+            <form class="s-create-product-form">
+                <div class="fields">
+
+                    <div class="field">
+                        <div class="value">
+                            <div class="drop-area">
+                                <div class="upload">
+                                    <label class="button light-gray">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                        <span>[`Upload photos`]</span>
+                                        <input type="file" multiple autocomplete="off">
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <div class="name">[`Product name`]</div>
+                        <div class="value">
+                            <textarea type="text" class="width-100 bold large hide-scrollbar" name="product[name]" data-error="[`Enter a product name.`]">{$product.name|escape}</textarea>
+                        </div>
+                    </div>
+
+
+                    <div class="field">
+                        <div class="name">[`Price`]</div>
+                        <div class="value">
+                            <div class="flexbox space-8">
+                                <div>
+                                    <input type="text" inputmode="numeric" min="0" name="product[skus][-1][price]" value="{$sku.price}" class="shorter small">
+                                    <div class="hint">[`Regular price`]</div>
+                                </div>
+                                <div>
+                                    <input type="text" inputmode="numeric" min="0" name="product[skus][-1][compare_price]" value="{$sku.compare_price}" class="shorter strike small">
+                                    <div class="hint">[`Compare at price`]</div>
+                                </div>
+                                <div>
+                                    <div class="wa-select small">
+                                        <select name="product[currency]" class="text-ellipsis width-100">
+                                            {foreach $currencies as $currency}
+                                            <option value="{$currency.code}"{if $product.price === $currency.code} selected{/if} title="{$currency.title|default:$currency.sign|escape}">{strip}
+                                                {$currency.sign_html|default:$currency.sign}
+                                            {/strip}</option>
+                                            {/foreach}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <div class="name">[`In stock`]</div>
+                        <div class="value">
+                            <div class="s-qunatity-section">
+                                <div class="dropdown">
+                                    <div class="dropdown-toggle state-with-inner-icon left">
+                                        <i class="js-quantity-icon icon size-16 text-green"><svg><use xlink:href='{$_sprite_url}#warehouse'></use></svg></i>
+                                        <input type="text" placeholder="∞" class="js-quantity-input small shorter" value="" readonly{if empty($stocks)} disabled{/if}>
+                                    </div>
+
+                                    <div class="dropdown-body">
+                                        {foreach $stocks as $stock}
+                                            <div class="dropdown-item">
+                                                <div class="flexbox middle space-8">
+                                                    <div class="flexbox middle space-8">
+                                                        <i class="icon size-16 text-green"><svg><use xlink:href='{$_sprite_url}#warehouse'></use></svg></i>
+
+                                                        <input class="is-number small shortest{if $stock.is_virtual} opacity-50{/if}"
+                                                            type="text"
+                                                            placeholder="∞"
+                                                            name="product[skus][-1][stock][{$stock.id}]"
+                                                            data-stock-id="{$stock.id}"
+                                                            {if $stock.is_virtual} readonly{/if} value="">
+                                                    </div>
+
+                                                    <span class="cursor-default{if $stock.is_virtual} opacity-50{/if}">{$stock.name}</span>
+                                                </div>
+                                            </div>
+                                        {/foreach}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <div class="name">[`Visibility`]</div>
+                        <div class="value">
+                            {$_statuses = [
+                                "1" => [
+                                    "id" => "1",
+                                    "ident" => "published",
+                                    "icon" => "fas fa-check text-green",
+                                    "name" => _w("Published, for sale")
+                                ],
+                                "0" => [
+                                    "id" => "0",
+                                    "ident" => "unpublished",
+                                    "icon" => "fas fa-times text-yellow",
+                                    "name" => _w("Hidden, not for sale")
+                                ]
+                            ]}
+
+                            {$_active_status = $_statuses[$product.status]}
+                            <div class="s-product-status-section js-product-status-section" data-id="{$_active_status.ident|escape}">
+                                <div class="dropdown" id="js-product-status-select">
+                                    <button class="dropdown-toggle button light-gray small" type="button">
+                                        {if !empty($_active_status.icon)}
+                                            <i class="{$_active_status.icon|escape}"></i>
+                                        {/if}
+                                        {$_active_status.name|escape}
+                                    </button>
+                                    <div class="dropdown-body" style="min-width: 280px;">
+                                        {foreach $_statuses as $_status}
+                                            <div class="dropdown-item {if $_status@first}selected{/if}" data-id="{$_status.id|escape}" data-ident="{$_status.ident|escape}">
+                                                {if !empty($_status.icon)}
+                                                    <span class="icon baseline shift-2"><i class="{$_status.icon|escape}"></i></span>
+                                                {/if}
+                                                {$_status.name|escape}
+                                            </div>
+                                        {/foreach}
+                                    </div>
+                                    <input name="product[status]" type="hidden" value="{$_active_status.id}">
+                                </div>
+
+                                <div class="s-status-hint hint" data-status-id="unpublished">
+                                    [`The product is not shown among other products in the storefront, is not available for purchase, and can be viewed at its direct URL only.`]
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <div class="name">
+                            [`Category`]
+                            <span class="wa-tooltip right" data-title="{_w("Each product type; e.g., “TVs”, “Phones”, or “Clocks”, can have its own set of features. You can decide which product types to make visible in a storefront. Separate access rights to product types can be set up for store backend users and user groups.")|escape}">
+                                <i class="fas fa-question-circle s-icon gray"></i>
+                            </span>
+                        </div>
+                        <div class="value">
+                            <div class="js-category-section flexbox space-8">
+                                <div class="dropdown" id="js-product-main-category-select">
+                                    <button class="dropdown-toggle button light-gray small" data-title="[`Please select a category`]" type="button">[`Please select a category`]</button>
+                                    <div class="dropdown-body">
+                                        <div class="dropdown-filter js-dropdown-filter custom-p-4">
+                                            <div class="left state-with-inner-icon width-100">
+                                                <input class="s-field js-field width-100" type="text" value="">
+                                                <span class="icon"><div class="s-action js-apply"><i class="fas fa-search"></i></div></span>
+                                            </div>
+                                        </div>
+                                        {function name="_render_categories_options" _categories=[] isGroup=true }
+                                            {foreach $_categories as $_category}
+                                                {$_is_active = (!empty($product.category_id) && $product.category_id === $_category.id)}
+                                                <div class="{if $isGroup}dropdown-group{else}custom-pl-32{/if} dropdown-item {if !empty($_is_active)}selected{/if}" data-id="{$_category.id|escape}">
+                                                    <div class="dropdown-item-name">{$_category.name|escape}</div>
+                                                </div>
+
+                                                {if !empty($_category.categories)}
+                                                    {_render_categories_options isGroup=false _categories=$_category.categories}
+                                                {/if}
+                                            {/foreach}
+                                        {/function}
+                                        {_render_categories_options _categories=$categories_tree}
+                                    </div>
+                                    <input type="hidden" name="product[category_id]" value="">
+                                </div>
+                                <button
+                                    class="js-main-category-remove button nobutton circle light-gray smallest"
+                                    type="button"
+                                    style="display: none;"
+                                    title="[`Remove product from this category`]"
+                                >
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <div class="name">
+                            [`Product type`]
+                            <span class="wa-tooltip right" data-title="{_w("Each product type; e.g., “TVs”, “Phones”, or “Clocks”, can have its own set of features. You can decide which product types to make visible in a storefront. Separate access rights to product types can be set up for store backend users and user groups.")|escape}">
+                                <i class="fas fa-question-circle s-icon gray"></i>
+                            </span>
+                        </div>
+                        <div class="value">
+                            <div class="js-product-type-section flexbox space-8">
+
+                                <div class="dropdown" id="js-product-type-select">
+                                    <button class="dropdown-toggle button light-gray small" type="button">
+                                        {if !empty($active_product_type.icon)}{_render_type_icon _icon=$active_product_type.icon}{/if}
+                                        {$active_product_type.name|default:""|escape}
+                                    </button>
+                                    <div class="dropdown-body">
+                                        <div class="dropdown-filter js-dropdown-filter custom-p-4">
+                                            <div class="left state-with-inner-icon width-100">
+                                                <input class="s-field js-field" type="text" value="">
+                                                <span class="icon"><div class="s-action js-apply"><i class="fas fa-search"></i></div></span>
+                                            </div>
+                                        </div>
+
+                                        {foreach $product_types as $_type}
+                                            <div class="dropdown-item{if $_type.id === ifset($active_product_type, 'id', '')} selected{/if}" data-id="{$_type.id|escape}">
+                                                {if !empty($_type.icon)}{_render_type_icon _icon=$_type.icon}{/if}
+                                                {$_type.name|default:""|escape}
+                                            </div>
+                                        {/foreach}
+                                    </div>
+                                    <input name="product[type_id]" type="hidden" value="{$active_product_type.id|default:''|escape}">
+                                </div>
+
+                                <div>
+                                    <a class="button nobutton gray small nowrap js-disable-router js-setup-type-link"
+                                        data-href="{$wa_app_url|escape}?action=settings#/typefeat/%type_id%/"
+                                        href="{$wa_app_url|escape}?action=settings#/typefeat/{$active_product_type.id|escape}/"
+                                        target="_blank">
+                                        <span class="s-name">[`Customize`]</span>
+                                        <span class="s-icon icon custom-ml-4 size-12"><i class="fas fa-external-link-alt"></i></span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <div class="name">[`Summary`]</div>
+                        <div class="value">
+                            <textarea name="product[summary]" value="{$product.summary}" class="width-100 small"></textarea>
+                            <p class="hint">[`Save the product to edit its full-text description and features.`]</p>
+                        </div>
+                    </div>
+                </div>
+
+                <input type="hidden" name="product[id]" value="{$product.id}">
+                <input type="hidden" name="product[order_multiplicity_factor]" value="{$product.order_multiplicity_factor}">
+                <input type="hidden" name="product[stock_unit_id]" value="{$product.stock_unit_id}">
+                <input type="hidden" name="product[base_unit_id]" value="{$product.base_unit_id}">
+                <input type="hidden" name="product[stock_base_ratio]" value="{$product.stock_base_ratio}">
+                <input type="hidden" name="product[order_count_min]" value="{$product.order_count_min}">
+                <input type="hidden" name="product[order_count_step]" value="{$product.order_count_step}">
+                <input type="hidden" name="product[skus][-1][purchase_price]" value="{$sku.purchase_price}">
+            </form>
+        </div>
+        <footer class="dialog-footer">
+            <div class="flexbox space-4">
+                <div class="wide">
+                    <button type="submit" class="js-submit button"><span>[`Add product`]</span></button>
+                </div>
+                <a href="{$wa_app_url}products/new/general/" class="js-skip-dialog button light-gray">[`Full-screen mode`] ›</a>
+            </div>
+            <div class="js-error-message state-error-hint break-word custom-mt-6"></div>
+        </footer>
+    </div>
+</div>
+<script src="{$wa_app_static_url}js/backend/products/main/dialogs/create_product.dialog.js?v={$wa->version()}"></script>
+<script>
+(function($) {
+    $.wa_shop_products.init.initCreateProductDialog({
+        $wrapper: $('.s-create-product-dialog'),
+        wa_app_url: {$wa_app_url|json_encode},
+        stocks: {$stocks|json_encode},
+        skip_dialog_storage_key: 'shop/products/skip_create_dialog',
+        urls: {
+            create_product: "?module=prod&action=saveGeneral",
+            upload_image: "?module=prod&action=imageUpload",
+            edit_product: "products/%id%/general/",
+        },
+        templates: {
+            error: '<div class="state-error-hint">%content%</div>',
+            loading: '<span class="js-loading custom-pl-4"><i class="fas fa-spinner fa-spin"></i></span>'
+        }
+    });
+})(jQuery);
+</script>

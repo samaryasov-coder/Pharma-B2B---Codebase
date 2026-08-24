@@ -1,0 +1,188 @@
+{if !empty($object.id)}
+    <span class="hint">id: {$object.id|escape}</span>
+{/if}
+
+<h1 class="mt0">
+    {if empty($object.id)}
+        Новый тендер
+    {else}
+        Тендер {$object.number|default:''|escape} — {$object.title|default:''|escape}
+    {/if}
+</h1>
+
+<form class="js-form form fields" action="?module=tender&amp;action=save">
+    {if !empty($object.id)}
+        <input type="hidden" name="id" value="{$object.id|escape}">
+    {/if}
+
+    <div class="field">
+        <div class="name">Номер</div>
+        <div class="value">
+            <input type="text" name="data[number]" value="{$object.number|default:''|escape}" class="w100">
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="name">Наименование</div>
+        <div class="value">
+            <input type="text" name="data[title]" value="{$object.title|default:''|escape}" class="w100">
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="name">Тип</div>
+        <div class="value">
+            <div class="wa-select w100">
+                <select name="data[type]" class="w100">
+                    <option value="">—</option>
+                    {foreach $tender_types as $tender_type}
+                        <option value="{$tender_type.id|escape}" {if isset($object.type) && $object.type == $tender_type.id}selected{/if}>
+                            {$tender_type.name|escape}
+                        </option>
+                    {/foreach}
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="name">Статус</div>
+        <div class="value">
+            <div class="wa-select w100">
+                <select name="data[status]" class="w100">
+                    {foreach $tender_statuses as $tender_status}
+                        <option value="{$tender_status.id|escape}" {if ((!empty($tender_status.code) && $tender_status.code == 'draft' && empty($object.id)) || (isset($object.status) && $object.status == $tender_status.id))}selected{/if}>
+                            {$tender_status.name|escape}
+                        </option>
+                    {/foreach}
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="name">ID компании организатора</div>
+        <div class="value">
+            <input type="text" name="data[organizer_company_id]" value="{$object.organizer_company_id|default:''|escape}" class="w100">
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="name">ID ответственного контакта</div>
+        <div class="value">
+            <input type="text" name="data[responsible_contact_id]" value="{$object.responsible_contact_id|default:''|escape}" class="w100">
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="name">Форма участия</div>
+        <div class="value">
+            <div class="wa-select w100">
+                <select name="data[submission_form]" class="w100">
+                    <option value="">—</option>
+                    {foreach $tender_submission_forms as $sf}
+                        <option value="{$sf.id|escape}" {if isset($object.submission_form) && $object.submission_form == $sf.id}selected{/if}>
+                            {$sf.name|escape}
+                        </option>
+                    {/foreach}
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="name">Флаги</div>
+        <div class="value">
+            <div class="mt5">
+                <span class="switch js-wa-switch">
+                    <input type="checkbox" id="demo-proc-priv" name="data[is_private]" value="1" {if !empty($object.is_private)}checked{/if}>
+                </span>
+                <label for="demo-proc-priv">Закрытая</label>
+            </div>
+            <div class="mt10">
+                <span class="switch js-wa-switch">
+                    <input type="checkbox" id="demo-proc-ret" name="data[retendering_enabled]" value="1" {if !empty($object.retendering_enabled)}checked{/if}>
+                </span>
+                <label for="demo-proc-ret">Переторжка</label>
+            </div>
+            <div class="mt10">
+                <span class="switch js-wa-switch">
+                    <input type="checkbox" id="demo-proc-item" name="data[itemized_enabled]" value="1" {if !empty($object.itemized_enabled)}checked{/if}>
+                </span>
+                <label for="demo-proc-item">Попозиционная</label>
+            </div>
+            <div class="mt10">
+                <span class="switch js-wa-switch">
+                    <input type="checkbox" id="demo-proc-app" name="data[approval_required]" value="1" {if !empty($object.approval_required)}checked{/if}>
+                </span>
+                <label for="demo-proc-app">Требуется согласование</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="name">Валюта</div>
+        <div class="value">
+            <input type="text" name="data[currency]" value="{$object.currency|default:'RUB'|escape}" maxlength="3" class="w100">
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="name">Бюджет</div>
+        <div class="value">
+            <input type="text" name="data[budget]" value="{$object.budget|default:''|escape}" class="w100">
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="name">Начало</div>
+        <div class="value">
+            <input type="datetime-local" name="data[start_at]" value="{$tender_dt_local.start_at|default:''|escape}" class="w100" autocomplete="off" step="1">
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="name">Окончание</div>
+        <div class="value">
+            <input type="datetime-local" name="data[end_at]" value="{$tender_dt_local.end_at|default:''|escape}" class="w100" autocomplete="off" step="1">
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="name">Вскрытие</div>
+        <div class="value">
+            <input type="datetime-local" name="data[opening_at]" value="{$tender_dt_local.opening_at|default:''|escape}" class="w100" autocomplete="off" step="1">
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="name">Условия оплаты</div>
+        <div class="value">
+            <textarea name="data[payment_terms]" class="w100" rows="3">{$object.payment_terms|default:''|escape}</textarea>
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="name">Условия поставки</div>
+        <div class="value">
+            <textarea name="data[delivery_terms]" class="w100" rows="3">{$object.delivery_terms|default:''|escape}</textarea>
+        </div>
+    </div>
+
+    <section class="bottombar pb2b-bottombar">
+        <div class="article width-100">
+            <div class="article-body custom-py-8 flexbox">
+                <input type="submit" class="button" value="Сохранить">
+                <span class="js-form-message form-message red" style="display: none;">
+                    <span class="js-form-message-icons">
+                        <i class="fas fa-check-circle" style="display:none;"></i>
+                    </span>
+                    <span class="js-form-message-text"></span>
+                </span>
+                {if !empty($object.id)}
+                    <a href="#/tender/" class="button light-gray nowrap">К списку</a>
+                {/if}
+            </div>
+        </div>
+    </section>
+</form>

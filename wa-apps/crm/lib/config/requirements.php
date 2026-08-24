@@ -1,0 +1,16 @@
+<?php
+
+return array(
+    'app.installer' => array(
+        'version' => '>=4.1.0',
+        'strict' => true,
+    ),
+    'app.team' => array(
+        'version' => '>=2.2.2',
+        'strict' => true,
+    ),
+    'php' => array(
+        'version' => '>=8.2.0',
+        'strict'  => true,
+    ),
+);

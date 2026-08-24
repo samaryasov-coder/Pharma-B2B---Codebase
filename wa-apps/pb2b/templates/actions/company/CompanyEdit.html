@@ -1,0 +1,53 @@
+{if !empty($object.id)}      
+    <span class="hint">id: {$object.id|escape}</span>
+{/if}
+
+<h1 class="mt0">
+    {if empty($object.id)}
+        Новая компания 
+    {else}
+        
+        Компания {$object.name|escape}
+
+        {if $object.status|default:0}
+            <span class="badge small user green">Активная</span>
+        {else}
+            <span class="badge small user">Не активная</span>
+        {/if}
+
+    {/if} 
+</h1>
+
+{if !empty($object.id)}
+    {assign var=default_tab value=$includes.options.default_tab|default:'common'}
+    <div class="js-tabs" data-default-tab="{$default_tab|escape}" data-param="tab">
+        
+        <ul class="tabs js-tabs-controls">
+            {foreach $includes.tabs.items as $key => $tab}
+                <li data-tab="{$key|escape}" class="{if $key==$default_tab}selected{/if}">
+                    <a href="#"><span>{$tab.name|escape}</span></a>
+                </li>
+            {/foreach}
+        </ul>
+
+        <div class="js-tabs-panels mt10">
+            {foreach $includes.tabs.items as $key => $tab}
+                <div data-tab="{$key|escape}" {if $key!=$default_tab}style="display:none"{/if}>
+                    {if $key == 'common'}
+                        {include file="./tabs/`$key`.html" inline}
+                    {elseif $key == 'category'}
+                        {include file="./tabs/`$key`.html" inline}
+                    {elseif $key == 'accreditation'}
+                        {include file="./tabs/`$key`.html" inline}
+                    {elseif $key == 'tenders'}
+                        {include file="./tabs/`$key`.html" inline}
+                    {else}
+                        {$key|escape}
+                    {/if}
+                </div>
+            {/foreach}
+        </div>
+    </div>
+{else}
+    {include file="./tabs/common.html" inline}
+{/if}

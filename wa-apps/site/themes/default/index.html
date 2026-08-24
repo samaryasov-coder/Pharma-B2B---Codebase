@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+{strip}
+
+{$html_class_array = []}
+
+{if $wa->globals('isMyAccount')}{$html_class_array[] = 'my'}{/if}
+
+{if $wa->shop}
+    {$_cart_url = $wa->getUrl('shop/frontend/order')}
+{/if}
+
+{$_is_order_page = $wa->globals("isOrderPage")}
+{if !empty($_is_order_page)}
+    {$html_class_array[] = "is-order-page"}
+{/if}
+
+{/strip}
+<html{if !empty($html_class_array)} class="{join(' ', $html_class_array)}"{/if} lang="{if $wa->locale() == 'ru_RU'}ru{else}en{/if}">
+
+{$_head_prefix = $wa->globals("headPrefix")}
+
+<head {if !empty($_head_prefix)}prefix="{$_head_prefix}"{/if}>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1{if $wa->isMobile()}, maximum-scale=1, user-scalable=0{/if}">
+
+    <title>{$wa->title()}</title>
+    <meta name="keywords" content="{$wa->meta('keywords')|escape}">
+    <meta name="description" content="{$wa->meta('description')|escape}">
+
+    {if !empty($canonical)}
+        <link rel="canonical" href="{$canonical}">
+    {/if}
+    {if $wa->blog}
+        <!-- rss -->
+        {$rss=$wa->blog->rssUrl()}
+        {if $rss}<link rel="alternate" type="application/rss+xml" title="{$wa->accountName()}" href="{$rss}">{/if}
+    {/if}
+
+    <!-- css -->
+    {if !empty($is_blockpage)}
+    <link href="{$wa_app_static_url}css/site.min.css?v={$wa->version()}" rel="stylesheet">
+    {/if}
+    <link href="{$wa_theme_url}default.css?v{$wa_theme_version}" rel="stylesheet" type="text/css">
+    {$wa->css()} {* links active plugins CSS *}
+    {if empty($theme_settings.font_family)}{$theme_settings.font_family = 'System'}{/if}
+    {$_real_font_name = ''}
+    {if $theme_settings.font_family == 'Rubik'}{$_real_font_name = 'Rubik:ital,wght@0,300..900;1,300..900&display=swap'}{/if}
+    {if $theme_settings.font_family == 'Mulish'}{$_real_font_name = 'Mulish:ital,wght@0,200..1000;1,200..1000&display=swap'}{/if}
+    {if $theme_settings.font_family == 'Source Sans 3'}{$_real_font_name = 'Source+Sans+3:ital,wght@0,200..900;1,200..900&display=swap'}{/if}
+    {if $theme_settings.font_family == 'Spectral'}{$_real_font_name = 'Spectral:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap'}{/if}
+    {if $theme_settings.font_family == 'Source Serif 4'}{$_real_font_name = 'Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&display=swap'}{/if}
+    {if $theme_settings.font_family == 'Nunito'}{$_real_font_name = 'Nunito:ital,wght@0,200..1000;1,200..1000&display=swap'}{/if}
+    {if $_real_font_name}
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family={$_real_font_name}" rel="stylesheet">
+    {/if}
+
+    <!-- js -->
+    <script src="{$wa_static_url}wa-content/js/jquery/jquery-1.11.1.min.js?v={$wa->version(true)}"></script>
+    <script src="{$wa_static_url}wa-content/js/jquery/jquery-migrate-1.2.1.min.js?v={$wa->version(true)}"></script>
+    <script src="{$wa_theme_url}js/waTheme.js?v={$wa_theme_version}"></script>
+    <script src="{$wa_theme_url}default.js?v{$wa_theme_version}"></script>
+
+    {$wa->js()} {* links active plugins JS *}
+
+    {include file="`$wa_active_theme_path`/head.html" inline}
+
+    {$wa->head()} {* links Google Analytics tracking code, site's custom JS (defined in Site app settings), and meta data such as Open Graph data *}
+
+    <!-- custom colors -->
+    <style>
+        :root {
+            {if $theme_settings.color_scheme == 'light'}
+                color-scheme: light;
+                --chevron-svg: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M18 9L12 15L6 9' stroke='%23000000' stroke-opacity='0.5' stroke-width='1.875' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+                --check-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none'%3E%3Cpath d='M5.81 11.333c-.276.44-.682.667-1.154.667-.486 0-.866-.2-1.22-.654L.341 7.488C.118 7.208 0 6.914 0 6.594c0-.654.498-1.188 1.141-1.188.393 0 .708.147 1.023.56l2.44 3.164L9.783.667c.275-.44.63-.667 1.023-.667C11.423 0 12 .44 12 1.108c0 .294-.157.614-.328.894l-5.862 9.33Z' fill='%23000000'/%3E%3C/svg%3E");
+                {if $theme_settings.color_accent == '#000000'}
+                    --accent-color: #000000;
+                {/if}
+                {if $theme_settings.color_accent == '#666666'}
+                    --accent-color: #666666;
+                {/if}
+            {/if}
+            {if $theme_settings.color_scheme == 'dark'}
+                color-scheme: dark;
+                --chevron-svg: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M18 9L12 15L6 9' stroke='%23ffffff' stroke-opacity='0.5' stroke-width='1.875' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+                --check-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none'%3E%3Cpath d='M5.81 11.333c-.276.44-.682.667-1.154.667-.486 0-.866-.2-1.22-.654L.341 7.488C.118 7.208 0 6.914 0 6.594c0-.654.498-1.188 1.141-1.188.393 0 .708.147 1.023.56l2.44 3.164L9.783.667c.275-.44.63-.667 1.023-.667C11.423 0 12 .44 12 1.108c0 .294-.157.614-.328.894l-5.862 9.33Z' fill='%23ffffff'/%3E%3C/svg%3E");
+                {if $theme_settings.color_accent == '#000000'}
+                    --accent-color: #888888;
+                {/if}
+                {if $theme_settings.color_accent == '#666666'}
+                    --accent-color: #555555;
+                {/if}
+            {/if}
+            {if $theme_settings.color_scheme == 'auto'}
+                @media (prefers-color-scheme: light) {
+                    --chevron-svg: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M18 9L12 15L6 9' stroke='%23000000' stroke-opacity='0.5' stroke-width='1.875' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+                    --check-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none'%3E%3Cpath d='M5.81 11.333c-.276.44-.682.667-1.154.667-.486 0-.866-.2-1.22-.654L.341 7.488C.118 7.208 0 6.914 0 6.594c0-.654.498-1.188 1.141-1.188.393 0 .708.147 1.023.56l2.44 3.164L9.783.667c.275-.44.63-.667 1.023-.667C11.423 0 12 .44 12 1.108c0 .294-.157.614-.328.894l-5.862 9.33Z' fill='%23000000'/%3E%3C/svg%3E");
+                    {if $theme_settings.color_accent == '#000000'}
+                        --accent-color: #000000;
+                    {/if}
+                    {if $theme_settings.color_accent == '#666666'}
+                        --accent-color: #666666;
+                    {/if}
+                }
+                @media (prefers-color-scheme: dark) {
+                    --chevron-svg: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M18 9L12 15L6 9' stroke='%23ffffff' stroke-opacity='0.5' stroke-width='1.875' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+                    --check-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none'%3E%3Cpath d='M5.81 11.333c-.276.44-.682.667-1.154.667-.486 0-.866-.2-1.22-.654L.341 7.488C.118 7.208 0 6.914 0 6.594c0-.654.498-1.188 1.141-1.188.393 0 .708.147 1.023.56l2.44 3.164L9.783.667c.275-.44.63-.667 1.023-.667C11.423 0 12 .44 12 1.108c0 .294-.157.614-.328.894l-5.862 9.33Z' fill='%23ffffff'/%3E%3C/svg%3E");
+                    {if $theme_settings.color_accent == '#000000'}
+                        --accent-color: #888888;
+                    {/if}
+                    {if $theme_settings.color_accent == '#666666'}
+                        --accent-color: #555555;
+                    {/if}
+                }
+            {/if}
+
+            {if $theme_settings.color_accent != '#000000' && $theme_settings.color_accent != '#666666'}
+                --accent-color: {$theme_settings.color_accent};
+            {/if}
+            --bg-color-light: {$theme_settings.color_background_light};
+            --bg-color-dark: {$theme_settings.color_background_dark};
+            {if $theme_settings.border_radius}
+                --element-border-radius: {$theme_settings.border_radius};
+            {/if}
+            {if $theme_settings.font_family}
+                {if $theme_settings.font_family == 'System'}
+                    --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+                {else}
+                    --font-family: "{$theme_settings.font_family}",{if $theme_settings.font_family == 'Source Serif 4' || $theme_settings.font_family == 'Spectral'} serif{else} sans-serif{/if};
+                {/if}
+            {/if}
+            {if $theme_settings.font_size}
+                --font-size: {$theme_settings.font_size};
+            {/if}
+        }
+        @supports not (color: light-dark(white, black)) {
+            :root {
+                --accent-color: {$theme_settings.color_accent};
+            }
+        }
+        {if !empty($is_blockpage)}
+            .maincontent > .container { margin: 0; max-width: unset; }
+        {/if}
+        .appfooter .webasyst-magic-wand { z-index: unset; }
+        {if trim($theme_settings.style_custom)}{$theme_settings.style_custom}{/if}
+    </style>
+
+</head>
+
+<body>
+    <!-- HEADER -->
+     {include file="header.section.html" inline}
+
+    <!-- APP CONTENT -->
+    <main class="maincontent">
+        <div class="container">
+            {include file="`$wa_active_theme_path`/main.html" inline}
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    {include file="footer.section.html" inline}
+
+    <script>
+        jQuery.browser = { };
+        (function () {
+            jQuery.browser.msie = false;
+            jQuery.browser.version = 0;
+            if (navigator.userAgent.match(/MSIE ([0-9]+)\./)) {
+                jQuery.browser.msie = true;
+                jQuery.browser.version = RegExp.$1;
+            }
+        })();
+    </script>
+
+    {if $theme_settings.cookie_show && !waRequest::cookie('cookie_allowed')}
+        <div id="cookie-agreement">
+            <div class="cookie-agreement-content wa-pl-12 wa-pr-12 wa-pt-12 wa-pb-12">
+                <div class="text-gray smaller">
+                    {$theme_settings.cookie_text|default:''}
+                </div>
+                <button class="button blink smallest wa-mt-12" onclick="acceptCookies()">{$theme_settings.cookie_button|default:''}</button>
+            </div>
+        </div>
+        <script>
+            {literal}
+            function setCookie(name, value, days = 365) {
+                const expires = new Date();
+                expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+                document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
+            }
+
+            function adjustThemeEditorTriggerPosition() {
+                const trigger = document.querySelector('.theme-editor-trigger-wrapper');
+                if (!trigger) {
+                    return;
+                }
+
+                const cookie = document.getElementById('cookie-agreement');
+                if (cookie) {
+                    if (!trigger.dataset.baseBottom) {
+                        trigger.dataset.baseBottom = getComputedStyle(trigger).bottom;
+                    }
+                    const base = parseFloat(trigger.dataset.baseBottom) || 0;
+                    const gap = 12;
+                    const bottom = base + cookie.getBoundingClientRect().height + gap;
+                    trigger.style.bottom = `${bottom}px`;
+                } else if (trigger.dataset.baseBottom) {
+                    trigger.style.bottom = trigger.dataset.baseBottom;
+                    delete trigger.dataset.baseBottom;
+                } else {
+                    trigger.style.bottom = '';
+                }
+            }
+
+            function acceptCookies() {
+                setCookie('cookie_allowed', '1');
+                const popup = document.getElementById('cookie-agreement');
+                popup.style.transition = 'all 0.3s ease';
+                popup.style.opacity = '0';
+                popup.style.transform = 'translateY(1rem)';
+
+                setTimeout(() => {
+                    popup.remove();
+                    adjustThemeEditorTriggerPosition();
+                }, 300);
+            }
+            {/literal}
+        </script>
+    {/if}
+
+    {if $wa->user()->isAdmin()}
+        <script src="{$wa_theme_url}js/theme-settings.js?v{$wa_theme_version}"></script>
+        {include file="theme-settings.html" inline}
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                new ThemeEditor({
+                    saveUrl: '{$wa_backend_url}{$wa_app}/?module=design&theme=default&action=themeSettings',
+                    csrfToken: "{waRequest::cookie('_csrf', '')}",
+                    settingsArrayName: "{if $wa->param('app') == 'site'}settings{else}parent_settings{/if}",
+                    {if $theme_settings.border_radius}borderRadius: '{$theme_settings.border_radius|replace:'px':''}',{/if}
+                    colorScheme: '{$theme_settings.color_scheme}',
+                    accentColor: '{$theme_settings.color_accent}',
+                    bgColorLight: '{$theme_settings.color_background_light}',
+                    bgColorDark: '{$theme_settings.color_background_dark}',
+                    {if $theme_settings.font_family}fontFamily: '{$theme_settings.font_family}',{/if}
+                    {if $theme_settings.font_size}fontSize: '{$theme_settings.font_size}',{/if}
+                    locale: {
+                        'save_settings_error': '{_wd('site', 'Settings saving error')|escape}',
+                        'save_success': '{_wd('site', 'Settings saved')|escape}',
+                        'reset_confirm': '{_wd('site', 'Rollback to the latest saved settings?')|escape}',
+                        'reset_success': '{_wd('site', 'Settings have been reset')|escape}',
+                        'maximize_title': '{_wd('site', 'Show settings dialog')|escape}',
+                        'restore_title': '{_wd('site', 'Set up design')|escape}'
+                    }
+                });
+
+                if (typeof window.adjustThemeEditorTriggerPosition === 'function') {
+                    window.adjustThemeEditorTriggerPosition();
+                    window.addEventListener('resize', window.adjustThemeEditorTriggerPosition);
+                }
+            });
+        </script>
+    {/if}
+</body>
+</html>

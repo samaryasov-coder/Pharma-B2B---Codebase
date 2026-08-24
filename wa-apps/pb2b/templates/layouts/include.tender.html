@@ -1,0 +1,14 @@
+<div class="pb2b-sidebar-block mt0 pt0 pb0">
+    <a href="#/tender/edit/" class="button w100"><i class="fas fa-plus"></i> Добавить тендер</a>
+</div>
+<div class="pb2b-sidebar-block mt5 pt0 pb0">
+    <a href="#/tender/" class="button w100"><i class="fas fa-list"></i> Все тендеры</a>
+</div>
+
+{if !empty($sidebar_filters.tender)}
+    <div class="pb2b-sidebar-block mt15 pt0 pb0">
+        <form class="js-sidebar-filters-form" data-namespace="tender">
+            {include file="../includes/include.sidebarFilters.html" filters=$sidebar_filters.tender namespace="tender"}
+        </form>
+    </div>
+{/if}

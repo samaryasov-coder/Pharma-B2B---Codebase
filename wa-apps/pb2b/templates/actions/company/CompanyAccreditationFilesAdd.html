@@ -1,0 +1,56 @@
+<div class="dialog pb2b-dialog js-company-category-dialog" data-company-id="{$object.id|escape}">
+    <div class="dialog-background"></div>
+    <div class="dialog-body">
+        <a href="#" class="dialog-close js-close-dialog"><i class="fas fa-times"></i></a>
+        <div class="dialog-block">
+            <form class="js-form form fields pb2b-company-accreditation-form" action="?module=company&action=docflowTemplateAdd">
+                <header class="dialog-header">
+                    <h1>Добавление документа</h1>
+                </header>
+                <div class="dialog-content">
+                    <input type="hidden" name="company_id" value="{$object.id|escape|default:0}">
+                    <input type="hidden" name="template_item[process_type]" value="1">
+
+                    <div class="field">
+                        <div class="name">Для кого документ</div>
+                        <div class="value">
+                            <select name="template_item[company_type_id]">
+                                <option value="">Все типы компаний</option>
+                                <option value="1">Организация</option>
+                                <option value="2">Предприниматель</option>
+                            </select>
+                            <div class="hint">Совпадает со справочником типа компании в карточке поставщика</div>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <div class="name">Название документа</div>
+                        <div class="value">
+                            <input type="text" name="template_item[name]">
+                        </div>
+                    </div>
+                    
+                    <div class="field">
+                        <div class="name">Документ</div>
+                        <div id="pb2b_company_accreditation_fileupload">
+                            <div class="upload">
+                                <label class="link">
+                                    <i class="fas fa-file-upload"></i>
+                                    <span>Выберите файл</span>
+                                    <input name="file" type="file" autocomplete="off">
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <footer class="dialog-footer">
+                    <!-- <button type="button" class="button green js-company-category-save">Добавить</button> -->
+                    <input type="submit" class="button green" value="Сохранить">
+                    <button type="button" class="js-close-dialog button light-gray">Закрыть</button>
+                </footer>
+            </form>
+        </div>
+            
+        </div>
+    </div>
+</div>

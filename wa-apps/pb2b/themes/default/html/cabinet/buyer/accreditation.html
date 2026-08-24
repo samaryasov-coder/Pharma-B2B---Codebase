@@ -1,0 +1,131 @@
+<div class="cabinet-container js-cabinet-page" data-page="accreditation">
+    <div class="title">Одобрение поставщиков</div>
+    <div class="grid gap24">
+        <ul class="tabs large js-tab-menu">
+            <li data-tab="templates" class="tab-btn">
+                <a href="#templates">Мои условия</a>
+            </li>
+            <li data-tab="requests" class="tab-btn">
+                <a href="#requests">Запросы</a>
+            </li>
+            <li data-tab="suppliers" class="tab-btn">
+                <a href="#suppliers">Одобренные поставщики</a>
+            </li>
+        </ul>
+
+        <div class="tabs-content">
+            <div class="tab-content" data-tab="templates">
+                <div class="flexbox gap16 align-items-start">
+                        <div class="grid gap12 wa-flex-fill">
+                            <div class="flexbox justify-content-between">
+                                <div class="toggle medium" id="templateToggle">
+                                    {foreach pb2bCompanyType::cases() as $type}
+                                        <span data-type="{$type->value}">{$type->name()}</span>
+                                    {/foreach}
+                                </div>
+                                <button class="button secondary upload-template">
+                                    <svg><use href="#icon-plus"></use></svg>Добавить документ
+                                </button>
+                            </div>
+                            <table id="templateTable">
+                                <thead>
+                                <tr>
+                                    <th>Наименование документа</th>
+                                    <th>Шаблон документа</th>
+                                    <th>Комментарий</th>
+                                    <th></th>
+                                </tr>
+                                </thead>
+                            </table>
+                        </div>
+                        <div class="right-panels">
+                            <div class="section-item">
+                                <div class="section-item-content">
+                                    <div class="item-block">
+                                        <span class="title text-l1">Хотите проверить документы поставщика?</span>
+                                        <span class="des text-p3 gray-500">Отправьте запрос поставщикам на предоставление документов для прохождения одобрения.</span>
+                                    </div>
+                                    <button class="button primary create-request">Запросить документы</button>
+                                </div>
+                            </div>
+                            <div class="section-item">
+                                <div class="section-item-head">
+                                    <div class="item-block">
+                                        <span class="title">Параметры одобрения</span>
+                                    </div>
+                                    <span class="button secondary icon-only edit-block">
+                                        <svg><use href="#icon-edit"></use></svg>
+                                    </span>
+                                </div>
+                                <div class="section-item-content">
+                                    <div class="item-block">
+                                        <span class="field">Автоматический запрос документов</span>
+                                        <span class="badge medium">Выключен</span>
+                                    </div>
+                                    <div class="item-block">
+                                        <span class="field">Период действия</span>
+                                        <span class="text-l1">1 год</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {*
+                    <div class="empty-container">
+                        <span class="icon"><svg><use href="#icon-info"></use></svg></span>
+                        <span class="title">У вас пока нет созданных требуемых документов</span>
+                        <span class="des">В этом разделе отображаются документы, требуемые вашей компанией для одобрения поставщиков перед сотрудничеством. <br> Добавьте документ и укажите условия период одобрения.</span>
+                        <button class="button primary large upload-template">Добавить документ</button>
+                    </div>
+                *}
+            </div>
+
+            <div class="tab-content" data-tab="requests">
+                <div class="empty-container hidden">
+                    <span class="icon"><svg><use href="#icon-info"></use></svg></span>
+                    <span class="title">У вас пока нет заявок на одобрение</span>
+                    <span class="des">Когда поставщики отправят документы для одобрения, заявки появятся здесь. <br> Вы сможете проверить документы и принять решение. <br> Для того, чтобы отправить запрос поставщику и получить заявки на одобрение, заполните документы во вкладке «Мои условия»</span>
+                </div>
+
+                <div class="grid gap12 wa-flex-fill">
+                    <div class="toggle medium" id="requestToggle">
+                        <span data-type="">Запросы поставщиков</span>
+                        <span data-type="" class="selected">Мои запросы</span>
+                    </div>
+                    <table id="requestTable">
+                        <thead>
+                        <tr>
+                            <th>Номер</th>
+                            <th>Наименование поставщика</th>
+                            <th>Статус запроса</th>
+                            <th>Дата запроса</th>
+                        </tr>
+                        </thead>
+                    </table>
+                </div>
+
+            </div>
+
+            <div class="tab-content" data-tab="suppliers">
+                <div class="empty-container">
+                    <span class="icon"><svg><use href="#icon-info"></use></svg></span>
+                    <span class="title">У вас пока нет одобренных поставщиков</span>
+                    <span class="des">После проверки документов и принятия решения одобренные поставщики будут отображаться здесь.</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+<style>
+
+    .right-panels {
+        max-width: 470px;
+        display: grid;
+        gap: 12px;
+        margin-top: 3.7rem;
+    }
+
+</style>

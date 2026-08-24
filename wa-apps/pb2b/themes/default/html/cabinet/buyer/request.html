@@ -1,0 +1,223 @@
+{assign var="request_status" value=$request->getStatus()}
+
+<div class="cabinet-container js-cabinet-page" data-page="request" data-id="{$request.data.id}">
+    <div class="title">
+        <a class="button secondary icon-only small" hx-get="/cabinet/buyer/accreditation/#requests">
+            <svg><use href="#icon-chevron-left"></use></svg>
+        </a>
+        Запрос на одобрение {$request.data.procedure_code|default:' 00-00-000000'}
+        <span class="badge xlarge {$request_status->type()}">{$request_status->name()}</span>
+    </div>
+
+    <div class="grid gap24">
+        {if $company_provider.id}
+            <div class="flexbox gap12">
+                <div class="grid gap24 width-100">
+                    <div class="section-item company-info">
+                        <div class="section-item-head">
+                            <div class="item-block">
+                                <span class="title">Сведения о компании</span>
+                            </div>
+                        </div>
+                        <div class="section-item-content">
+                            <div class="info-grid">
+                                <div class="label">
+                                    <svg><use href="#icon-office"></use></svg>
+                                    Наименование компании
+                                </div>
+                                <div class="value">
+                                    {$company_provider->getFullName()}
+                                </div>
+
+                                <div class="label">ИНН</div>
+                                <div class="value">{$company_provider.data.inn}</div>
+
+                                <div class="label">КПП</div>
+                                <div class="value">{$company_provider.data.kpp}</div>
+
+                                <div class="label">ОГРН</div>
+                                <div class="value">{$company_provider.data.ogrn}</div>
+
+                                <div class="label">
+                                    <svg><use href="#icon-mail"></use></svg>
+                                    Эл. почта
+                                </div>
+                                <div class="value">{$company_provider.data.registry_email}</div>
+
+                                <div class="label">
+                                    <svg><use href="#icon-phone"></use></svg>
+                                    Телефон
+                                </div>
+                                <div class="value">{$company_provider.data.phone}</div>
+
+                                <div class="label">
+                                    <svg><use href="#icon-user"></use></svg>
+                                    Контактное лицо
+                                </div>
+                                <div class="value">{$company_provider.data.contact_person}</div>
+
+                                <div class="label">
+                                    <svg><use href="#icon-globe"></use></svg>
+                                    Веб-сайт
+                                </div>
+                                <div class="value">
+                                    {assign var="company_site" value=$company_provider.data.site}
+                                    <a href="{if $company_site|strpos:'http' !== 0}https://{/if}{$company_site}" target="_blank">
+                                        {$company_site}
+                                    </a>
+                                </div>
+
+                                <div class="label">
+                                    <svg><use href="#icon-map-pin"></use></svg>
+                                    Юр. адрес
+                                </div>
+                                <div class="value">{$company_provider.data.jur_address}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="dataTable-wrapper">
+                        <div class="dataTable-head">
+                            <span class="text-h4 font-weight-semibold">Документы</span>
+                            <button class="button secondary">
+                                <svg><use href="#icon-file-upload"></use></svg> Скачать все документы
+                            </button>
+                        </div>
+                        <table id="reqDocumentTable">
+                            <thead>
+                            <tr>
+                                <th>Наименование документа</th>
+                                <th>Документ</th>
+                                <th>Комментарий</th>
+                                <th>Статус</th>
+                            </tr>
+                            </thead>
+                        </table>
+                    </div>
+                    <div class="dataTable-wrapper">
+                        <div class="dataTable-head">
+                            <span class="text-h4 font-weight-semibold">Запрошенные документы</span>
+                            <button class="button secondary download-all-files">
+                                <svg><use href="#icon-file-upload"></use></svg> Скачать все документы
+                            </button>
+                        </div>
+                        <table id="reqTemplateTable">
+                            <thead>
+                            <tr>
+                                <th>Наименование документа</th>
+                                <th>Шаблон документа</th>
+                                <th>Комментарий</th>
+                            </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
+                <div class="right-panel">
+                    <div class="section-item">
+                        <div class="section-item-head">
+                            <div class="item-block">
+                                <span class="title text-l1">Информация о запросе</span>
+                            </div>
+                        </div>
+                        <div class="section-item-content">
+                            <div class="item-block">
+                                <span class="field text-p2">Дата создания</span>
+                                <span class="text-h4">{$request.data.create_datetime|date_format:"%d.%m.%Y"}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {if $request->canSubmitFromReviewer()}
+                        <div class="section-item">
+                            <div class="section-item-content">
+                                <div class="item-block">
+                                    <span class="title text-h3">Решение по заявке</span>
+                                    <span class="text-p1 gray-500">Советуем проверить все документы, прежде чем принять окончательное рещение</span>
+                                </div>
+                                <div class="actions flexbox">
+                                    <button class="button secondary reject-request">Отклонить</button>
+                                    <button class="button primary approve-request">Утвердить</button>
+                                </div>
+                            </div>
+                        </div>
+                    {elseif $request->canCancelFromReviewer()}
+                        <button class="button large destruct-light cancel-request">Отозвать запрос</button>
+                    {/if}
+                    <button class="button large destruct delete-request">Удалить запрос</button>
+                </div>
+            </div>
+        {else}
+            <div class="empty-company">
+                <img style="max-width: 700px" src="{$wa_theme_url}img/empty_company.png">
+            </div>
+        {/if}
+
+
+    </div>
+
+</div>
+
+<style>
+    .dataTable-head .button svg{
+        width: 17px;
+        height: 17px;
+    }
+
+    .section-item-content .actions {
+        display: flex;
+        gap: 16px;
+    }
+    .section-item-content .actions > *{
+        flex: 1;
+    }
+
+    .cabinet-container .right-panel{
+        display: grid;
+        gap: 16px;
+        width: 100%;
+        max-width: 370px;
+        height: fit-content;
+    }
+
+
+    .empty-company{
+        border: 1px solid var(--gray-300);
+        border-radius: 20px;
+        padding: 10px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        margin: auto;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: 230px 1fr;
+    }
+
+    .label {
+        color: var(--gray-500);
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font: var(--text-font-p3);
+        font-weight: var(--font-weight-regular);
+    }
+
+    .value {
+        word-break: break-word;
+        font: var(--text-font-p1);
+        font-weight: var(--font-weight-regular);
+    }
+
+    .label,
+    .value {
+        padding: 16px;
+        border-bottom: 1px solid #e5e5e5;
+    }
+
+    .label svg {
+        max-width: 16px;
+        max-height: 16px;
+    }
+</style>

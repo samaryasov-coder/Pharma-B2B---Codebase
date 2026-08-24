@@ -1,0 +1,208 @@
+<form class="js-form form fields" action="?module=company&action=save">
+    {if !empty($object.id)}
+        <input type="hidden" name="id" value="{$object.id|escape}">
+    {/if}
+    <div class="field">
+        <div class="name">Название</div>
+        <div class="value">
+            <input type="text" name="data[name]" value="{$object.name|default:''|escape}" class="w100"><br>
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="name">Тип компании</div>
+        <div class="value">
+            <div class="wa-select w100">
+                <select name="data[company_type]" class="w100 js-company-type-select">
+                    <option value="">Выберите тип</option>
+                    {foreach $company_types|default:[] as $company_type}
+                        <option value="{$company_type.id|default:0|escape}" {if $company_type.id == $object.company_type|default:0}selected{/if}>
+                            {$company_type.name|default:''|escape}
+                        </option>
+                    {/foreach}
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="field js-type-organization-field"{if $object.company_type|default:0 != 1} style="display:none;"{/if}>
+        <div class="name">Тип организации</div>
+        <div class="value">
+            <div class="wa-select w100">
+                <select name="data[type_organization]" class="w100 js-type-organization-select"{if $object.company_type|default:0 != 1} disabled{/if}>
+                    <option value="">Выберите тип организации</option>
+                    {foreach $types_organization|default:[] as $type_organization}
+                        <option value="{$type_organization.id|default:0|escape}" {if $type_organization.id == $object.type_organization|default:0}selected{/if}>
+                            {$type_organization.name|default:''|escape}
+                        </option>
+                    {/foreach}
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <div class="field">
+        <div class="name">Тип</div>
+        <div class="value">
+
+            <div class="">
+                <span class="switch js-wa-switch" id="switch-buyer-{$object.id|default:'new'}">
+                    <input type="checkbox"
+                        id="demo-switch-buyer-{$object.id|default:'new'}"
+                        name="data[buyer]"
+                        value="1"
+                        {if $object.buyer|default:0==1}checked{/if}>
+                </span>
+                <label for="demo-switch-buyer-{$object.id|default:'new'}">Покупатель</label>
+            </div>
+            
+            <div class="mt10">
+                <span class="switch js-wa-switch" id="switch-supplier-{$object.id|default:'new'}">
+                    <input type="checkbox"
+                        id="demo-switch-supplier-{$object.id|default:'new'}"
+                        name="data[supplier]"
+                        value="1"
+                        {if $object.supplier|default:0==1}checked{/if}>
+                </span>
+                <label for="demo-switch-supplier-{$object.id|default:'new'}">Поставщик</label>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="name">ИНН</div>
+        <div class="value">
+            <input type="text" name="data[inn]" value="{$object.inn|default:''|escape}" class="w100"><br>
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="name">КПП</div>
+        <div class="value">
+            <input type="text" name="data[kpp]" value="{$object.kpp|default:''|escape}" class="w100"><br>
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="name">ОГРН</div>
+        <div class="value">
+            <input type="text" name="data[ogrn]" value="{$object.ogrn|default:''|escape}" class="w100"><br>
+        </div>
+    </div>
+
+    <div class="field">
+        <div class="name">Юридический адрес</div>
+        <div class="value">
+            <input type="text" name="data[jur_address]" value="{$object.jur_address|default:''|escape}" class="w100"><br>
+        </div>
+    </div>
+
+    {if !empty($object.id)}
+        <div class="field">
+            <div class="name">Банк</div>
+            <div class="value">
+                <input type="text" name="data[bank]" value="{$object.bank|default:''|escape}" class="w100"><br>
+            </div>
+        </div>
+
+        <div class="field">
+            <div class="name">БИК</div>
+            <div class="value">
+                <input type="text" name="data[bik]" value="{$object.bik|default:''|escape}" class="w100"><br>
+            </div>
+        </div>
+
+        <div class="field">
+            <div class="name">Расчётный счёт</div>
+            <div class="value">
+                <input type="text" name="data[rs]" value="{$object.rs|default:''|escape}" class="w100"><br>
+            </div>
+        </div>
+
+        <div class="field">
+            <div class="name">Корреспондентский счёт</div>
+            <div class="value">
+                <input type="text" name="data[ks]" value="{$object.ks|default:''|escape}" class="w100"><br>
+            </div>
+        </div>
+
+        <div class="field">
+            <div class="name">Основной E-mail организации</div>
+            <div class="value">
+                <input type="email" name="data[registry_email]" value="{$object.registry_email|default:''|escape}" class="w100"><br>
+            </div>
+        </div>
+
+        {if isset($object.reserve_emails)}
+            {foreach $object.reserve_emails as $i => $reserve_email}
+                <div class="field">
+                    <div class="name">Дополнительный E-mail</div>
+                    <div class="value">
+                        <input type="text" name="data[reserve_emails][]" value="{$reserve_email|default:''|escape}" class="w100"><br>
+                    </div>
+                </div>
+            {/foreach}
+        {/if}
+    
+        <div class="field js-add-reserve-email-row">
+            <div class="name"></div>
+            <div class="value">
+                <button type="button" class="button small light-gray js-add-reserve-email">Добавить резервный номер телефона</button>
+            </div>
+        </div>
+
+        <div class="field">
+            <div class="name">Номер телефона</div>
+            <div class="value">
+                <input type="text" name="data[phone]" value="{$object.phone|default:''|escape}" class="w100"><br>
+            </div>
+        </div>
+        
+        {if isset($object.reserve_phones)}
+            {foreach $object.reserve_phones as $i => $reserve_phone}
+                <div class="field">
+                    <div class="name">Дополнительный телефон</div>
+                    <div class="value">
+                        <input type="text" name="data[reserve_phones][]" value="{$reserve_phone|default:''|escape}" class="w100"><br>
+                    </div>
+                </div>
+            {/foreach}
+        {/if}
+    
+        <div class="field js-add-reserve-phone-row">
+            <div class="name"></div>
+            <div class="value">
+                <button type="button" class="button small light-gray js-add-reserve-phone">Добавить резервный номер телефона</button>
+            </div>
+        </div>
+    
+        <div class="field">
+            <div class="name">Контактное лицо</div>
+            <div class="value">
+                <input type="text" name="data[contact_person]" value="{$object.contact_person|default:''|escape}" class="w100"><br>
+            </div>
+        </div>
+    
+        <div class="field">
+            <div class="name">Веб-сайт</div>
+            <div class="value">
+                <input type="url" name="data[site]" value="{$object.site|default:''|escape}" class="w100"><br>
+            </div>
+        </div>
+    {/if}
+
+    <section class="bottombar pb2b-bottombar">
+        <div class="article width-100">
+            <div class="article-body custom-py-8 flexbox">
+                <input type="submit" class="button" value="Сохранить">
+                <span class="js-form-message form-message red" style="display: none;">
+                    <span class="js-form-message-icons">
+                        <i class="fas fa-check-circle" style="display:none;"></i>
+                    </span>
+                    <span class="js-form-message-text"></span>
+                </span>
+            </div>
+        </div>
+    </section>
+</form>

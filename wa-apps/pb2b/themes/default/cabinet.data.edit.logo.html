@@ -1,0 +1,53 @@
+<div id="dialog" data-title="Редактирование данных компании">
+    <div class="logo-container">
+        <span class="logo-upload button secondary"><svg><use href="#icon-upload"></use></svg></span>
+        <div class="logo-text">
+            <span class="title">Логотип организации</span>
+            <span class="des">Убедитесь, что изображение четкое и соответствует требованиям: формат PNG или JPEG, минимальный размер 500x500 пикселей.</span>
+        </div>
+    </div>
+    <div class="form-actions">
+        <button class="button primary large" type="submit" form="form-data-edit">Загрузить фотографию</button>
+    </div>
+</div>
+
+<style>
+    .logo-container{
+        display: grid;
+        justify-content: center;
+        padding: 45px 0;
+        gap: 12px;
+    }
+
+    .logo-upload{
+        margin: auto !important;
+        border-radius: 24px;
+        width: 100px;
+        height: 100px;
+    }
+    .logo-upload svg{
+        width: 32px;
+        height: 32px;
+        color: var(--gray-300);
+    }
+
+    .logo-text{
+        display: grid;
+        gap: 4px;
+        max-width: 460px;
+    }
+
+    .logo-text .title{
+        font: var(--text-font-l1);
+    }
+
+    .logo-text .des{
+        font: var(--text-font-p3);
+        font-weight: var(--font-weight-regular);
+        color: var(--gray-500);
+    }
+
+    .form-actions{
+        justify-content: center;
+    }
+</style>

@@ -1,0 +1,21 @@
+<h1 class="mb5">{if empty($object.id)}Новый тег{else}Тег &laquo;{$object.name|escape}&raquo;{/if}</h1>
+<span class="hint">Укажите тег</span>
+<form class="js-form form fields" action="?module=tag&action=save">
+    {if !empty($object.id)}
+        <input type="hidden" name="id" value="{$object.id|escape}">
+    {/if}
+    <div class="field">
+        <div class="name">Название</div>
+        <div class="value">
+            <input type="text" name="data[name]" value="{$object.name|default:''|escape}" class="w100"><br>
+            <span class="hint">Чтобы сохранить тег, нужно заполниь его название</span>
+        </div>
+    </div>
+    <div class="field">
+        {include $app_path|cat:'/templates/includes/include.message.html'}
+    </div>
+    <div class="field">
+        <input type="submit" class="button" value="Сохранить тег">
+        <span class="js-form-message form-message red" style="display: none;"></span>
+    </div>
+</form>

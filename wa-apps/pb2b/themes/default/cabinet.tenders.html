@@ -1,0 +1,2604 @@
+<div class="cabinet-container js-cabinet-page" data-page="tenders">
+    <div class="title">Тендеры</div>
+    <div class="search-panel">
+        <div class="input-wrap tenders-search">
+            <div class="input-box">
+            <span class="input-prefix">
+                <svg><use href="#icon-search"></use></svg>
+            </span>
+                <input id="search-tenders" name="search-tenders" type="text" class="input tenders" placeholder="Ключевое слово, ИНН, МНН, CAS номер или номер процедуры">
+                <button class="button advanced-search">
+                    Расширенный поиск
+                    <svg><use href="#icon-filter"></use></svg>
+                </button>
+                <button class="button primary search" type="submit">Найти</button>
+            </div>
+        </div>
+
+        <div class="tender-filters">
+            <select class="select2 filter-select" name="tags" id="selectTags" multiple data-placeholder="Добавить теги">
+                <option value="pharma">Фармацевтика</option>
+                <option value="vaccines">Вакцины</option>
+                <option value="bio">Биопрепараты</option>
+                <option value="other">Медицинские изделия</option>
+            </select>
+
+            <select class="select2 filter-select" name="status" id="selectStatus" multiple data-placeholder="Статус">
+                <option value="acceptance">Приём заявок</option>
+                <option value="results">Подведение итогов</option>
+                <option value="cancelled">Отменён</option>
+                <option value="finished">Завершён</option>
+            </select>
+
+            <div class="date-picker two-months" id="selectDeadline">
+                <input 
+                    type="text"
+                    class="date-select filter-date"
+                    placeholder="Дата окончания приёма заявок"
+                    readonly
+                >
+                <input type="hidden" id="deadline_from" name="deadline_from">
+                <input type="hidden" id="deadline_to" name="deadline_to">
+                <svg><use href="#icon-calendar"></use></svg>
+            </div>
+
+            <select class="select2 filter-select" name="delivery_place" id="selectDeliveryPlace" multiple data-placeholder="Место поставки">
+                <option value="msk">Москва</option>
+                <option value="spb">Санкт-Петербург</option>
+                <option value="kzn">Казань</option>
+            </select>
+
+            <div class="price-select select2-container">
+                <div class="price-select-trigger">
+                    <span class="price-select-label">Начальная цена</span>
+                    <svg><use href="#icon-ruble"></use></svg>
+                </div>
+
+                <div class="price-select-dropdown">
+                    <div class="price-dropdown-title">Начальная цена</div>
+                    <div class="price-inputs-wrap">
+                        <div class="price-input-item">
+                            <input type="tel" name="price_min" class="price-min">
+                            <button class="clear-price" data-target="min"></button>
+                        </div>
+                        <div class="price-input-item">
+                            <input type="tel" name="price_max" class="price-max">
+                            <button class="clear-price" data-target="max"></button>
+                        </div>
+                    </div>
+                </div>
+
+                <input type="hidden" name="price_min">
+                <input type="hidden" name="price_max">
+            </div>
+        </div>
+    </div>
+    <div class="tenders-wrap">
+        <div class="section-title">Все тендеры</div>
+        <div class="tender-card">
+            <div class="tender-info">
+                <div class="tender-upper">
+                    <div class="tender-upper-text">
+                        <div class="tender-publication">
+                            Дата публикации: 15.05.2025
+                        </div>
+                        <div class="tender-title">
+                            Закупка реагентов для ООО “Торгуйся до упаду”
+                        </div>
+                        <div class="tender-request">
+                            Запрос предложений №02-25-128934
+                        </div>
+                    </div>
+                    <div class="tender-upper-status ok">Status</div>
+                </div>
+                <div class="tender-requirements">
+                    <div class="tender-requirement">
+                        <svg>
+                            <use href="#icon-alert"></use>
+                        </svg>
+                        Требуется предварительная квалификация
+                    </div>
+                    <div class="tender-requirement">
+                    <svg>
+                        <use href="#icon-alert"></use>
+                    </svg>
+                        Требуется одобрение поставщика
+                    </div>
+                </div>
+                <div class="tender-info-bottom">
+                    <div class="tender-city-org">
+                        <div class="tender-city-org-title">
+                            <p>Город:</p>
+                            <p>Организатор:</p>
+                        </div>
+                        <div class="tender-city-org-value">
+                            <p>Москва</p>
+                            <p>ООО “Торгуйся до упаду”</p>
+                        </div>
+                    </div>
+                    <div class="tender-tag-wrap">
+                        <svg><use href="#icon-tag"></use></svg>
+                        <div class="tender-tag">
+                            Товары для лабораторий
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="tender-price">
+                <div class="tender-price-left">
+                    <div class="tender-price-hint">Начальная цена контракта</div>
+                    <div class="tender-price-value">2 500 000 ₽</div>
+                    <div class="tender-request-hint">Окончание приема заявок</div>
+                    <div class="tender-request">
+                        <div class="tender-request-end">15.08.2025 в 12:00</div>
+                        <div class="tender-request-end-count">Осталось 4 дня</div>
+                    </div>
+                </div>
+                <div class="tender-price-favourite">
+                    <svg>
+                        <use href="#icon-star"></use>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="tender-card">
+            <div class="tender-info">
+                <div class="tender-upper">
+                    <div class="tender-upper-text">
+                        <div class="tender-publication">
+                            Дата публикации: 15.05.2025
+                        </div>
+                        <div class="tender-title">
+                            Закупка реагентов для ООО “Торгуйся до упаду”
+                        </div>
+                        <div class="tender-request">
+                            Запрос предложений №02-25-128934
+                        </div>
+                    </div>
+                    <div class="tender-upper-status comparison">Сравнение предложений</div>
+                </div>
+                <div class="tender-requirements">
+                    <div class="tender-requirement">
+                        <svg>
+                            <use href="#icon-alert"></use>
+                        </svg>
+                        Требуется предварительная квалификация
+                    </div>
+                    <div class="tender-requirement">
+                    <svg>
+                        <use href="#icon-alert"></use>
+                    </svg>
+                        Требуется одобрение поставщика
+                    </div>
+                </div>
+                <div class="tender-info-bottom">
+                    <div class="tender-city-org">
+                        <div class="tender-city-org-title">
+                            <p>Город:</p>
+                            <p>Организатор:</p>
+                        </div>
+                        <div class="tender-city-org-value">
+                            <p>Москва</p>
+                            <p>ООО “Торгуйся до упаду”</p>
+                        </div>
+                    </div>
+                    <div class="tender-tag-wrap">
+                        <svg><use href="#icon-tag"></use></svg>
+                        <div class="tender-tag">
+                            Товары для лабораторий
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="tender-price">
+                <div class="tender-price-left">
+                    <div class="tender-price-hint">Начальная цена контракта</div>
+                    <div class="tender-price-value">Цена не указана</div>
+                    <div class="tender-request-hint">Окончание приема заявок</div>
+                    <div class="tender-request">
+                        <div class="tender-request-end">15.08.2025 в 12:00</div>
+                        <div class="tender-request-end-count">Осталось 4 дня</div>
+                    </div>
+                </div>
+                <div class="tender-price-favourite">
+                    <svg>
+                        <use href="#icon-star"></use>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="tender-card">
+            <div class="tender-info">
+                <div class="tender-upper">
+                    <div class="tender-upper-text">
+                        <div class="tender-publication">
+                            Дата публикации: 15.05.2025
+                        </div>
+                        <div class="tender-title">
+                            Закупка реагентов для ООО “Торгуйся до упаду”
+                        </div>
+                        <div class="tender-request">
+                            Запрос предложений №02-25-128934
+                        </div>
+                    </div>
+                    <div class="tender-upper-status warning">Сравнение предложений</div>
+                </div>
+                <div class="tender-requirements">
+                    <div class="tender-requirement">
+                        <svg>
+                            <use href="#icon-alert"></use>
+                        </svg>
+                        Требуется предварительная квалификация
+                    </div>
+                    <div class="tender-requirement">
+                    <svg>
+                        <use href="#icon-alert"></use>
+                    </svg>
+                        Требуется одобрение поставщика
+                    </div>
+                </div>
+                <div class="tender-info-bottom">
+                    <div class="tender-city-org">
+                        <div class="tender-city-org-title">
+                            <p>Город:</p>
+                            <p>Организатор:</p>
+                        </div>
+                        <div class="tender-city-org-value">
+                            <p>Москва</p>
+                            <p>ООО “Торгуйся до упаду”</p>
+                        </div>
+                    </div>
+                    <div class="tender-tag-wrap">
+                        <svg><use href="#icon-tag"></use></svg>
+                        <div class="tender-tag">
+                            Товары для лабораторий
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="tender-price">
+                <div class="tender-price-left">
+                    <div class="tender-price-hint">Начальная цена контракта</div>
+                    <div class="tender-price-value">Цена не указана</div>
+                    <div class="tender-request-hint">Окончание приема заявок</div>
+                    <div class="tender-request">
+                        <div class="tender-request-end">15.08.2025 в 12:00</div>
+                        <div class="tender-request-end-count">Осталось 4 дня</div>
+                    </div>
+                </div>
+                <div class="tender-price-favourite">
+                    <svg>
+                        <use href="#icon-star"></use>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="tab-content" data-tab="request" style="display: block;">
+        <div class="empty-container">
+            <span class="icon"><svg><use href="#icon-info"></use></svg></span>
+            <span class="title">У вас пока нет активных тендеров</span>
+            <span class="des">В этом разделе отображаются тендеры, созданные вашей компанией. <br />Создайте тендер, чтобы начать процедуру закупки и получить<br />предложения от поставщиков.</span>
+            <button class="button primary large create-request">Создать тендер</button>
+        </div>
+    </div>
+
+    <div class="breadcrumbs">
+        <svg class="breadcrumbs-icon">
+            <use href="#icon-breadcrumbs"></use>
+        </svg>
+        <svg class="breadcrumbs-icon-arrow">
+            <use href="#icon-breadcrumbs-arrow"></use>
+        </svg>
+        <span>Создание процедуры</span>
+    </div>
+    <div class="tender-creation-upper">
+        <div class="creation-title">Создание процедуры запроса цен</div>
+        <div class="tender-creation-upper-buttons">
+            <div class="button">Сохранить в черновик</div>
+            <div class="button">Применить шаблон</div>
+        </div>
+    </div>
+
+    <div class="creation-steps">
+        <div class="creation-step">Доступ и видимость</div>
+        <div class="creation-step next">Основные данные</div>
+        <div class="creation-step next">Параметры закупки</div>
+        <div class="creation-step next">Условия оплаты и доставки</div>
+        <div class="creation-step next">Заполнение лотов</div>
+        <div class="creation-step completed">Рассылка</div>
+    </div>
+
+    <div class="creation-card">
+        <div class="creation-card-title">Доступ к процедуре</div>
+        <div class="creation-card-hint mg-bt-24">Выберите, кто сможет видеть и участвовать в вашей закупке.</div>
+
+        <div class="tender-creation-radios">
+            <div class="creation-radio-wrap">
+                <label class="tender-creation-radio">
+                    <input type="radio" name="tenderType" value="opened" checked>
+                    <span class="radio-ui"></span>
+                    <span class="radio-text">Открытая процедура</span>
+                </label>
+                <div class="creation-card-hint">Заявки могут подавать все зарегистрированные пользователи</div>
+            </div>
+
+            <div class="creation-radio-wrap">
+                <label class="tender-creation-radio">
+                    <input type="radio" name="tenderType" value="closed">
+                    <span class="radio-ui"></span>
+                    <span class="radio-text">Закрытая процедура</span>
+                </label>
+                <div class="creation-card-hint">Заявки могут подавать только приглашённые пользователи</div>
+            </div>
+        </div>
+
+        <div class="tender-creation-closed-procedure">
+            <div class="closed-procedure-title">Перечень участников, допущенных к процедуре</div>
+            <div class="creation-card-hint">Введите наименование компании</div>
+
+            <select class="select2 filter-select company-select" name="companies" id="selectCompanies" multiple data-placeholder="Введите название компании">
+                <option value="horns">ООО "Рога и копыта"</option>
+                <option value="trade">ООО "ООО ООО"</option>
+                <option value="laundry">ООО "Бнал"</option>
+                <option value="taxi">ООO "Зеленоглазое такси"</option>
+                <option value="defence">ООO "Моя оборона"</option>
+            </select>
+            
+            <div class="creation-card-hint">Добавьте названия компаний, которые будут допущены к процедуре</div>
+        </div>
+
+        <div class="tender-creation-checkbocks">
+            <div class="tender-creation-checkbox-wrap border-bottom">
+                <label class="tender-creation-checkbox">
+                    <input type="checkbox" name="prequalification" value="prequalification">
+                    <span class="checkbox-ui"></span>
+                    <span class="checkbox-text">Проведена предварительная квалификация поставщиков</span>
+                </label>
+                <div class="creation-card-hint">Заявки могут подавать только приглашённые пользователи</div>
+
+                <div class="tender-creation-prequalification">
+                    <div class="creation-card-hint">Введите наименование или номер процедуры предварительной квалификации</div>
+
+                    <select class="select2 filter-select prequalification-select" name="select-prequalification" id="selectPrequalification" multiple data-placeholder="Введите название или номер процедуры">
+                        <option value="horns">test21</option>
+                        <option value="trade">test22</option>
+                        <option value="laundry">test23</option>
+                        <option value="taxi">test24</option>
+                    </select>
+                    
+                </div>
+            </div>
+
+            
+
+            <div class="tender-creation-checkbox-wrap">
+                <label class="tender-creation-checkbox">
+                    <input type="checkbox" name="supplierApproval" value="supplierApproval">
+                    <span class="checkbox-ui"></span>
+                    <span class="checkbox-text">Требуется предварительное одобрение поставщиков</span>
+                </label>
+                <div class="creation-card-hint">Заявки могут подавать только приглашённые пользователи</div>
+                    <div class="tender-creation-checkbox-wrap inner">
+                    <label class="tender-creation-checkbox">
+                        <input type="checkbox" name="fixPeriod" value="fixPeriod">
+                        <span class="checkbox-ui"></span>
+                        <span class="checkbox-text">Указать период прохождения предварительного одобрения отличным от срока завершения процедуры запроса цен</span>
+                    </label>
+                    <div class="creation-card-hint">При указании сроков прохождения предварительного одобрения после завершения процедуры поставщики смогут подать предложения, несмотря на статус одобрения. Подведение итогов будет возможно только после указанной даты.</div>
+                </div>
+                <div class="tender-create-period">
+                    <div class="date-picker" id="selectPeriod">
+                        <input 
+                            type="text"
+                            class="date-select filter-date"
+                            placeholder="ДД.ММ.ГГ"
+                            readonly
+                        >
+                        <input type="hidden" id="deadline_period" name="deadline_period">
+                        <svg><use href="#icon-calendar"></use></svg>
+                    </div>
+                    <div id="selectTime" class="date-picker time">
+                        <input type="text" id="deadline_time" class="time" name="deadline_time" placeholder="00:00">
+                        <svg><use href="#icon-clock"></use></svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="creation-card">
+        <div class="creation-card-title">Видимость</div>
+        <div class="creation-card-hint mg-bt-24">Выберите параметры приватности</div>
+
+        <div class="tender-creation-checkbocks">
+            <div class="tender-creation-checkbox-wrap">
+                <label class="tender-creation-checkbox">
+                    <input type="checkbox" name="hidePrice" value="hidePrice">
+                    <span class="checkbox-ui"></span>
+                    <span class="checkbox-text">Скрывать начальную цену</span>
+                </label>
+                <div class="creation-card-hint">Участники не видят начальную цену. Участники могут подавать цену выше начальной.</div>
+            </div>
+
+            <div class="tender-creation-checkbox-wrap">
+                <label class="tender-creation-checkbox">
+                    <input type="checkbox" name="hideParticipants" value="hideParticipants">
+                    <span class="checkbox-ui"></span>
+                    <span class="checkbox-text">Скрывать количество участников</span>
+                </label>
+                <div class="creation-card-hint">Для участников количество поданных заявок скрыто.<br />Для организатора количество поступивших заявок отображается.</div>
+            </div>
+
+            <div class="tender-creation-checkbox-wrap checkboxes-container">
+                <label class="tender-creation-checkbox">
+                    <input type="checkbox" name="hidePrices" value="hidePrices">
+                    <span class="checkbox-ui"></span>
+                    <span class="checkbox-text">Скрывать цены участников</span>
+                </label>
+                <div class="creation-card-hint">Участники не видят цены друг друга.<br />Настройки применяются в зависимости от типа процедуры.</div>
+                <div class="tender-creation-radios inner">
+                    <div class="creation-radio-wrap">
+                        <label class="tender-creation-radio">
+                            <input type="radio" name="rankPrices" value="yes" checked>
+                            <span class="radio-ui"></span>
+                            <span class="radio-text">Использовать ранги по ценам</span>
+                        </label>
+                        <div class="creation-card-hint">Для участников: вместо цен отображается ранг участника. Цены скрыты до объявления следующего этапа или подведения итогов.<br />Для организатора: вместо цен отображается ранг участника. Цены скрыты до окончания подачи заявок.<br />Использование числового параметра для распределения рангов недоступно.</div>
+                        <div class="tender-creation-checkbox-wrap inner">
+                            <label class="tender-creation-checkbox">
+                                <input type="checkbox" name="orgNameVisible" value="orgNameVisible">
+                                <span class="checkbox-ui"></span>
+                                <span class="checkbox-text">Наименования участников в процессе подачи заявок видны организатору (доступно при ранжировании)</span>
+                            </label>
+                            <div class="creation-card-hint">Для участников наименования других участников скрыты.<br />Для организатора наименования участников отображаются.</div>
+                        </div>
+                    </div>
+
+
+                    <div class="creation-radio-wrap">
+                        <label class="tender-creation-radio">
+                            <input type="radio" name="rankPrices" value="no">
+                            <span class="radio-ui"></span>
+                            <span class="radio-text">Не использовать ранги по ценам</span>
+                        </label>
+                        <div class="creation-card-hint">Для участников: цены всегда скрыты.<br />Для организатора: цены скрыты до окончания подачи заявок.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="creation-manage-buttons">
+        <div class="manage-button button large cancel">Отменить</div>
+        <div class="manage-button button large primary continue disabled">Продолжить</div>
+    </div>
+
+
+    <div class="breadcrumbs">
+        <svg class="breadcrumbs-icon">
+            <use href="#icon-breadcrumbs"></use>
+        </svg>
+        <svg class="breadcrumbs-icon-arrow">
+            <use href="#icon-breadcrumbs-arrow"></use>
+        </svg>
+        <span>Создание процедуры</span>
+    </div>
+    <div class="tender-creation-upper">
+        <div class="creation-title">Создание процедуры запроса цен</div>
+        <div class="tender-creation-upper-buttons">
+            <div class="button">Сохранить в черновик</div>
+            <div class="button">Применить шаблон</div>
+        </div>
+    </div>
+
+    <div class="creation-steps">
+        <div class="creation-step completed">Доступ и видимость</div>
+        <div class="creation-step next">Основные данные</div>
+        <div class="creation-step next">Параметры закупки</div>
+        <div class="creation-step next">Условия оплаты и доставки</div>
+        <div class="creation-step next">Заполнение лотов</div>
+        <div class="creation-step next">Рассылка</div>
+    </div>
+
+    <div class="creation-card">
+        <div class="creation-card-title">Доступ к процедуре</div>
+        <div class="creation-card-hint mg-bt-24">Выберите, кто сможет видеть и участвовать в вашей закупке.</div>
+        <div class="creation-card-primary-data">
+            
+            <div class="input-title">Наименование извещения</div>
+            <div class="input-wrap tenders-search notification">
+                <div class="input-box">
+                    <input id="choose-notification" name="choose-notification" type="text" class="input tenders" placeholder="Введите наименование извещения">
+                </div>
+            </div>
+
+            <div class="input-title svg">
+                Релевантные теги
+                <svg><use href="#icon-question"></use></svg>
+            </div>
+            <select class="select2 filter-select relevant-tags" name="relevantTags" id="relevantTags" multiple data-placeholder="Выберите релевантные теги">
+                <option value="tag1">ООO "Рога и копыта"</option>
+                <option value="tag2">ООO "ООO ООО"</option>
+                <option value="tag3">ООO "Бнал"</option>
+                <option value="tag4">ООO "Зеленоглазое такси"</option>
+                <option value="tag5">ООO "Моя оборона"</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="creation-card">
+        <div class="creation-card-title">Категории</div>
+        <div class="creation-card-hint mg-bt-16">Выберите все подходящие категории</div>
+
+        <div class="creation-card-categories">
+
+            <div class="creation-card-categories-buttons">
+                <button class="creation-card-categories-button" data-tab="common">Общий классификатор</button>
+            <button class="creation-card-categories-button" data-tab="esklp">ЕСКЛП</button>
+            </div>
+
+            <div class="creation-card-categories-results common-classifier">
+                <div class="input-wrap tenders-search notification">
+                    <div class="input-box">
+                        <span class="input-prefix">
+                            <svg><use href="#icon-search"></use></svg>
+                        </span>
+                        <input id="search-category-classifier" name="search-category-classifier" type="text" class="input tenders" placeholder="Поиск по классификатору">
+                    </div>
+                </div>
+
+                <div class="creation-card-categories-result">
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="category-test1" value="category-test1">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Товары</span>
+                        </label>
+                    </div>
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="category-test2" value="category-test2">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Товары</span>
+                        </label>
+                    </div>
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="category-test3" value="category-test3">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Товары</span>
+                        </label>
+                    </div>
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="category-test4" value="category-test4">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Товары</span>
+                        </label>
+                    </div>
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="category-test5" value="category-test5">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Товары</span>
+                        </label>
+                    </div>
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="category-test7" value="category-test7">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Товары</span>
+                        </label>
+                    </div>
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="category-test8" value="category-test8">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Товары</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="creation-card-results-tags-title">Выбранные категории</div>
+                <div class="creation-card-results-tags">
+
+                </div>
+            </div>
+
+            <div class="creation-card-categories-results esklp">
+                <div class="input-wrap tenders-search notification">
+                    <div class="input-box">
+                        <span class="input-prefix">
+                            <svg><use href="#icon-search"></use></svg>
+                        </span>
+                        <input id="search-category-esklp" name="search-category-esklp" type="text" class="input tenders" placeholder="Поиск по классификатору">
+                    </div>
+                </div>
+
+                <div class="creation-card-categories-result">
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="category-test1" value="category-test1">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Товары</span>
+                        </label>
+                    </div>
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="category-test2" value="category-test2">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Товары</span>
+                        </label>
+                    </div>
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="category-test3" value="category-test3">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Товары</span>
+                        </label>
+                    </div>
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="category-test4" value="category-test4">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Товары</span>
+                        </label>
+                    </div>
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="category-test5" value="category-test5">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Товары</span>
+                        </label>
+                    </div>
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="category-test7" value="category-test7">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Товары</span>
+                        </label>
+                    </div>
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="category-test8" value="category-test8">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Товары</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="creation-card-results-tags-title">Выбранные категории</div>
+                <div class="creation-card-results-tags">
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="creation-card file-upload-card">
+        <div class="creation-card-title">Файлы технического задания</div>
+        <div class="creation-card-hint mg-bt-16">Загрузите все файлы технического задания</div>
+
+        <div class="creation-card-file-area">
+            <div class="file-drop-zone">
+                <div class="file-drop-icon">
+                    <svg><use href="#icon-file-upload"></use></svg>
+                </div>
+                <div class="file-drop-text">
+                    <span class="file-browse-btn">Нажмите сюда</span>
+                    <span class="file-drop-primary">или перетащите файл для загрузки файлов</span>
+                </div>
+                <div class="file-drop-hint">Поддерживаемый формат: .word, PDF<br />Макс. размер файлов: 10 MB</div>
+                <input type="file" class="file-input" multiple accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+            </div>
+        </div>
+        <div class="file-list">
+
+        </div>
+    </div>
+
+    <div class="creation-manage-buttons">
+        <div class="manage-button button large cancel">Отменить</div>
+        <div class="manage-buttons-right">
+            <div class="manage-button button large primary back">Назад</div>
+            <div class="manage-button button large primary continue disabled">Продолжить</div>
+        </div>
+    </div>
+
+
+    <div class="breadcrumbs">
+        <svg class="breadcrumbs-icon">
+            <use href="#icon-breadcrumbs"></use>
+        </svg>
+        <svg class="breadcrumbs-icon-arrow">
+            <use href="#icon-breadcrumbs-arrow"></use>
+        </svg>
+        <span>Создание процедуры</span>
+    </div>
+    <div class="tender-creation-upper">
+        <div class="creation-title">Создание процедуры запроса цен</div>
+        <div class="tender-creation-upper-buttons">
+            <div class="button">Сохранить в черновик</div>
+            <div class="button">Применить шаблон</div>
+        </div>
+    </div>
+
+    <div class="creation-steps">
+        <div class="creation-step completed">Доступ и видимость</div>
+        <div class="creation-step completed">Основные данные</div>
+        <div class="creation-step next">Параметры закупки</div>
+        <div class="creation-step next">Условия оплаты и доставки</div>
+        <div class="creation-step next">Заполнение лотов</div>
+        <div class="creation-step next">Рассылка</div>
+    </div>
+
+    <div class="creation-card">
+        <div class="creation-card-title">Параметры закупки</div>
+        <div class="creation-card-hint mg-bt-16">Заполните все основные данные извещания</div>
+            
+        <div class="tender-creation-checkbox-wrap">
+            <label class="tender-creation-checkbox">
+                <input type="checkbox" name="positionBuy" value="positionBuy">
+                <span class="checkbox-ui"></span>
+                <span class="checkbox-text">Попозиционная закупка возможна</span>
+            </label>
+            <div class="creation-card-hint">Участники могут подавать предложения на часть позиций в лоте.</div>
+        </div>
+
+        <div class="tender-creation-checkbox-wrap">
+            <label class="tender-creation-checkbox">
+                <input type="checkbox" name="allowAnalog" value="allowAnalog">
+                <span class="checkbox-ui"></span>
+                <span class="checkbox-text">Разрешена подача аналогов закупаемой позиции</span>
+            </label>
+            <div class="creation-card-hint">Участники не видят начальную цену. Участники могут подавать цену выше начальной.</div>
+        </div>
+
+        <div class="tender-creation-checkbox-wrap">
+            <label class="tender-creation-checkbox">
+                <input type="checkbox" name="procedureRenewalOffers" value="procedureRenewalOffers">
+                <span class="checkbox-ui"></span>
+                <span class="checkbox-text">Автопродление процедуры при отсутствии предложений</span>
+            </label>
+            <div class="creation-card-hint">Процедура продляется на 24 часа в случае отсутствия предложений по истечению срока указанного в заявке</div>
+        </div>
+
+        <div class="tender-creation-checkbox-wrap renewal-offers">
+            <label class="tender-creation-checkbox">
+                <input type="checkbox" name="procedureRenewalPrices" value="procedureRenewalPrices" checked>
+                <span class="checkbox-ui"></span>
+                <span class="checkbox-text">Автопродление процедуры при изменении стоимости/ранга за 30 минут до окончания тендера</span>
+            </label>
+            <div class="tender-creation-renewal-inner">
+                <div class="tender-creation-renewal-select">
+                    <div class="tender-creation-hint">Период автопродления</div>
+                    <select class="select2 filter-select renewal-period" name="renewalPeriod" id="renewalPeriod" multiple data-placeholder="Укажите период">
+                        <option value="30">30 минут</option>
+                        <option value="60">60 минут</option>
+                        <option value="90">90 минут</option>
+                    </select>
+                </div>
+                <div class="tender-creation-checkbox-wrap">
+                    <label class="tender-creation-checkbox">
+                        <input type="checkbox" name="minIncrement" value="minIncrement">
+                        <span class="checkbox-ui"></span>
+                        <span class="checkbox-text">Минимальный шаг измененения предложения</span>
+                    </label>
+                    <div class="tender-creation-radios min-increment">
+                        <div class="creation-radio-wrap min-increment-radio">
+                            <label class="tender-creation-radio">
+                                <input type="radio" name="increment" value="selfPrice" checked>
+                                <span class="radio-ui"></span>
+                                <span class="radio-text">От своей цены</span>
+                            </label>
+                            <div class="tender-creation-increment">
+                                <div class="tender-creation-increment-buttons">
+                                    <button type="button" class="increment-button active">Сумма</button>
+                                    <button type="button" class="increment-button">Процент</button>
+                                </div>
+                                <div class="input-box">
+                                    <input type="text" name="minIncrementSum" placeholder="1000">
+                                    <svg><use href="#icon-ruble"></use></svg>
+                                </div>
+                                <div class="input-box">
+                                    <input type="text" name="minIncrementPercent" placeholder="10">
+                                    <svg><use href="#icon-percent"></use></svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="creation-radio-wrap">
+                            <label class="tender-creation-radio">
+                                <input type="radio" name="increment" value="bestPrice">
+                                <span class="radio-ui"></span>
+                                <span class="radio-text">От лучшей цены</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="tender-creation-checkbox-wrap mg-bt-0">
+                    <label class="tender-creation-checkbox">
+                        <input type="checkbox" name="onlyDecrease" value="onlyDecrease">
+                        <span class="checkbox-ui"></span>
+                        <span class="checkbox-text">Разрешать только уменьшение предложений при корректировке</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="tender-creation-checkbox-wrap price-limit">
+            <label class="tender-creation-checkbox">
+                <input type="checkbox" name="priceLimit" value="priceLimit">
+                <span class="checkbox-ui"></span>
+                <span class="checkbox-text">Ограничение предложений указанной в заявке стоимости</span>
+            </label>
+            
+            <div class="tender-creation-input-field inner-hidden">
+                <div class="tender-creation-hint mg-bt-8">Максимальная цена заявки</div>
+                <div class="input-box">
+                    <input type="text" name="maxSum" placeholder="0">
+                    <svg><use href="#icon-ruble"></use></svg>
+                </div>
+                <div class="tender-creation-hint mg-top-8">Указывается без НДС</div>
+            </div>
+        </div>
+
+        <div class="tender-creation-radio-title">При выборе победителя учитывается цена</div>
+
+        <div class="tender-creation-radios purchase-options">
+            <div class="creation-radio-wrap">
+                <label class="tender-creation-radio">
+                    <input type="radio" name="NDS" value="no" checked>
+                    <span class="radio-ui"></span>
+                    <span class="radio-text">Без НДС</span>
+                </label>
+            </div>
+
+            <div class="creation-radio-wrap">
+                <label class="tender-creation-radio">
+                    <input type="radio" name="NDS" value="yes">
+                    <span class="radio-ui"></span>
+                    <span class="radio-text">С НДС</span>
+                </label>
+                <div class="tender-creation-nds-select">
+                    <select class="select2 filter-select NDS-choice" name="NDSchoice" id="NDSchoice" multiple data-placeholder="Укажите НДС">
+                        <option value="22%">22%</option>
+                        <option value="18%">18%</option>
+                        <option value="20%">20%</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+
+    <div class="creation-card deadlines">
+        <div class="creation-card-title">Даты и время</div>
+        <div class="creation-card-hint">Заполните все данные по датам и времени</div>
+
+        <div class="creation-card-item">
+            <div class="creation-card-subtitle text-p2">Конечный срок подачи заявок.</div>
+            <div class="creation-card-hint">Минимальный срок 5 календарных дней</div>
+
+            <div class="tender-create-period always-visible">
+                <div class="date-picker-wrap">
+                    <div class="creation-card-hint-sm mg-bt-6">Дата</div>
+                    <div class="date-picker" id="applicationDeadlineContainer">
+                        <input type="text" class="date-select filter-date" placeholder="ДД.ММ.ГГ" readonly>
+                        <input type="hidden" id="applicationDeadline" name="applicationDeadline">
+                        <svg><use href="#icon-calendar"></use></svg>
+                    </div>
+                </div>
+                <div class="date-picker-wrap">
+                    <div class="creation-card-hint-sm mg-bt-6">Время</div>
+                    <div id="applicationDeadlineTime" class="date-picker time">
+                        <input type="text" id="applicationDeadlineTime" class="time" name="applicationDeadlineTime" placeholder="00:00">
+                        <svg><use href="#icon-clock"></use></svg>
+                    </div>
+                    <div class="creation-card-hint-sm mg-top-6">Россия, Москва (UTC +3:00)</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="creation-card-item">
+            <div class="creation-card-subtitle text-p2">Конечный срок загрузки документов</div>
+            <div class="creation-card-hint">Участники смогут обновить коммерческое предложение и другие документы после окончания приёма, если указать отдельную дату</div>
+
+            <div class="tender-creation-radios purchase-options">
+                <div class="creation-radio-wrap">
+                    <label class="tender-creation-radio">
+                        <input type="radio" name="documentDeadlineRadio" value="equal" checked>
+                        <span class="radio-ui"></span>
+                        <span class="radio-text">Установить равным сроку подачи заявок</span>
+                    </label>
+                </div>
+
+                <div class="creation-radio-wrap deadline-radio">
+                    <label class="tender-creation-radio">
+                        <input type="radio" name="documentDeadlineRadio" value="manual">
+                        <span class="radio-ui"></span>
+                        <span class="radio-text">Установить вручную</span>
+                    </label>
+                    <div class="tender-create-period">
+                        <div class="date-picker-wrap">
+                            <div class="creation-card-hint-sm mg-bt-6">Дата</div>
+                            <div class="date-picker" id="documentDeadlineContainer">
+                                <input type="text" class="date-select filter-date" placeholder="ДД.ММ.ГГ" readonly>
+                                <input type="hidden" id="documentDeadline" name="documentDeadline">
+                                <svg><use href="#icon-calendar"></use></svg>
+                            </div>
+                        </div>
+                        <div class="date-picker-wrap">
+                            <div class="creation-card-hint-sm mg-bt-6">Время</div>
+                            <div id="documentDeadlineTime" class="date-picker time">
+                                <input type="text" id="documentDeadlineTime" class="time" name="documentDeadlineTime" placeholder="00:00">
+                                <svg><use href="#icon-clock"></use></svg>
+                            </div>
+                            <div class="creation-card-hint-sm mg-top-6">Россия, Москва (UTC +3:00)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="creation-card-item">
+            <div class="creation-card-subtitle text-p2">Плановая дата подведения итогов</div>
+            <div class="creation-card-hint">Укажите предполагаемую дату подведения итогов процедуры.</div>
+
+            
+            <div class="tender-create-period always-visible">
+                <div class="date-picker-wrap">
+                    <div class="creation-card-hint-sm mg-bt-6">Дата</div>
+                    <div class="date-picker" id="endDeadlineContainer">
+                        <input type="text" class="date-select filter-date" placeholder="ДД.ММ.ГГ" readonly>
+                        <input type="hidden" id="endDeadline" name="endDeadline">
+                        <svg><use href="#icon-calendar"></use></svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="creation-card add-info">
+        <div class="creation-card-title">Дополнительная информация</div>
+        <div class="creation-card-hint mg-bt-16">Заполните дополнительную информацию</div>
+
+        <div class="tender-creation-checkbox-wrap additional-info">
+            <label class="tender-creation-checkbox">
+                <input type="checkbox" name="additionalInfo" value="additionalInfo">
+                <span class="checkbox-ui"></span>
+                <span class="checkbox-text">Требуется предоставление дополнительной документации</span>
+            </label>
+            <div class="creation-card-hint">При установке требований по предоставлению дополнительной документации открывается функция запроса документов при заполнении позиций</div>
+        </div>
+
+        <div class="tender-creation-input-field additional-info-text">
+            <div class="tender-creation-hint mg-bt-8">Дополнительная информация</div>
+            <div class="input-box">
+                <input type="text" name="additionalInfoText" placeholder="Введите информацию для поставщиков">
+            </div>
+            <button class="button-add-more" type="button">
+                <svg><use href="#icon-plus"></use></svg>
+                <span>Добавить дополнительные поля информации</span>
+            </button>
+        </div>
+
+        <div class="tender-creation-input-field approver-appointment">
+            <div class="tender-creation-hint mg-bt-8">Утверждение заявки перед началом конкурса</div>
+            <div class="tender-creation-closed-procedure">
+
+                <select class="select2 filter-select company-select" name="approverAppointment" id="approverAppointment" data-placeholder="Добавить утверждающего">
+                    <option value="approver1">утверждающий1</option>
+                    <option value="approver2">утверждающий2</option>
+                    <option value="approver3">утверждающий3</option>
+                    <option value="approver4">утверждающий4</option>
+                    <option value="approver5">утверждающий5</option>
+                </select>
+                
+            </div>
+            <button class="button-add-more" type="button">
+                <svg><use href="#icon-plus"></use></svg>
+                <span>Добавить  дополнительного утверждающего</span>
+            </button>
+        </div>
+
+    </div>
+
+    
+
+    <div class="creation-card">
+        <div class="creation-card-upper">
+            <div class="creation-card-upper-text">
+                <div class="creation-card-title">Неценовые критерии<span class="platform-rec">Рекомендация платформы</span></div>
+                <div class="creation-card-hint">Оценивайте поставщиков не только по цене: учитывайте качество, сроки и опыт</div>
+            </div>
+
+            <div class="how-does-it-work">
+                <svg><use href="#icon-question"></use></svg>
+                Как это работает?
+            </div>
+        </div>
+
+        <button class="button-add-more criteria" type="button">
+            <svg><use href="#icon-plus"></use></svg>
+            <span>Добавить критерий</span>
+        </button>
+    </div>
+
+    
+
+    <div class="creation-manage-buttons">
+        <div class="manage-button button large cancel">Отменить</div>
+        <div class="manage-buttons-right">
+            <div class="manage-button button large primary back">Назад</div>
+            <div class="manage-button button large primary continue disabled">Продолжить</div>
+        </div>
+    </div>
+
+
+
+    <div class="breadcrumbs">
+        <svg class="breadcrumbs-icon">
+            <use href="#icon-breadcrumbs"></use>
+        </svg>
+        <svg class="breadcrumbs-icon-arrow">
+            <use href="#icon-breadcrumbs-arrow"></use>
+        </svg>
+        <span>Создание процедуры</span>
+    </div>
+    <div class="tender-creation-upper">
+        <div class="creation-title">Создание процедуры запроса цен</div>
+        <div class="tender-creation-upper-buttons">
+            <div class="button">Сохранить в черновик</div>
+            <div class="button">Применить шаблон</div>
+        </div>
+    </div>
+
+    <div class="creation-steps">
+        <div class="creation-step completed">Доступ и видимость</div>
+        <div class="creation-step completed">Основные данные</div>
+        <div class="creation-step completed">Параметры закупки</div>
+        <div class="creation-step">Условия оплаты и доставки</div>
+        <div class="creation-step next">Заполнение лотов</div>
+        <div class="creation-step next">Рассылка</div>
+    </div>
+
+    <div class="creation-card delivery-info">
+        <div class="creation-card-title">Условия оплаты и доставки</div>
+
+        <div class="tender-creation-single-search width-440 search-icon">
+
+            <div class="creation-card-hint">Адрес</div>
+            <select class="select2 filter-select address-select" name="addressChoice" id="addressChoice" data-placeholder="Индекс, Страна Область, населенный пункт, Улица, дом, Строение/корпус, квартира/офис">
+                <option value="address1">адрес1</option>
+                <option value="address2">адрес2</option>
+                <option value="address3">адрес3</option>
+                <option value="address4">адрес4</option>
+                <option value="address5">адрес5</option>
+            </select>
+
+        </div>
+
+        <button class="button-add-more" type="button">
+            <svg><use href="#icon-plus"></use></svg>
+            <span>Добавить еще адрес</span>
+        </button>
+
+
+        <div class="tender-creation-input-field additional-delivery-text">
+            <div class="creation-card-hint">Дополнительные условия поставки</div>
+            <div class="input-box width-440">
+                <input type="text" name="additionalDeliveryInfo" placeholder="Время работы склада, возможна ли частичная отгрузка, когда требуется поставка или оказание услуги">
+            </div>
+        </div>
+
+        <div class="tender-creation-single-search width-440 list-icon">
+
+            <div class="creation-card-hint">Условия оплаты</div>
+            <select class="select2 filter-select payment-conditions" name="paymentConditions" id="paymentConditions" data-placeholder="Выберите условия оплаты из ваших шаблонов">
+                <option value="payment1">условие1</option>
+                <option value="payment2">условие2</option>
+                <option value="payment3">условие3</option>
+                <option value="payment4">условие4</option>
+                <option value="payment5">условие5</option>
+            </select>
+
+            
+            <button class="button-add-more" type="button">
+                <svg><use href="#icon-plus"></use></svg>
+                <span>Добавить другие условия</span>
+            </button>
+
+        </div>
+    </div>
+
+    <div class="creation-card contacts-info">
+        <div class="creation-card-title">Контакты</div>
+
+        <div class="tender-creation-single-search width-440 no-icon">
+
+            <div class="creation-card-hint">Контакты</div>
+            <select class="select2 filter-select address-select" name="contactsInfo" id="contactsInfo" data-placeholder="Выберите контакт из списка организации">
+                <option value="contact1">контакт1</option>
+                <option value="contact2">контакт2</option>
+                <option value="contact3">контакт3</option>
+                <option value="contact4">контакт4</option>
+                <option value="contact5">контакт5</option>
+            </select>
+
+        </div>
+
+        <div class="buttons-more-wrap">
+
+            <button class="button-add-more" type="button">
+                <svg><use href="#icon-plus"></use></svg>
+                <span>Добавить еще контакт</span>
+            </button>
+
+            <button class="button-add-more" type="button">
+                <svg><use href="#icon-plus"></use></svg>
+                <span>Создать новый контакт вне организации</span>
+            </button>
+
+        </div>
+    </div>
+
+    <div class="tender-creation-checkbox-wrap additional-info">
+        <label class="tender-creation-checkbox">
+            <input type="checkbox" name="infoMessages" value="infoMessages">
+            <span class="checkbox-ui"></span>
+            <span class="checkbox-text">Я даю согласие на получение информационных сообщений</span>
+        </label>
+    </div>
+
+    <div class="creation-manage-buttons">
+        <div class="manage-button button large cancel">Отменить</div>
+        <div class="manage-buttons-right">
+            <div class="manage-button button large primary back">Назад</div>
+            <div class="manage-button button large primary continue disabled">Продолжить</div>
+        </div>
+    </div>
+
+    <div class="tender-creation-upper">
+        <div class="creation-title">Создание процедуры запроса цен</div>
+        <div class="tender-creation-upper-buttons">
+            <div class="button">Сохранить в черновик</div>
+            <div class="button">Применить шаблон</div>
+        </div>
+    </div>
+
+    <div class="creation-steps">
+        <div class="creation-step completed">Доступ и видимость</div>
+        <div class="creation-step completed">Основные данные</div>
+        <div class="creation-step completed">Параметры закупки</div>
+        <div class="creation-step completed">Условия оплаты и доставки</div>
+        <div class="creation-step">Заполнение лотов</div>
+        <div class="creation-step next">Рассылка</div>
+    </div>
+
+    <div class="creation-card">
+        <div class="creation-card-lots-upper">
+            <div class="creation-card-title text-h2">Заполнение лотов</div>
+            <div class="creation-card-lots-buttons">
+                <button class="button-use-template button" type="button">
+                    <svg><use href="#icon-use-template"></use></svg>
+                    <span>Применить шаблон к позиции</span>
+                </button>
+
+                <button class="button-use-template button" type="button">
+                    <svg><use href="#icon-arrow-down"></use></svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="creation-card-lot-toggle">
+            <div class="creation-card-lot-toggle-item active" data-text="Позиции">Позиции</div>
+            <div class="creation-card-lot-toggle-item" data-text="Запрашиваемые документы">Запрашиваемые документы</div>
+        </div>
+
+        <div class="creation-card-lots-wrap">
+
+            <div class="creation-card-lot left-side">
+
+                <button class="button-add-more lot" type="button">
+                    <svg><use href="#icon-plus"></use></svg>
+                    <span>Добавить позицию</span>
+                </button>
+
+                <div class="creation-card-lot-item selected">
+                    <div class="lot-number">1</div>
+                    <div class="lot-text">
+                        <div class="lot-title">Позиция 1</div>
+                        <div class="lot-info">100шт · 190 000 ₽ · НДС 20%</div>
+                    </div>
+                </div>
+                <div class="creation-card-lot-item completed">
+                    <div class="lot-number">1</div>
+                    <div class="lot-text">
+                        <div class="lot-title">Позиция 1</div>
+                        <div class="lot-info">100шт · 190 000 ₽ · НДС 20%</div>
+                    </div>
+                </div>
+                <div class="creation-card-lot-item attention">
+                    <div class="lot-number">1</div>
+                    <div class="lot-text">
+                        <div class="lot-title">Позиция 1</div>
+                        <div class="lot-info">100шт · 190 000 ₽ · НДС 20%</div>
+                    </div>
+                </div>
+
+            </div>
+            
+            <div class="creation-card-lot center-side lot-border">
+                <div class="tender-creation-upper border-bottom">
+                    <div class="creation-card-title">Позиция №1</div>
+                        <div class="tender-creation-upper-buttons">
+                        <div class="button position">
+                            <svg><use href="#icon-position-copy"></use></svg>
+                        </div>
+                        <div class="button position">
+                            <svg><use href="#icon-trash"></use></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tender-creation-input-field positon-name">
+                    <div class="input-hint small mg-bt-6">
+                        Наименование позиции 
+                        <span class="input-required">*</span>
+                        <svg>
+                            <use href="#icon-question"></use>
+                        </svg>
+                    </div>
+                    <div class="input-box">
+                        <input type="text" name="positionName" placeholder="Введите наименование позиции">
+                    </div>
+                </div>
+
+                <div class="position-options-wrap">
+                    <div class="tender-creation-input-field position-option">
+                        <div class="input-hint small mg-bt-6">Количество <span class="input-required">*</span></div>
+                        <div class="input-box">
+                            <input type="text" name="positionQuantity" placeholder="0">
+                        </div>
+                    </div>
+                    <div class="tender-creation-single-search position-option">
+                        <div class="input-hint small mg-bt-6">Ед. измерения</div>
+                        <select class="select2 filter-select single-select" name="positionUnit" id="positionUnit" data-placeholder="">
+                            <option value="unit1">шт</option>
+                            <option value="unit2">кг</option>
+                            <option value="unit3">л</option>
+                            <option value="unit4">мг</option>
+                            <option value="unit5">комплект</option>
+                        </select>
+                    </div>
+                    <div class="tender-creation-input-field position-option NDS">
+                        <div class="input-hint small mg-bt-6">Макс. цена без НДС <span class="input-required">*</span></div>
+                        <div class="input-box">
+                            <input type="text" name="positionMaxPrice" placeholder="0">
+                        </div>
+                    </div>
+                    <div class="tender-creation-single-search position-option">
+                        <div class="input-hint small mg-bt-6">НДС</div>
+                        <select class="select2 filter-select single-select" name="positionNDS" id="positionNDS" data-placeholder="0%">
+                            <option value="nds1">20%</option>
+                            <option value="nds2">10%</option>
+                            <option value="nds3">0%</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="tender-creation-single-search delivery-place search-icon search-visible mg-top-16">
+                    <div class="input-hint small mg-bt-6">Место поставки <span class="input-required">*</span></div>
+                    <select class="select2 filter-select single-select" name="deliveryPlace" id="deliveryPlace" data-placeholder="Введите или выберите из списка">
+                        <option value="place1">Место 1</option>
+                        <option value="place2">Место 2</option>
+                        <option value="place3">Место 3</option>
+                    </select>
+                </div>
+                
+                <button class="button-add-more small" type="button">
+                    <svg><use href="#icon-plus"></use></svg>
+                    <span>Добавить поле</span>
+                </button>
+
+                <div class="file-upload-card position-edit">
+                    <div class="creation-card-hint mg-bt-8">Добавить закупочную документацию</div>
+
+                    <div class="creation-card-file-area">
+                        <div class="file-drop-zone">
+                            <div class="file-drop-icon">
+                                <svg><use href="#icon-file-upload"></use></svg>
+                            </div>
+                            <div class="file-drop-text">
+                                <span class="file-browse-btn">Нажмите сюда</span>
+                                <span class="file-drop-primary">или перетащите файл для загрузки файлов</span>
+                            </div>
+                            <div class="file-drop-hint">Поддерживаемый формат: .word, PDF<br />Макс. размер файлов: 10 MB</div>
+                            <input type="file" class="file-input" multiple accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+                        </div>
+                    </div>
+                    <div class="file-list">
+
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="creation-card-lot right-side lot-border">
+                <div class="creation-card-title l1 border-bottom">Контроль бюджета</div>
+
+                <div class="creation-lot-results">
+                    <div class="creation-lot-result">
+                        <div class="creation-lot-result-title">Сумма цен по позициям</div>
+                        <div class="creation-lot-result-number">0.00₽</div>
+                    </div>
+                    <div class="creation-lot-result">
+                        <div class="creation-lot-result-title">НДС позиций</div>
+                        <div class="creation-lot-result-number">20%</div>
+                    </div>
+                    <div class="creation-lot-result">
+                        <div class="creation-lot-result-title">НМЦ лота</div>
+                        <div class="creation-lot-result-number">900 000.00₽</div>
+                    </div>
+                    <div class="creation-lot-result">
+                        <div class="creation-lot-result-title">НДС лота</div>
+                        <div class="creation-lot-result-number">20%</div>
+                    </div>
+                </div>
+
+                <div class="creation-lot-result-bottom">
+                    <div class="creation-lot-result">
+                        <div class="creation-lot-result-title">Разница</div>
+                        <div class="creation-lot-result-number">0.00₽</div>
+                    </div>
+                    <div class="creation-lot-result">
+                        <div class="creation-lot-result-title">Соотношение</div>
+                        <div class="creation-lot-result-number">0%</div>
+                    </div>
+                </div>
+            </div>
+
+            
+        </div>
+
+        <div class="creation-card-documents-wrap">
+
+            <div class="creation-card-documents left-side">
+
+                <button class="button-add-more document" type="button">
+                    <svg><use href="#icon-plus"></use></svg>
+                    <span>Добавить позицию</span>
+                </button>
+
+                <div class="creation-card-document-item selected">
+                    <div class="lot-number">1</div>
+                    <div class="lot-text">
+                        <div class="lot-title">Документ 1</div>
+                    </div>
+                </div>
+                <div class="creation-card-document-item completed">
+                    <div class="lot-number">1</div>
+                    <div class="lot-text">
+                        <div class="lot-title">Документ 1</div>
+                    </div>
+                </div>
+                <div class="creation-card-document-item attention">
+                    <div class="lot-number">1</div>
+                    <div class="lot-text">
+                        <div class="lot-title">Документ 1</div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="creation-card-documents center-side lot-border">
+                <div class="tender-creation-upper border-bottom">
+                    <div class="creation-card-title">Документ №1</div>
+                        <div class="tender-creation-upper-buttons">
+                        <div class="button position">
+                            <svg><use href="#icon-position-copy"></use></svg>
+                        </div>
+                        <div class="button position">
+                            <svg><use href="#icon-trash"></use></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tender-creation-input-field positon-name">
+                    <div class="input-hint small mg-bt-6">
+                        Наименование документа
+                        <span class="input-required">*</span>
+                        <svg>
+                            <use href="#icon-question"></use>
+                        </svg>
+                    </div>
+                    <div class="input-box">
+                        <input type="text" name="positionName" placeholder="Введите наименование позиции">
+                    </div>
+                </div>
+
+                <div class="position-options">
+                    <div class="input-hint small mg-bt-6">
+                        Описание
+                    </div>
+                    <div class="textarea-wrapper">
+                        <textarea class="char-counter-textarea" rows="3" name="document_desc" id="documentDesc" placeholder="Введите" maxlength="200"></textarea>
+                        <div class="char-counter">0/200</div>
+                    </div>
+                </div>
+
+                <div class="file-upload-card position-edit">
+                    <div class="creation-card-hint mg-bt-8">Добавить закупочную документацию</div>
+
+                    <div class="creation-card-file-area">
+                        <div class="file-drop-zone">
+                            <div class="file-drop-icon">
+                                <svg><use href="#icon-file-upload"></use></svg>
+                            </div>
+                            <div class="file-drop-text">
+                                <span class="file-browse-btn">Нажмите сюда</span>
+                                <span class="file-drop-primary">или перетащите файл для загрузки файлов</span>
+                            </div>
+                            <div class="file-drop-hint">Поддерживаемый формат: .word, PDF<br />Макс. размер файлов: 10 MB</div>
+                            <input type="file" class="file-input" multiple accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+                        </div>
+                    </div>
+                    <div class="file-list">
+
+                    </div>
+                    <div class="tender-creation-checkbox-wrap additional-info">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="infoMessages" value="infoMessages">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Отметить обязательным</span>
+                        </label>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <div class="creation-manage-buttons">
+        <div class="manage-button button large cancel">Отменить</div>
+        <div class="manage-buttons-right">
+            <div class="manage-button button large primary back">Назад</div>
+            <div class="manage-button button large primary continue disabled">Предварительный просмотр</div>
+        </div>
+    </div>
+
+    <div class="tender-creation-upper">
+        <div class="creation-title">Создание процедуры запроса цен</div>
+        <div class="tender-creation-upper-buttons">
+            <div class="button">Сохранить в черновик</div>
+            <div class="button">Применить шаблон</div>
+        </div>
+    </div>
+
+    <div class="creation-steps">
+        <div class="creation-step completed">Доступ и видимость</div>
+        <div class="creation-step completed">Основные данные</div>
+        <div class="creation-step completed">Параметры закупки</div>
+        <div class="creation-step completed">Условия оплаты и доставки</div>
+        <div class="creation-step completed">Заполнение лотов</div>
+        <div class="creation-step">Рассылка</div>
+    </div>
+    
+    <div class="mail-list-wrap">
+        <div class="mail-list-left">
+            <div class="creation-card">
+                <div class="creation-card-lots-upper">
+                    <div class="creation-card-upper-text">
+                        <div class="creation-card-title">Приглашение поставщиков</div>
+                        <div class="tender-price-hint">Выберите поставщиков из общего списка, ваших прошлых процедур или групп.</div>
+                    </div>
+                    <div class="creation-card-lots-buttons">
+                        <button class="button-use-template button" type="button">
+                            <svg><use href="#icon-use-template"></use></svg>
+                            <span>Загрузить файлом</span>
+                        </button>
+
+                        <button class="button-use-template button" type="button">
+                            <svg><use href="#icon-arrow-down"></use></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="creation-card-lot-toggle">
+                    <div class="creation-card-lot-toggle-item active" data-text="Все поставщики">Все поставщики</div>
+                    <div class="creation-card-lot-toggle-item" data-text="Мои поставщики">Мои поставщики</div>
+                    <div class="creation-card-lot-toggle-item" data-text="Группы">Группы</div>
+                </div>
+
+                <div class="input-wrap tenders-search all-suppliers">
+                    <div class="input-box supplier">
+                        <input id="search-supplier-all" name="search-supplier-all" type="text" class="input supplier" placeholder="Поиск по названию или ИНН">
+                        
+                        <span class="input-prefix">
+                            <svg><use href="#icon-search"></use></svg>
+                        </span>
+                    </div>
+
+                    <div class="supplier-search-results">
+                        <div class="tender-creation-checkbox-wrap">
+                            <label class="tender-creation-checkbox">
+                                <input type="checkbox" name="supplier-test1" value="supplier-test1">
+                                <span class="checkbox-ui"></span>
+                                <span class="checkbox-text">ООО «МеталлПоставка»</span>
+                            </label>
+                            <div class="tender-supplier-badges">
+                                <div class="tender-supplier-badge group">
+                                    В группе
+                                </div>
+                                <div class="tender-supplier-badge approved">
+                                    <svg><use href="#icon-approved-supplier"></use></svg>
+                                    Одобрен
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tender-creation-checkbox-wrap">
+                            <label class="tender-creation-checkbox">
+                                <input type="checkbox" name="supplier-test2" value="supplier-test2">
+                                <span class="checkbox-ui"></span>
+                                <span class="checkbox-text">АО «Металлоснаб»</span>
+                            </label>
+                            <div class="tender-supplier-badges">
+                                <div class="tender-supplier-badge approved">
+                                    <svg><use href="#icon-approved-supplier"></use></svg>
+                                    Одобрен
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tender-creation-checkbox-wrap">
+                            <label class="tender-creation-checkbox">
+                                <input type="checkbox" name="supplier-test3" value="supplier-test3">
+                                <span class="checkbox-ui"></span>
+                                <span class="checkbox-text">ИП Козлов А.А.</span>
+                            </label>
+                            <div class="tender-supplier-badges">
+                                <div class="tender-supplier-badge group">
+                                    В группе
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tender-creation-checkbox-wrap">
+                            <label class="tender-creation-checkbox">
+                                <input type="checkbox" name="supplier-test4" value="supplier-test4">
+                                <span class="checkbox-ui"></span>
+                                <span class="checkbox-text">ООО «СнабСервис»</span>
+                            </label>
+                            <div class="tender-supplier-badges">
+                                <div class="tender-supplier-badge group">
+                                    Победитель
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tender-creation-checkbox-wrap">
+                            <label class="tender-creation-checkbox">
+                                <input type="checkbox" name="supplier-test5" value="supplier-test5">
+                                <span class="checkbox-ui"></span>
+                                <span class="checkbox-text">ЗАО «СтальТрейд»</span>
+                            </label>
+                        </div>
+                        <div class="tender-creation-checkbox-wrap">
+                            <label class="tender-creation-checkbox">
+                                <input type="checkbox" name="supplier-test7" value="supplier-test7">
+                                <span class="checkbox-ui"></span>
+                                <span class="checkbox-text">ИП Смирнов Б.В.</span>
+                            </label>
+                        </div>
+                        <div class="tender-creation-checkbox-wrap">
+                            <label class="tender-creation-checkbox">
+                                <input type="checkbox" name="supplier-test8" value="supplier-test8">
+                                <span class="checkbox-ui"></span>
+                                <span class="checkbox-text">ИП Смирнов Б.В.</span>
+                            </label>
+                        </div>
+                        <div class="tender-creation-checkbox-wrap">
+                            <label class="tender-creation-checkbox">
+                                <input type="checkbox" name="supplier-test9" value="supplier-test9">
+                                <span class="checkbox-ui"></span>
+                                <span class="checkbox-text">ИП Смирнов Б.В.</span>
+                            </label>
+                        </div>
+                        <div class="tender-creation-checkbox-wrap">
+                            <label class="tender-creation-checkbox">
+                                <input type="checkbox" name="supplier-test10" value="supplier-test10">
+                                <span class="checkbox-ui"></span>
+                                <span class="checkbox-text">ИП Смирнов Б.В.</span>
+                            </label>
+                        </div>
+                        <div class="tender-creation-checkbox-wrap">
+                            <label class="tender-creation-checkbox">
+                                <input type="checkbox" name="supplier-test11" value="supplier-test11">
+                                <span class="checkbox-ui"></span>
+                                <span class="checkbox-text">ИП Смирнов Б.В.</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-wrap tenders-search my-suppliers">
+                    <div class="input-box supplier">
+                        <input id="search-supplier-my" name="search-supplier-my" type="text" class="input supplier" placeholder="Поиск по названию или ИНН">
+                        
+                        <span class="input-prefix">
+                            <svg><use href="#icon-search"></use></svg>
+                        </span>
+                    </div>
+
+                    <div class="creation-card-title mg-bt-16">Мои поставщики</div>
+                </div>
+
+                <div class="input-wrap tenders-search group-suppliers">
+                    <div class="input-box supplier">
+                        <input id="search-supplier-group" name="search-supplier-group" type="text" class="input supplier" placeholder="Поиск по названию или ИНН">
+                        
+                        <span class="input-prefix">
+                            <svg><use href="#icon-search"></use></svg>
+                        </span>
+                    </div>
+
+                    <div class="creation-card-title mg-bt-16">Группа поставщиков</div>
+                </div>
+            </div>
+
+            <div class="creation-card">
+                <div class="creation-card-title mg-bt-16">Пригласить вне системы</div>
+
+                <div class="supplier-invite-wrap">
+                    <div class="suplier-invite-search">
+                        <div class="input-box supplier small">
+                            <input id="invite-supplier" name="invite-supplier" type="text" class="input supplier" placeholder="Введите E-mail">
+                        </div>
+                        <button class="button secondary add">
+                            <svg><use href="#icon-plus"></use></svg>
+                            Добавить
+                        </div>
+                    </div>
+                    
+                    <div class="chosen-supplier-invites">
+                        
+                    </div>
+                </div>
+            </div>
+            
+
+        <div class="creation-card chosen-supplier">
+            <div class="chosen-supplier-number">
+                <div class="chosen-supplier-title">Выбранные поставщики</div>
+                <div class="chosen-supplier-value">0</div>
+            </div>
+            <div class="chosen-suplier-bottom">
+                <div class="chosen-supplier-no-text">
+                    Здесь появятся поставщики, которым будет отправлено приглашение
+                </div>
+                <div class="chosen-supplier-list">
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="creation-card">
+        <div class="creation-card-title">Тип отправки</div>
+        <div class="tender-price-hint mg-bt-16">Выберите тип отправки</div>
+
+        <div class="tender-creation-radios">
+            <div class="creation-radio-wrap">
+                <label class="tender-creation-radio">
+                    <input type="radio" name="sendType" value="auto" checked="">
+                    <span class="radio-ui"></span>
+                    <span class="radio-text">Автоматически</span>
+                </label>
+                <div class="creation-card-hint">Приглашения будут отправлены автоматически при публикации процедуры</div>
+            </div>
+
+            <div class="creation-radio-wrap">
+                <label class="tender-creation-radio">
+                    <input type="radio" name="sendType" value="manual">
+                    <span class="radio-ui"></span>
+                    <span class="radio-text">Вручную</span>
+                </label>
+                <div class="creation-card-hint">Приглашения нужно будет отправить вручную после публикации процедуры</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="creation-card">
+        <div class="creation-card-title">Текст приглашения</div>
+        <div class="input-hint small mg-bt-16">Настройте сообщение, которое получат приглашённые поставщики</div>
+
+        <div class="invitation-message">
+            <div class="input-hint small mg-bt-6 black">
+                Системное сообщение, которое получат поставщики
+                <svg>
+                    <use href="#icon-question"></use>
+                </svg>
+            </div>
+            <div class="auto-message">
+                Уважаемый поставщик,<br />
+                ООО «АльфаСнаб» приглашает вас принять участие в процедуре №2433488 «Поставка офисной мебели».<br />
+                Пожалуйста, ознакомьтесь с условиями тендера и направьте ваше коммерческое предложение в указанные сроки.<br />
+            </div>
+            <div class="input-hint small mg-bt-6">Дополнительный текст (опционально)</div>
+            <div class="textarea-wrapper">
+                <textarea class="char-counter-textarea" rows="3" name="invitaion-message" id="invitationMessage" placeholder="Введите" maxlength="200"></textarea>
+                <div class="char-counter">0/200</div>
+            </div>
+
+            <div class="input-hint small mg-top-6">Ваше сообщение будет добавлено в конец приглашения</div>
+        </div>
+    </div>
+
+    <div class="creation-manage-buttons">
+        <div class="manage-button button large cancel">Отменить</div>
+        <div class="manage-buttons-right">
+            <div class="manage-button button large primary back">Назад</div>
+            <div class="manage-button button large primary continue">Пропустить и опубликовать</div>
+        </div>
+    </div>
+
+    <div class="breadcrumbs">
+        <svg class="breadcrumbs-icon">
+            <use href="#icon-breadcrumbs"></use>
+        </svg>
+        <svg class="breadcrumbs-icon-arrow">
+            <use href="#icon-breadcrumbs-arrow"></use>
+        </svg>
+        <span>Создание процедуры</span>
+    </div>
+    
+    <div class="tender-creation-upper">
+        <div class="creation-title">Создание процедуры предварительной квалификации</div>
+        <div class="tender-creation-upper-buttons">
+            <div class="button">Сохранить в черновик</div>
+            <div class="button">Применить шаблон</div>
+        </div>
+    </div>
+
+    <div class="creation-steps">
+        <div class="creation-step">Доступ к процедуре</div>
+        <div class="creation-step next">Основные данные</div>
+        <div class="creation-step next">Параметры закупки</div>
+        <div class="creation-step next">Условия оплаты и доставки</div>
+        <div class="creation-step next">Заполнение лотов</div>
+    </div>
+
+    <div class="creation-card quali">
+        <div class="creation-card-title">Доступ к процедуре</div>
+        <div class="input-hint small mg-bt-16">Выберите, кто сможет видеть и участвовать в вашей закупке.</div>
+
+        <div class="tender-creation-radios">
+            <div class="creation-radio-wrap">
+                <label class="tender-creation-radio">
+                    <input type="radio" name="qualiType" value="opened" checked>
+                    <span class="radio-ui"></span>
+                    <span class="radio-text">Открытая процедура</span>
+                </label>
+                <div class="creation-card-hint">Заявки могут подавать все зарегистрированные пользователи</div>
+            </div>
+
+            <div class="creation-radio-wrap">
+                <label class="tender-creation-radio">
+                    <input type="radio" name="qualiType" value="closed">
+                    <span class="radio-ui"></span>
+                    <span class="radio-text">Закрытая процедура</span>
+                </label>
+                <div class="creation-card-hint">Заявки могут подавать только приглашённые пользователи</div>
+            </div>
+        </div>
+
+        <div class="tender-creation-closed-procedure" style="display: block;">
+            <div class="closed-procedure-title">Перечень участников, допущенных к процедуре</div>
+            <div class="creation-card-hint">Введите наименование компании</div>
+
+            <select class="select2 filter-select company-select" name="companiesQuali" id="selectCompaniesQuali" multiple data-placeholder="Введите название компании">
+                <option value="horns">ООО "Рога и копыта"</option>
+                <option value="trade">ООО "ООО ООО"</option>
+                <option value="laundry">ООО "Бнал"</option>
+                <option value="taxi">ООO "Зеленоглазое такси"</option>
+                <option value="defence">ООO "Моя оборона"</option>
+            </select>
+            
+            <div class="creation-card-hint">Добавьте названия компаний, которые будут допущены к процедуре</div>
+        </div>
+        
+    </div>
+    
+    <div class="creation-manage-buttons">
+        <div class="manage-button button large cancel">Отменить</div>
+        <div class="manage-button button large primary continue disabled">Продолжить</div>
+    </div> 
+
+
+
+    <div class="breadcrumbs">
+        <svg class="breadcrumbs-icon">
+            <use href="#icon-breadcrumbs"></use>
+        </svg>
+        <svg class="breadcrumbs-icon-arrow">
+            <use href="#icon-breadcrumbs-arrow"></use>
+        </svg>
+        <span>Создание процедуры</span>
+    </div>
+    <div class="tender-creation-upper">
+        <div class="creation-title">Создание процедуры предварительной квалификации</div>
+        <div class="tender-creation-upper-buttons">
+            <div class="button">Сохранить в черновик</div>
+            <div class="button">Применить шаблон</div>
+        </div>
+    </div>
+
+    <div class="creation-steps">
+        <div class="creation-step completed">Доступ к процедуре</div>
+        <div class="creation-step">Основные данные</div>
+        <div class="creation-step next">Параметры закупки</div>
+        <div class="creation-step next">Условия оплаты и доставки</div>
+        <div class="creation-step next">Заполнение лотов</div>
+    </div>
+
+     <div class="creation-card">
+        <div class="creation-card-title">Доступ к процедуре</div>
+        <div class="creation-card-hint mg-bt-24">Выберите, кто сможет видеть и участвовать в вашей закупке.</div>
+        <div class="creation-card-primary-data">
+            
+            <div class="input-title">Наименование извещения</div>
+            <div class="input-wrap tenders-search notification">
+                <div class="input-box">
+                    <input id="choose-notification-quali" name="choose-notification-quali" type="text" class="input tenders" placeholder="Введите наименование извещения">
+                </div>
+            </div>
+
+            <div class="input-title svg">
+                Релевантные теги
+                <svg><use href="#icon-question"></use></svg>
+            </div>
+            <select class="select2 filter-select relevant-tags" name="relevantTagsQuali" id="relevantTagsQuali" multiple data-placeholder="Выберите релевантные теги">
+                <option value="tag1">ООO "Рога и копыта"</option>
+                <option value="tag2">ООO "ООO ООО"</option>
+                <option value="tag3">ООO "Бнал"</option>
+                <option value="tag4">ООO "Зеленоглазое такси"</option>
+                <option value="tag5">ООO "Моя оборона"</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="creation-card quali">
+        <div class="creation-card-title">Категория</div>
+        <div class="creation-card-hint mg-bt-16">Выберите все подходящие категории</div>
+
+        <div class="creation-card-categories">
+
+            <div class="creation-card-categories-buttons">
+                <button class="creation-card-categories-button" data-tab="common">Общий классификатор</button>
+                <button class="creation-card-categories-button" data-tab="esklp">ЕСКЛП</button>
+            </div>
+
+            <div class="creation-card-categories-results common-classifier">
+                <div class="input-wrap tenders-search notification">
+                    <div class="input-box">
+                        <span class="input-prefix">
+                            <svg><use href="#icon-search"></use></svg>
+                        </span>
+                        <input id="search-category-classifier-quali" name="search-category-classifier-quali" type="text" class="input tenders" placeholder="Поиск по классификатору">
+                    </div>
+                </div>
+
+                <div class="creation-card-categories-result">
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="category-test-quali1" value="category-test-quali1">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Товары</span>
+                        </label>
+                    </div>
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="category-test-quali2" value="category-test-quali2">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Товары</span>
+                        </label>
+                    </div>
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="category-test-quali3" value="category-test-quali3">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Товары</span>
+                        </label>
+                    </div>
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="category-test-quali4" value="category-test-quali4">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Товары</span>
+                        </label>
+                    </div>
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="category-test-quali5" value="category-test-quali5">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Товары</span>
+                        </label>
+                    </div>
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="category-test-quali7" value="category-test-quali7">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Товары</span>
+                        </label>
+                    </div>
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="category-test-quali8" value="category-test-quali8">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Товары</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="creation-card-results-tags-title">Выбранные категории</div>
+                <div class="creation-card-results-tags">
+
+                </div>
+            </div>
+
+            <div class="creation-card-categories-results esklp">
+                <div class="input-wrap tenders-search notification">
+                    <div class="input-box">
+                        <span class="input-prefix">
+                            <svg><use href="#icon-search"></use></svg>
+                        </span>
+                        <input id="search-category-esklp-quali" name="search-category-esklp-quali" type="text" class="input tenders" placeholder="Поиск по классификатору">
+                    </div>
+                </div>
+
+                <div class="creation-card-categories-result">
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="category-test-quali1" value="category-test1-quali">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Товары</span>
+                        </label>
+                    </div>
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="category-test-quali2" value="category-test-quali2">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Товары</span>
+                        </label>
+                    </div>
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="category-test-quali3" value="category-test-quali3">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Товары</span>
+                        </label>
+                    </div>
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="category-test-quali4" value="category-test-quali4">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Товары</span>
+                        </label>
+                    </div>
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="category-test-quali5" value="category-test-quali5">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Товары</span>
+                        </label>
+                    </div>
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="category-test-quali7" value="category-test-quali7">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Товары</span>
+                        </label>
+                    </div>
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="category-test-quali8" value="category-test-quali8">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Товары</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="creation-card-results-tags-title">Выбранные категории</div>
+                <div class="creation-card-results-tags">
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="creation-card file-upload-card">
+        <div class="creation-card-title">Файлы технического задания</div>
+        <div class="creation-card-hint mg-bt-16">Загрузите все файлы технического задания</div>
+
+        <div class="creation-card-file-area">
+            <div class="file-drop-zone">
+                <div class="file-drop-icon">
+                    <svg><use href="#icon-file-upload"></use></svg>
+                </div>
+                <div class="file-drop-text">
+                    <span class="file-browse-btn">Нажмите сюда</span>
+                    <span class="file-drop-primary">или перетащите файл для загрузки файлов</span>
+                </div>
+                <div class="file-drop-hint">Поддерживаемый формат: .word, PDF<br />Макс. размер файлов: 10 MB</div>
+                <input type="file" class="file-input" multiple accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+            </div>
+        </div>
+        <div class="file-list">
+
+        </div>
+    </div>
+
+    <div class="creation-manage-buttons">
+        <div class="manage-button button large cancel">Отменить</div>
+        <div class="manage-button button large primary continue disabled">Продолжить</div>
+    </div> 
+
+
+    <div class="breadcrumbs">
+        <svg class="breadcrumbs-icon">
+            <use href="#icon-breadcrumbs"></use>
+        </svg>
+        <svg class="breadcrumbs-icon-arrow">
+            <use href="#icon-breadcrumbs-arrow"></use>
+        </svg>
+        <span>Создание процедуры</span>
+    </div>
+    <div class="tender-creation-upper">
+        <div class="creation-title">Создание процедуры предварительной квалификации</div>
+        <div class="tender-creation-upper-buttons">
+            <div class="button">Сохранить в черновик</div>
+            <div class="button">Применить шаблон</div>
+        </div>
+    </div>
+
+    <div class="creation-steps">
+        <div class="creation-step completed">Доступ к процедуре</div>
+        <div class="creation-step completed">Основные данные</div>
+        <div class="creation-step">Параметры закупки</div>
+        <div class="creation-step next">Условия оплаты и доставки</div>
+        <div class="creation-step next">Заполнение лотов</div>
+    </div>
+
+    <div class="creation-card">
+        <div class="creation-card-title">Параметры процедуры</div>
+        <div class="creation-card-hint mg-bt-16">Заполните  все основные данные извещания</div>
+
+        <div class="tender-creation-checkbox-wrap renewal-offers">
+            <label class="tender-creation-checkbox">
+                <input type="checkbox" name="auditMandatory" value="auditMandatory">
+                <span class="checkbox-ui"></span>
+                <span class="checkbox-text">Требуется прохождение предварительного аудита</span>
+            </label>
+            <div class="textarea-wrapper inner-hidden">
+                <textarea class="char-counter-textarea" rows="3" name="audit_desc" id="auditDesc" placeholder="Напишите как будет проходить аудит" maxlength="200"></textarea>
+                <div class="char-counter">0/200</div>
+            </div>
+        </div>
+
+        <div class="tender-creation-checkbox-wrap renewal-offers">
+            <label class="tender-creation-checkbox">
+                <input type="checkbox" name="testMandatory" value="testMandatory">
+                <span class="checkbox-ui"></span>
+                <span class="checkbox-text">Требуется отправка тестовых образцов</span>
+            </label>
+            <div class="creation-card-hint">Поставьте отметку, если для предварительной квалификации требуется отправка образцов</div>
+            
+            <div class="textarea-wrapper inner-hidden">
+                <textarea class="char-counter-textarea" rows="3" name="test_desc" id="testDesc" placeholder="Напишите какие будут требования к предоставляемым образцам" maxlength="200"></textarea>
+                <div class="char-counter">0/200</div>
+            </div>
+        </div>
+
+        <div class="tender-creation-checkbox-wrap">
+            <label class="tender-creation-checkbox">
+                <input type="checkbox" name="autoRenewalQuali" value="autoRenewalQuali">
+                <span class="checkbox-ui"></span>
+                <span class="checkbox-text">Автопродление процедуры при отсутствии предложений</span>
+            </label>
+            <div class="creation-card-hint">Процедура продляется на 24 часа в случае отсутствия предложений по истечению срока указанного в заявке</div>
+        </div>
+
+    </div>
+
+    <div class="creation-card deadlines">
+        <div class="creation-card-title">Даты и время</div>
+        <div class="creation-card-hint">Заполните все данные по датам и времени</div>
+
+        <div class="creation-card-item">
+            <div class="creation-card-subtitle text-p2">Конечный срок подачи откликов</div>
+            <div class="creation-card-hint">Минимальный срок 5 календарных дней</div>
+
+            <div class="tender-create-period always-visible">
+                <div class="date-picker-wrap">
+                    <div class="creation-card-hint-sm mg-bt-6">Дата</div>
+                    <div class="date-picker" id="applicationDeadlineContainerQuali">
+                        <input type="text" class="date-select filter-date" placeholder="ДД.ММ.ГГ" readonly>
+                        <input type="hidden" id="applicationDeadlineQuali" name="applicationDeadlineQuali">
+                        <svg><use href="#icon-calendar"></use></svg>
+                    </div>
+                </div>
+                <div class="date-picker-wrap">
+                    <div class="creation-card-hint-sm mg-bt-6">Время</div>
+                    <div id="applicationDeadlineTimeQuali" class="date-picker time">
+                        <input type="text" id="applicationDeadlineTimeQuali" class="time" name="applicationDeadlineTimeQuali" placeholder="00:00">
+                        <svg><use href="#icon-clock"></use></svg>
+                    </div>
+                    <div class="creation-card-hint-sm mg-top-6">Россия, Москва (UTC +3:00)</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="creation-card-item">
+            <div class="creation-card-subtitle text-p2">Плановая дата завершения процедуры</div>
+            <div class="creation-card-hint">Укажите предполагаемую дату подведения итогов процедуры.</div>
+
+            
+            <div class="tender-create-period always-visible">
+                <div class="date-picker-wrap">
+                    <div class="creation-card-hint-sm mg-bt-6">Дата</div>
+                    <div class="date-picker" id="endDeadlineContainerQuali">
+                        <input type="text" class="date-select filter-date" placeholder="ДД.ММ.ГГ" readonly>
+                        <input type="hidden" id="endDeadlineQuali" name="endDeadlineQuali">
+                        <svg><use href="#icon-calendar"></use></svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="creation-card add-info">
+        <div class="creation-card-title">Дополнительная информация</div>
+        <div class="creation-card-hint mg-bt-16">Заполните дополнительную информацию</div>
+
+        <div class="tender-creation-input-field additional-info-text">
+            <div class="tender-creation-hint mg-bt-8">Дополнительная информация</div>
+            <div class="input-box">
+                <input type="text" name="additionalInfoTextQuali" placeholder="Введите информацию для поставщиков">
+            </div>
+            <button class="button-add-more" type="button">
+                <svg><use href="#icon-plus"></use></svg>
+                <span>Добавить дополнительные поля информации</span>
+            </button>
+        </div>
+
+        <div class="tender-creation-single-search approver-appointment">
+            <div class="tender-creation-hint mg-bt-8">Утверждение заявки перед началом конкурса</div>
+            <div class="tender-creation-closed-procedure">
+
+                <select class="select2 filter-select tender-creation-single-search" name="approverAppointmentQuali" id="approverAppointmentQuali" data-placeholder="Добавить утверждающего">
+                    <option value="approver1">утверждающий1</option>
+                    <option value="approver2">утверждающий2</option>
+                    <option value="approver3">утверждающий3</option>
+                    <option value="approver4">утверждающий4</option>
+                    <option value="approver5">утверждающий5</option>
+                </select>
+                
+            </div>
+            <button class="button-add-more" type="button">
+                <svg><use href="#icon-plus"></use></svg>
+                <span>Добавить дополнительного утверждающего</span>
+            </button>
+        </div>
+
+    </div>
+
+    <div class="creation-card">
+        <div class="creation-card-upper">
+            <div class="creation-card-upper-text">
+                <div class="creation-card-title">Критерии квалификации <span class="platform-rec">Рекомендация платформы</span></div>
+                <div class="creation-card-hint">Добавьте требования и документы для прохождения предварительной квалификации</div>
+            </div>
+
+            <div class="how-does-it-work">
+                <svg><use href="#icon-question"></use></svg>
+                Как это работает?
+            </div>
+        </div>
+
+        <button class="button-add-more criteria" type="button">
+            <svg><use href="#icon-plus"></use></svg>
+            <span>Добавить критерий</span>
+        </button>
+    </div>
+    
+
+    <div class="creation-manage-buttons">
+        <div class="manage-button button large cancel">Отменить</div>
+        <div class="manage-button button large primary continue disabled">Продолжить</div>
+    </div> 
+
+    <div class="tender-creation-upper">
+        <div class="creation-title">Создание процедуры предварительной квалификации</div>
+        <div class="tender-creation-upper-buttons">
+            <div class="button">Сохранить в черновик</div>
+            <div class="button">Применить шаблон</div>
+        </div>
+    </div>
+
+    <div class="creation-steps">
+        <div class="creation-step completed">Доступ к процедуре</div>
+        <div class="creation-step completed">Основные данные</div>
+        <div class="creation-step completed">Параметры закупки</div>
+        <div class="creation-step">Условия оплаты и доставки</div>
+        <div class="creation-step next">Заполнение лотов</div>
+    </div>
+
+    <div class="creation-card delivery-info">
+        <div class="creation-card-title">Условия оплаты и доставки</div>
+
+        <div class="tender-creation-single-search width-440 search-icon">
+
+            <div class="creation-card-hint">Адрес</div>
+            <select class="select2 filter-select address-select" name="addressChoiceQuali" id="addressChoiceQuali" data-placeholder="Индекс, Страна Область, населенный пункт, Улица, дом, Строение/корпус, квартира/офис">
+                <option value="address1">адрес1</option>
+                <option value="address2">адрес2</option>
+                <option value="address3">адрес3</option>
+                <option value="address4">адрес4</option>
+                <option value="address5">адрес5</option>
+            </select>
+
+        </div>
+
+        <button class="button-add-more" type="button">
+            <svg><use href="#icon-plus"></use></svg>
+            <span>Добавить еще адрес</span>
+        </button>
+
+
+        <div class="tender-creation-input-field additional-delivery-text">
+            <div class="creation-card-hint">Дополнительные условия поставки</div>
+            <div class="input-box width-440">
+                <input type="text" name="additionalDeliveryInfoQuali" placeholder="Время работы склада, возможна ли частичная отгрузка, когда требуется поставка или оказание услуги">
+            </div>
+        </div>
+
+        <div class="tender-creation-single-search width-440 list-icon">
+
+            <div class="creation-card-hint">Условия оплаты</div>
+            <select class="select2 filter-select payment-conditions" name="paymentConditionsQuali" id="paymentConditionsQuali" data-placeholder="Выберите условия оплаты из ваших шаблонов">
+                <option value="payment1">условие1</option>
+                <option value="payment2">условие2</option>
+                <option value="payment3">условие3</option>
+                <option value="payment4">условие4</option>
+                <option value="payment5">условие5</option>
+            </select>
+
+            
+            <button class="button-add-more" type="button">
+                <svg><use href="#icon-plus"></use></svg>
+                <span>Добавить другие условия</span>
+            </button>
+
+        </div>
+    </div>
+
+    <div class="creation-card contacts-info">
+        <div class="creation-card-title">Контакты</div>
+
+        <div class="tender-creation-single-search width-440 no-icon">
+
+            <div class="creation-card-hint">Контакты</div>
+            <select class="select2 filter-select address-select" name="contactsInfoQuali" id="contactsInfoQuali" data-placeholder="Выберите контакт из списка организации">
+                <option value="contact1">контакт1</option>
+                <option value="contact2">контакт2</option>
+                <option value="contact3">контакт3</option>
+                <option value="contact4">контакт4</option>
+                <option value="contact5">контакт5</option>
+            </select>
+
+        </div>
+
+        <div class="buttons-more-wrap">
+
+            <button class="button-add-more" type="button">
+                <svg><use href="#icon-plus"></use></svg>
+                <span>Добавить еще контакт</span>
+            </button>
+
+            <button class="button-add-more" type="button">
+                <svg><use href="#icon-plus"></use></svg>
+                <span>Создать новый контакт вне организации</span>
+            </button>
+
+        </div>
+    </div>
+
+    <div class="tender-creation-checkbox-wrap additional-info">
+        <label class="tender-creation-checkbox">
+            <input type="checkbox" name="infoMessages" value="infoMessages">
+            <span class="checkbox-ui"></span>
+            <span class="checkbox-text">Я даю согласие на получение информационных сообщений</span>
+        </label>
+    </div>
+
+
+    <div class="creation-manage-buttons">
+        <div class="manage-button button large cancel">Отменить</div>
+        <div class="manage-button button large primary continue disabled">Продолжить</div>
+    </div> 
+
+    <div class="breadcrumbs">
+        <svg class="breadcrumbs-icon">
+            <use href="#icon-breadcrumbs"></use>
+        </svg>
+        <svg class="breadcrumbs-icon-arrow">
+            <use href="#icon-breadcrumbs-arrow"></use>
+        </svg>
+        <span>Создание процедуры</span>
+    </div>
+
+    <div class="tender-creation-upper">
+        <div class="creation-title">Создание процедуры предварительной квалификации</div>
+        <div class="tender-creation-upper-buttons">
+            <div class="button">Сохранить в черновик</div>
+            <div class="button">Применить шаблон</div>
+        </div>
+    </div>
+
+    <div class="creation-steps">
+        <div class="creation-step completed">Доступ к процедуре</div>
+        <div class="creation-step completed">Основные данные</div>
+        <div class="creation-step completed">Параметры закупки</div>
+        <div class="creation-step completed">Условия оплаты и доставки</div>
+        <div class="creation-step">Заполнение лотов</div>
+    </div>
+
+
+    <div class="creation-card">
+        <div class="creation-card-lots-upper">
+            <div class="creation-card-title text-h2">Заполнение лотов</div>
+            <div class="creation-card-lots-buttons">
+                <button class="button-use-template button" type="button">
+                    <svg><use href="#icon-use-template"></use></svg>
+                    <span>Применить шаблон к позиции</span>
+                </button>
+
+                <button class="button-use-template button" type="button">
+                    <svg><use href="#icon-arrow-down"></use></svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="creation-card-lot-toggle">
+            <div class="creation-card-lot-toggle-item active" data-text="Позиции">Позиции</div>
+            <div class="creation-card-lot-toggle-item" data-text="Запрашиваемые документы">Запрашиваемые документы</div>
+        </div>
+
+        <div class="creation-card-lots-wrap">
+
+            <div class="creation-card-lot left-side">
+
+                <button class="button-add-more lot" type="button">
+                    <svg><use href="#icon-plus"></use></svg>
+                    <span>Добавить позицию</span>
+                </button>
+
+                <div class="creation-card-lot-item selected">
+                    <div class="lot-number">1</div>
+                    <div class="lot-text">
+                        <div class="lot-title">Позиция 1</div>
+                        <div class="lot-info">100шт · 190 000 ₽ · НДС 20%</div>
+                    </div>
+                </div>
+                <div class="creation-card-lot-item completed">
+                    <div class="lot-number">1</div>
+                    <div class="lot-text">
+                        <div class="lot-title">Позиция 1</div>
+                        <div class="lot-info">100шт · 190 000 ₽ · НДС 20%</div>
+                    </div>
+                </div>
+                <div class="creation-card-lot-item attention">
+                    <div class="lot-number">1</div>
+                    <div class="lot-text">
+                        <div class="lot-title">Позиция 1</div>
+                        <div class="lot-info">100шт · 190 000 ₽ · НДС 20%</div>
+                    </div>
+                </div>
+
+            </div>
+            
+            <div class="creation-card-lot center-side lot-border">
+                <div class="tender-creation-upper border-bottom">
+                    <div class="creation-card-title">Позиция №1</div>
+                        <div class="tender-creation-upper-buttons">
+                        <div class="button position">
+                            <svg><use href="#icon-position-copy"></use></svg>
+                        </div>
+                        <div class="button position">
+                            <svg><use href="#icon-trash"></use></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tender-creation-input-field positon-name">
+                    <div class="input-hint small mg-bt-6">
+                        Наименование позиции 
+                        <span class="input-required">*</span>
+                        <svg>
+                            <use href="#icon-question"></use>
+                        </svg>
+                    </div>
+                    <div class="input-box">
+                        <input type="text" name="positionNameQuali" placeholder="Введите наименование позиции">
+                    </div>
+                </div>
+
+                <div class="position-options-wrap">
+                    <div class="tender-creation-input-field position-option">
+                        <div class="input-hint small mg-bt-6">Количество <span class="input-required">*</span></div>
+                        <div class="input-box">
+                            <input type="text" name="positionQuantityQuali" placeholder="0">
+                        </div>
+                    </div>
+                    <div class="tender-creation-single-search position-option">
+                        <div class="input-hint small mg-bt-6">Ед. измерения</div>
+                        <select class="select2 filter-select single-select" name="positionUnitQuali" id="positionUnitQuali" data-placeholder="">
+                            <option value="unit1">шт</option>
+                            <option value="unit2">кг</option>
+                            <option value="unit3">л</option>
+                            <option value="unit4">мг</option>
+                            <option value="unit5">комплект</option>
+                        </select>
+                    </div>
+                    <div class="tender-creation-input-field position-option NDS">
+                        <div class="input-hint small mg-bt-6">Макс. цена без НДС <span class="input-required">*</span></div>
+                        <div class="input-box">
+                            <input type="text" name="positionMaxPriceQuali" placeholder="0">
+                        </div>
+                    </div>
+                    <div class="tender-creation-single-search position-option">
+                        <div class="input-hint small mg-bt-6">НДС</div>
+                        <select class="select2 filter-select single-select" name="positionNDSQuali" id="positionNDSQuali" data-placeholder="0%">
+                            <option value="nds1">20%</option>
+                            <option value="nds2">10%</option>
+                            <option value="nds3">0%</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="tender-creation-single-search delivery-place search-icon search-visible mg-top-16">
+                    <div class="input-hint small mg-bt-6">Место поставки <span class="input-required">*</span></div>
+                    <select class="select2 filter-select single-select" name="deliveryPlaceQuali" id="deliveryPlaceQuali" data-placeholder="Введите или выберите из списка">
+                        <option value="place1">Место 1</option>
+                        <option value="place2">Место 2</option>
+                        <option value="place3">Место 3</option>
+                    </select>
+                </div>
+                
+                <button class="button-add-more small" type="button">
+                    <svg><use href="#icon-plus"></use></svg>
+                    <span>Добавить поле</span>
+                </button>
+
+                <div class="file-upload-card position-edit">
+                    <div class="creation-card-hint mg-bt-8">Добавить закупочную документацию</div>
+
+                    <div class="creation-card-file-area">
+                        <div class="file-drop-zone">
+                            <div class="file-drop-icon">
+                                <svg><use href="#icon-file-upload"></use></svg>
+                            </div>
+                            <div class="file-drop-text">
+                                <span class="file-browse-btn">Нажмите сюда</span>
+                                <span class="file-drop-primary">или перетащите файл для загрузки файлов</span>
+                            </div>
+                            <div class="file-drop-hint">Поддерживаемый формат: .word, PDF<br />Макс. размер файлов: 10 MB</div>
+                            <input type="file" class="file-input" multiple accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+                        </div>
+                    </div>
+                    <div class="file-list">
+
+                    </div>
+                </div>
+
+            </div>
+
+            
+        </div>
+
+        <div class="creation-card-documents-wrap">
+
+            <div class="creation-card-documents left-side">
+
+                <button class="button-add-more document" type="button">
+                    <svg><use href="#icon-plus"></use></svg>
+                    <span>Добавить позицию</span>
+                </button>
+
+                <div class="creation-card-document-item selected">
+                    <div class="lot-number">1</div>
+                    <div class="lot-text">
+                        <div class="lot-title">Документ 1</div>
+                    </div>
+                </div>
+                <div class="creation-card-document-item completed">
+                    <div class="lot-number">1</div>
+                    <div class="lot-text">
+                        <div class="lot-title">Документ 1</div>
+                    </div>
+                </div>
+                <div class="creation-card-document-item attention">
+                    <div class="lot-number">1</div>
+                    <div class="lot-text">
+                        <div class="lot-title">Документ 1</div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="creation-card-documents center-side lot-border">
+                <div class="tender-creation-upper border-bottom">
+                    <div class="creation-card-title">Документ №1</div>
+                        <div class="tender-creation-upper-buttons">
+                        <div class="button position">
+                            <svg><use href="#icon-position-copy"></use></svg>
+                        </div>
+                        <div class="button position">
+                            <svg><use href="#icon-trash"></use></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tender-creation-input-field positon-name">
+                    <div class="input-hint small mg-bt-6">
+                        Наименование документа
+                        <span class="input-required">*</span>
+                        <svg>
+                            <use href="#icon-question"></use>
+                        </svg>
+                    </div>
+                    <div class="input-box">
+                        <input type="text" name="positionNameQuali" placeholder="Введите наименование позиции">
+                    </div>
+                </div>
+
+                <div class="position-options">
+                    <div class="input-hint small mg-bt-6">
+                        Описание
+                    </div>
+                    <div class="textarea-wrapper">
+                        <textarea class="char-counter-textarea" rows="3" name="document_descQuali" id="documentDescQuali" placeholder="Введите" maxlength="200"></textarea>
+                        <div class="char-counter">0/200</div>
+                    </div>
+                </div>
+
+                <div class="file-upload-card position-edit">
+                    <div class="creation-card-hint mg-bt-8">Добавить закупочную документацию</div>
+
+                    <div class="creation-card-file-area">
+                        <div class="file-drop-zone">
+                            <div class="file-drop-icon">
+                                <svg><use href="#icon-file-upload"></use></svg>
+                            </div>
+                            <div class="file-drop-text">
+                                <span class="file-browse-btn">Нажмите сюда</span>
+                                <span class="file-drop-primary">или перетащите файл для загрузки файлов</span>
+                            </div>
+                            <div class="file-drop-hint">Поддерживаемый формат: .word, PDF<br />Макс. размер файлов: 10 MB</div>
+                            <input type="file" class="file-input" multiple accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+                        </div>
+                    </div>
+                    <div class="file-list">
+
+                    </div>
+                    <div class="tender-creation-checkbox-wrap additional-info">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="infoMessagesQuali" value="infoMessagesQuali">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Отметить обязательным</span>
+                        </label>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+    
+</div>

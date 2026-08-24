@@ -1,0 +1,261 @@
+<div class="s-banner-wrapper js-banner-wrapper custom-pt-0">
+    {* @description Show this block when multiple banners are used *}
+    <div class="s-banner-header" style="display: none;">
+        <a class="inline-link js-banner-delete" href="javascript:void(0);"{if !empty($banner.image_filename)} data-filename="{$banner.image_filename|escape}"{/if}>
+            <i class="icon16 delete"></i><b><i>[`Delete banner`]</i></b>
+        </a>
+    </div>
+    <div class="s-fields-wrapper">
+
+        <input type="hidden" data-name="[type]" value="link" />
+
+        <div class="field">
+            <div class="name">[`Image`]</div>
+            <div class="value s-banner-upload-wrapper">
+
+                <div class="s-image-wrapper js-image-wrapper"{if empty($banner.image)} style="display: none;"{/if}>
+                    <img class="js-image-preview" src="{$banner.image|default:""|escape}" alt="">
+                </div>
+
+                {* Control for uploading a new image *}
+                <div class="js-image-field-wrapper">
+                    <div class="upload">
+                        <label class="link">
+                            <i class="fas fa-file-upload"></i>
+                            <span>[`Upload file`]</span>
+                            <input class="js-image-field" autocomplete="off" type="file" accept=".gif,.jpg,.jpeg,.png,.webp">
+                        </label>
+                    </div>
+                </div>
+
+                {* Field for transferring an already uploaded image *}
+                {* If the new image will not be uploaded, we will use the data from this field *}
+                {* If the user wants to change the image, this field is suitable for us to delete the old image from the server. *}
+                <input class="js-banner-url-field" type="hidden" data-name="[old_image_filename]" value="{$banner.image_filename|default:""|escape}">
+
+                {* Field for transferring the name of the image, loaded into the flat directory in the cache *}
+                <input class="js-image-filename-field" type="hidden" data-name="[image_filename]" value="">
+
+                <script>
+                    ( function($) {
+                        $(".js-image-field-wrapper").waUpload({
+                            is_uploadbox: true
+                        })
+                    })(jQuery);
+                </script>
+
+            </div>
+        </div>
+
+        <div class="field">
+            <div class="value submit">
+                <div class="small">
+                    <span>[`or`]</span>
+                    <button class="button small nobutton js-banner-ai-toggle" type="button">
+                        <span class="icon webasyst-magic-wand-ai"></span>
+                        [`generate banner with AI`] &rsaquo;
+                    </button>
+                </div>
+                <div class="box rounded s-ai-box js-banner-ai-box" style="display: none;">
+                    {$default_ai_style_id = ''}
+                    {$default_ai_style_description = ''}
+                    {foreach $allowed_ai_styles as $style_id => $style}
+                        {if $style_id !== 'auto'}
+                            {$default_ai_style_id = $style_id}
+                            {$default_ai_style_description = $style.description|default:''}
+                            {break}
+                        {/if}
+                    {/foreach}
+                    <div class="custom-mb-8 flexbox vertical space-4">
+                        <span>[`Select style`]</span>
+                        <select class="small js-banner-ai-style">
+                            {foreach $allowed_ai_styles as $style_id => $style}
+                                {if $style_id !== 'auto'}
+                                    <option value="{$style_id|escape}"{if $style_id === $default_ai_style_id} selected{/if}>{$style.title|escape}</option>
+                                {/if}
+                            {/foreach}
+                        </select>
+                    </div>
+                    <div class="custom-my-8">
+                        <p class="hint js-banner-ai-style-description">{$default_ai_style_description|escape}</p>
+                        <textarea class="full-width small js-banner-ai-prompt" placeholder="{_w("Describe what should be there on a banner...")|escape}"></textarea>
+                    </div>
+                    <div class="custom-mt-8">
+                        <button class="button small short purple-gradient js-banner-ai-generate" type="button">
+                            <span class="s-icon">
+                                <span class="icon webasyst-magic-wand-ai"></span>
+                            </span>
+                            <span class="s-name">[`Generate banner with AI`]</span>
+                        </button>
+                        <span class="custom-ml-8 hint js-banner-ai-loading" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            [`May take a couple of minutes...`]
+                        </span>
+                    </div>
+                    <p class="hint custom-mb-0">
+                        {sprintf('[`%s prompt cost multiplier applies for image generation tasks with Webasyst AI.`]', '<b>&times;'|cat:$_mltplr|cat:'</b>')}
+                        {if !$_is_premium}<a href="{$wa_app_url}?action=settings#/premium/" class="bold" style="color: var(--accent-color); text-decoration: none !important;">[`Upgrade to premium to reduce costs`]&nbsp;&rsaquo;</a>{/if}
+                    </p>
+                    <p class="state-error-hint js-banner-ai-error" style="display: none;"></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="field">
+            <div class="name for-input">[`Title`]</div>
+            <div class="value">
+
+                <input class="long bold large" type="text" data-name="[title]" value="{$banner.title|default:''|escape}">
+
+            </div>
+        </div>
+
+        <div class="field">
+            <div class="name for-input">[`Promo subtitle`]</div>
+            <div class="value">
+                <textarea type="text" data-name="[body]" class="width-100-mobile">{$banner.body|default:""|escape}</textarea>
+            </div>
+        </div>
+
+        <div class="field">
+            <div class="name for-input">[`Button text`]</div>
+            <div class="value">
+                <input type="text" data-name="[button_text]" class="width-100-mobile" value="{$banner.button_text|default:''|escape}">
+                <p class="small gray">[`If not empty, the promo link will be focused on a button withing the banner, not on the whole banner area. (The button display requires to be supported by your design theme.)`]</p>
+            </div>
+        </div>
+
+        <div class="field custom-my-20">
+            <div class="name for-input">[`Link`]</div>
+            <div class="value">
+                {$type_link = $banner.type_link|default:'link'}
+                {$b_link = $banner.link|default:''|escape}
+                <div class="flexbox wrap-mobile middle space-12">
+                    <label class="flexbox middle space-4"><input type="radio" class="custom-m-0" data-name="[type_link]" value="product"{if $type_link == 'product'} checked{/if}> [`Product`]</label>
+                    <input class="long js-product-autocomplete" type="search" data-name="[product_name]" value="{$banner.product_name|default:''|escape}" placeholder="[`Type product or SKU name`]"{if $type_link != 'product'} disabled{/if} required>
+                    <input type="hidden" data-name="[link]" value="{if $type_link == 'product'}{$b_link}{/if}">
+                    <span class="hint">{if $type_link == 'product'}[`ID`]: {$b_link}{/if}</span>
+                </div>
+                <div class="flexbox wrap-mobile middle space-8 custom-my-8">
+                    <label class="flexbox middle space-4"><input type="radio" class="custom-m-0" data-name="[type_link]" value="category"{if $type_link == 'category'} checked{/if}> [`Category`]</label>
+                    {if empty($categories)}
+                    <span>[`There are no product categories.`]</span>
+                    {else}
+                    <div class="wa-select">
+                        <select data-name="[link]"{if $type_link != 'category'} disabled{/if}>
+                            <option value="0" disabled selected>[`Select category`]</option>
+                            {foreach $categories as $category}
+                            <option value="{$category.id}"{if $type_link == 'category' && $b_link == $category.id} selected{/if}>{$category.name|escape}</option>
+                            {/foreach}
+                        </select>
+                    </div>
+                    {/if}
+                </div>
+                <div class="flexbox wrap-mobile middle space-8">
+                    <label class="flexbox middle space-4"><input type="radio" class="custom-m-0" data-name="[type_link]" value="link"{if $type_link == 'link'} checked{/if}> [`Link`]</label>
+                    <input class="long" type="text" data-name="[link]" value="{if $type_link == 'link'}{$b_link}{/if}"{if $type_link != 'link'} disabled{/if} required>
+                </div>
+            </div>
+        </div>
+
+        <div class="field">
+            <div class="name for-input">[`Text color`]</div>
+            <div class="value s-color-picker">
+                <input type="text" data-name="[color]" value="{$banner.color|escape|default:'#ffffff'}" class="shorter">
+                <div class="js-toggle-colorpicker icon color"></div>
+                <div class="js-colorpicker"></div>
+            </div>
+        </div>
+
+        <div class="field">
+            <div class="name for-input">[`Background color`]</div>
+            <div class="value s-color-picker">
+                <input type="text" data-name="[background_color]" value="{$banner.background_color|escape|default:'#aaaaaa'}" class="shorter">
+                <div class="js-toggle-colorpicker icon color"></div>
+                <div class="js-colorpicker"></div>
+                <p class="hint">[`Image background color`]</p>
+            </div>
+        </div>
+
+        <div class="field">
+            <div class="name">[`Countdown`]</div>
+            <div class="value">
+
+                <div class="s-countdown-section js-countdown-section {if !empty($banner.countdown_datetime)}is-extended{/if}">
+                    <div class="s-visible">
+                        <label>
+                            <span class="wa-checkbox">
+                                <input class="js-countdown-toggle" type="checkbox" {if !empty($banner.countdown_datetime)}checked{/if}>
+                                <span>
+                                    <span class="icon">
+                                        <i class="fas fa-check"></i>
+                                    </span>
+                                </span>
+                            </span>
+                            <span class="s-toggle-text">[`Turn on`]</span>
+                        </label>
+
+                        <span class="s-timer js-date-timer" data-pattern="%s" {if !empty($banner.countdown_datetime)}data-date="{$banner.countdown_datetime|wa_datetime:"Y-m-d-H-i"}"{/if}></span>
+                    </div>
+
+                    <div class="s-hidden js-hidden">
+                        {$_date = ""}
+                        {$_date_view = ""}
+                        {$_time_hours = ""}
+                        {$_time_minutes = ""}
+                        {if !empty($banner.countdown_datetime)}
+                            {$_date_view = $banner.countdown_datetime|wa_date}
+                            {$_date = $banner.countdown_datetime|wa_datetime:"Y-m-d"}
+                            {$_time_hours = $banner.countdown_datetime|wa_datetime:"H"}
+                            {$_time_minutes = $banner.countdown_datetime|wa_datetime:"i"}
+                        {/if}
+
+                        <div class="flexbox middle">
+                            <label class="s-datepicker-wrapper state-with-inner-icon right">
+                                <input class="s-datepicker js-datepicker" type="text" value="{$_date_view}" data-alt=".js-date" required {if empty($banner.countdown_datetime)}disabled{/if}>
+                                <span class="icon"><i class="fas fa-calendar-alt"></i></span>
+                                <input class="js-date" type="hidden" data-name="[countdown_datetime][date]" value="{$_date}"{if empty($banner.countdown_datetime)} disabled{/if}>
+                            </label>
+                            <label class="s-time-wrapper">
+                                <input class="s-time short js-hours" type="text" data-name="[countdown_datetime][hour]" pattern="{'[0-9]{2}'}" placeholder="00" maxlength="2" autocomplete="off" value="{$_time_hours}" required{if empty($banner.countdown_datetime)} disabled{/if}>
+                            </label>
+                            <span>:</span>
+                            <label class="s-time-wrapper">
+                                <input class="s-time short js-minutes" type="text" data-name="[countdown_datetime][minute]" pattern="{'[0-9]{2}'}" placeholder="00" maxlength="2" autocomplete="off" value="{$_time_minutes}" required{if empty($banner.countdown_datetime)} disabled{/if}>
+                            </label>
+                        </div>
+                        <div class="line">
+                            <span class="hint">([`date format`] <span class="s-countdown-user-date-format">DD.MM.YYYY</span><span class="s-countdown-current-user-time"></span>)</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    (function ($) {
+        $('input[data-name="[type_link]"]').on('change', function () {
+            $(this).closest('div.value').find('select, input:not(input[data-name="[type_link]"])').prop('disabled', true);
+            $(this).closest('div').find('input, select').prop('disabled', false);
+        });
+
+        let autocomplete_product_input = $('.js-product-autocomplete');
+        autocomplete_product_input.autocomplete({
+            source: '{$wa_app_url}?action=autocomplete&with_counts=1',
+            minLength: 3,
+            delay: 300,
+            select: function (event, ui) {
+                if (ui.item.id) {
+                    autocomplete_product_input.val(ui.item.value);
+                    autocomplete_product_input.siblings('span.hint').html('ID: '+ ui.item.id);
+                    autocomplete_product_input.siblings('input[data-name="[link]"]').val(ui.item.id);
+                }
+                return false;
+            }
+        });
+    })(jQuery);
+</script>

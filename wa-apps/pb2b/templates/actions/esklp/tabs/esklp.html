@@ -1,0 +1,18 @@
+<table class="zebra">
+    <thead>
+    <tr>
+        <th>Стандартизованное МНН</th>
+        <th>Код узла СМНН</th>
+        <th>Стандартизованная лекарственная форма</th>
+    </tr>
+    </thead>
+    <tbody>
+    {foreach $includes.esklp as $esklp}
+        <tr>
+            <td><a href="#/esklp/edit/id={$esklp.id|escape}">{$esklp.name|escape}</a></td>
+            <td>{$esklp.code|escape}</td>
+            <td>{$esklp.form|escape}</td>
+        </tr>
+    {/foreach}
+    </tbody>
+</table>

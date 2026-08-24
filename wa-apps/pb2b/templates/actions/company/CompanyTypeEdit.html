@@ -1,0 +1,15 @@
+{* <h1 class="mb5 ">Изменение типа в компании &laquo;{$object.name|escape}&raquo; </h1>      *}
+
+<form class="js-form form fields" action="?module=company&action=typeSave">
+    {if !empty($object.id)}
+        <input type="hidden" name="id" value="{$object.id|escape}">
+    {/if}
+    
+    
+    <div class="field">
+        <div class="value">
+            <input type="submit" class="button" value="Сохранить">
+            <span class="js-form-message form-message red" style="display: none;"></span>
+        </div>
+    </div>
+</form>

@@ -1,0 +1,34 @@
+<ul class="menu"{if !$parent_expanded|default:1} style="display: none;"{/if}>
+    <li class="fhierarchical-newposition {$newposition_class|default:''|escape}" data-type="{$type|default:'page'|escape}"></li>
+    {foreach $items as $item}
+        <li class="dr ui-draggable" data-type="{$type|default:'page'|escape}" data-id="{$item.id|escape}">
+            <a href="{$item_url|default:''|escape}" class="{$item_class|escape} fhierarchical-item"{$item_action|default:''}{if !empty($item_action)} data-params="id={$item.id}"{/if} data-id="{$item.id}">
+                {if $item.right_key - $item.left_key > 1}
+                    <i class="w-icon fas fa-caret-down {if empty($item.expanded)}rarr{else}darr{/if} overhanging collapse-handler" id="{$type|default:'page'|escape}-{$item.id}-handler"></i>
+                {else}
+                    <i class="w-icon fas fa-empty"></i>
+                {/if}
+                <span class="name{if ifempty($item.is_draft, 0) > 0} gray{/if}">{$item.name|escape}</span>
+                <strong class="small highlighted count-new"></strong>
+                <span class="count">
+                    {if !empty($show_checkboxes)}
+                        <input type="checkbox"
+                            class="fhierarchical-item-checkbox"
+                            data-category-id="{$item.id|escape}"
+                            data-parent-id="{ifempty($item.parent_id, 0)|escape}"
+                            data-left-key="{$item.left_key|escape}"
+                            data-right-key="{$item.right_key|escape}"
+                            {if in_array($item.id, $selected_checkboxes)}checked{/if}>
+                    {else}
+                        <i class="w-icon fas fa-plus-circle fhierarchical-inline-item-icon fhierarchical-{$type|default:'page'|escape}-create mr5"
+                           data-parent="{$item.id|escape}"></i>
+                    {/if}
+                </span>               
+            </a>
+            {if !empty($item.children)}
+                {include file=$app_path|cat:'/templates/includes/include.tree.html' items=$item.children parent_expanded=$item.expanded|default:0 parent_depth=$item.depth}
+            {/if}
+        </li>
+        <li class="fhierarchical-newposition {$newposition_class|default:''|escape}" data-type="{$type|default:'page'|escape}"></li>
+    {/foreach}
+</ul>

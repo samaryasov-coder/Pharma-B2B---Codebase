@@ -1,0 +1,35 @@
+<button class="button js-popup mt25" data-action="?module=company&action=categorySelect" data-params="id={$object.id|default:0}">Изменить</button>
+{if !empty($includes.categories)}
+    <div class="mt25">
+        <table class="zebra js-company-categories-table" style="width:100%;">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Название</th>
+                    <th>Путь</th>
+                    <!-- <th></th> -->
+                </tr>
+            </thead>
+            <tbody>
+                {if !empty($includes.categories)}
+                    {foreach $includes.categories as $cat}
+                        <tr data-id="{$cat.id|escape}">
+                            <td>{$cat.id|escape}</td>
+                            <td>{$cat.name|escape}</td>
+                            <td>{if !empty($cat.full_url)}{$cat.full_url|escape}{else}-{/if}</td>
+                            <!-- <td>
+                                <span class="js-company-category-remove cp"
+                                    data-company-id="{$object.id|escape}"
+                                    data-category-id="{$cat.id|escape}">
+                                    <i class="fas fa-trash"></i>
+                                </span>
+                            </td> -->
+                        </tr>
+                    {/foreach}
+                {/if}
+            </tbody>
+        </table>
+    </div>
+{else}
+    <div class="hint mt10">Категории не выбраны</div>
+{/if}

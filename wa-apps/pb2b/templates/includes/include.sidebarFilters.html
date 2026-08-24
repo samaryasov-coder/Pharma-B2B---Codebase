@@ -1,0 +1,92 @@
+{if !isset($namespace)}{$namespace = 'sidebar'}{/if}
+
+	<h5 class="heading">Фильтры</h5>
+	
+	<div class="sidebar-filter sidebar-filter-{$namespace|escape} mt25">
+		{foreach $filters|default:[] as $filter}
+	
+			{if $filter.type == 'hidden'}
+				<input type="hidden" name="{$namespace|escape}[{$filter.code|escape}]" value="{ifempty($filter.value,'')|escape}">
+	
+			{else}
+				<div class="sidebar-filter-field {*if !empty($filter.is_opened)} opened{/if*} ">
+					<div class="sidebar-filter-caption"><span>{$filter.name|escape}</span></div>
+	
+					<div class="sidebar-filter-content">
+	
+						{if $filter.type == 'select'}
+							<div class="sidebar-filter-block">
+								<div class="wa-select w100">
+									<select name="{$namespace|escape}[{$filter.code|escape}]">
+										{foreach $filter.values|default:[] as $value}
+											<option value="{$value.id|escape}"{if !empty($value.checked)} selected{/if}>{$value.name|escape}</option>
+										{/foreach}
+									</select>
+								</div>
+							</div>
+	
+						{elseif $filter.type == 'checkbox'}
+							<div class="sidebar-filter-block mt10">
+								<ul class="sidebar-filter-checkbox-menu menu mt10">
+									{foreach $filter.values|default:[] as $value}
+										
+											<li class="sidebar-filter-checkbox" data-default="{$value.default|default:'0'|escape}">
+											<input type="checkbox"
+												name="{$namespace|escape}[{$filter.code|escape}][{$value.id|escape}]"
+												{if !empty($value.checked)} checked{/if}>
+												{$value.name|escape}
+											</li>
+									
+									{/foreach}
+								</ul>
+							</div>	
+	
+						{elseif $filter.type == 'input'}
+							<div class="sidebar-filter-block">
+								<input type="text" class="w100"
+									   name="{$namespace|escape}[{$filter.code|escape}]"
+									   placeholder="{$filter.placeholder|default:''|escape}">
+							</div>
+	
+						{elseif $filter.type == 'date-interval'}
+							<div class="sidebar-filter-block">
+								C
+								<input type="date" name="company[create_datetime][from]" value="{$filter.from|default:''|escape}">
+								<br>
+								По
+								<input type="date" name="company[create_datetime][to]" value="{$filter.to|default:''|escape}">
+							</div>
+						{/if}
+	
+					</div>
+				</div>
+			{/if}
+	
+		{/foreach}
+	
+		<div class="sidebar-filter-block mt15 mb30">
+			<button type="submit" class="button green w100">Показать</button>
+		</div>
+	</div>
+
+
+{* {if !isset($namespace)}{$namespace = 'sidebar'}{/if}
+	<h5 class="heading">Фильтры</h5>
+    <div class="sidebar-filter sidebar-filter-{$namespace|escape} mt25">
+
+    <div class="sidebar-filter-block">
+        <input type="checkbox" name="filters[buyer]"> Покупатель
+    </div>
+
+    <div class="sidebar-filter-block">
+        <input type="checkbox" name="filters[supplier]"> Поставщик
+    </div>
+	
+	<div class="sidebar-filter-block mt15 mb30">
+		<button type="submit" class="button green w100">Показать</button>
+	</div>
+</div> *}
+    
+
+
+

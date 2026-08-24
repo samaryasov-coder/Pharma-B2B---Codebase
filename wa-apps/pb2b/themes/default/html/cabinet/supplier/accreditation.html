@@ -1,0 +1,58 @@
+<div class="cabinet-container js-cabinet-page" data-page="accreditation">
+    <div class="title">Запросы на одобрение</div>
+    <div class="grid gap24">
+        <ul class="tabs large js-tab-menu">
+            <li data-tab="request" class="tab-btn">
+                <a href="#request">Мои запросы</a>
+            </li>
+            <li data-tab="customer_requests" class="tab-btn">
+                <a href="#customer_requests">Запросы покупателей</a>
+            </li>
+            <li data-tab="documents" class="tab-btn">
+                <a href="#documents">Мои документы</a>
+            </li>
+        </ul>
+
+
+        <div class="tabs-content">
+            <div class="tab-content" data-tab="request">
+                <div class="empty-container">
+                    <span class="icon"><svg><use href="#icon-info"></use></svg></span>
+                    <span class="title">У вас пока нет отправленных запросов</span>
+                    <span class="des">В этом разделе будут отображаться запросы от покупателей на одобрение поставщиков. <br> Здесь вы сможете отслеживать их статус, просматривать детали и выполнять необходимые действия.</span>
+                </div>
+            </div>
+
+            <div class="tab-content" data-tab="customer_requests">
+                <div class="empty-container hidden">
+                    <span class="icon"><svg><use href="#icon-info"></use></svg></span>
+                    <span class="title">У вас пока нет запросов от покупателей</span>
+                    <span class="des">В этом разделе появляются запросы на предоставление документов от покупателей. Когда компания приглашена к участию в закупке или проверке, здесь можно загрузить требуемые документы и пройти одобрение.</span>
+                </div>
+
+                <table id="customerRequestTable">
+                    <thead>
+                    <tr>
+                        <th>Номер</th>
+                        <th>Наименование компании</th>
+                        <th>Сделать до</th>
+                        <th>Номер процедуры</th>
+                        <th>Статус</th>
+                        <th>Дата создания</th>
+                    </tr>
+                    </thead>
+                </table>
+            </div>
+
+            <div class="tab-content" data-tab="documents">
+                <div class="empty-container">
+                    <span class="icon"><svg><use href="#icon-info"></use></svg></span>
+                    <span class="title">У вас пока нет загруженных документов</span>
+                    <span class="des">В этом разделе хранятся документы вашей компании. Они используются при проверке покупателями и подставляются в запросы на одобрение поставщика.</span>
+                    <button class="button primary large create-document">Загрузить документы</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
