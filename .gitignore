@@ -12,5 +12,8 @@ wa-sources/
 wa-system/
 wa-widgets/
 .idea/
+.vscode/
+.cursor/
+.DS_Store
 /*.php
 *.md5
