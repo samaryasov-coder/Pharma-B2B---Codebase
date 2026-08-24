@@ -1,0 +1,16 @@
+wa-apps/*
+!wa-apps/pb2b/
+!wa-apps/pb2b/**
+wa-cache/
+wa-config/
+wa-content/
+wa-data/
+wa-installer/
+wa-log/
+wa-plugins/
+wa-sources/
+wa-system/
+wa-widgets/
+.idea/
+/*.php
+*.md5

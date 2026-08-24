@@ -1,1 +1,0 @@
-import{B as i,ad as t}from"./main-ade537b2.js";function l(e,a,o){i.webView?t.emit("spa:downloadFile",{id:a,name:o}):location.href=e}export{l as d};
