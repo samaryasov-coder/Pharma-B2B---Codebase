@@ -9,8 +9,9 @@ class pb2bLoginController extends pb2bFrontendController
         elseif (waRequest::issetPost(waAuth::LOGIN_FIELD_EMAIL))
             $login_field = waAuth::LOGIN_FIELD_EMAIL;
         else
-            return $this->error($message, ['fields' => ['phone' => 'Обязательное поле', 'email' => 'Обязательное поле']]);
+            return $this->error(pb2bHttpStatus::PAYMENT_REQUIRED, ['fields' => ['phone' => 'Обязательное поле', 'email' => 'Обязательное поле']]);
 
+        return $this->error(pb2bHttpStatus::PAYMENT_REQUIRED, 'validationError');
 
         $login_value = waRequest::post($login_field, '', 'string');
         if (!trim($login_value))

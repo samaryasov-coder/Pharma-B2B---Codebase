@@ -65,40 +65,40 @@
 				contentType: false,
 				dataType: 'json',
 				error: function (reply) {
-					viewMessage(result, (callbackMessage === true || callbackMessage === undefined) ? reply_data.message : callbackMessage);
+					viewMessage(reply.status, (callbackMessage === true || callbackMessage === undefined) ? reply_data.message : callbackMessage);
 				},
 				complete: function (){
 					$submit_button.removeClass('loading').prop('disabled', false);
 				},
 				success: function(reply) {
 					let replyStatus = reply.status;
-					let replyPayload = reply.payload;
+					let replyData = reply.data;
 					let callbackMessage = undefined;
 
 					switch (replyStatus){
 						case 'success': {
 							if (typeof config.onSuccess === 'function')
-								callbackMessage = config.onSuccess(replyPayload, $form);
+								callbackMessage = config.onSuccess(replyData, $form);
 							break;
 						}
 						case 'warning': {
 							if (typeof config.onWarning === 'function')
-								callbackMessage = config.onWarning(replyPayload, $form);
+								callbackMessage = config.onWarning(replyData, $form);
 							break;
 						}
 						case 'info': {
 							if (typeof config.onInfo === 'function')
-								callbackMessage = config.onInfo(replyPayload, $form);
+								callbackMessage = config.onInfo(replyData, $form);
 							break;
 						}
 						case 'error': {
 							if (typeof config.onError === 'function')
-								callbackMessage = config.onError(replyPayload, $form);
+								callbackMessage = config.onError(replyData, $form);
 							break;
 						}
 					}
 
-					showInputErrors(replyPayload.fields ?? {});
+					showInputErrors(replyData.fields ?? {});
 					viewMessage(replyStatus, (callbackMessage === true || callbackMessage === undefined) ? reply.message : callbackMessage);
 				}
 			});

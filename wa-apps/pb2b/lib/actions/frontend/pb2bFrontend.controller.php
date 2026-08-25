@@ -4,45 +4,27 @@ class pb2bFrontendController extends waJsonController
     use pb2bFrontendTrait;
     
     private pb2bResponseType $responseType = pb2bResponseType::SUCCESS;
-    private string $responseMessage = '';
+    protected $response = null;
 
-    private function buildResponse(): array
+    protected function success(array $data = [], int $status = pb2bHttpStatus::OK): pb2bResponse
     {
-        return [
-            'status' => $this->responseType->value,
-            'message' => $this->responseMessage,
-            'payload' => $this->response
-        ];
+        return $this->response = pb2bResponse::success($data, $status);
     }
 
-    private function setResponse(pb2bResponseType $type, string $message = '', array $payload = []): array
+    protected function error(int $http_status, string $code, string $message): pb2bResponse
     {
-        $this->responseType = $type;
-        $this->responseMessage = $message;
-        $this->response = $payload;
-
-        return $this->buildResponse();
-    }
-
-    protected function success(string $message = '', array $payload = []): array
-    {
-        return $this->setResponse(pb2bResponseType::SUCCESS, $message, $payload);
-    }
-
-    protected function error(string $message = '', array $payload = []): array
-    {
-        return $this->setResponse(pb2bResponseType::ERROR, $message, $payload);
+        return $this->response = pb2bResponse::error($http_status, $code, $message);
     }
 
     public final function display(): void
     {
-        if (waRequest::isXMLHttpRequest()) {
-            $this->getResponse()->addHeader('Content-Type', 'application/json');
-        }
+        $response = $this->response ?? pb2bResponse::error(500, 'internalError', 'Не удалось сформировать ответ');
+
+        $this->getResponse()->addHeader('Content-Type', 'application/json');
+        $this->getResponse()->setStatus($response->getStatus());
         $this->getResponse()->sendHeaders();
 
-
-        echo waUtils::jsonEncode($this->buildResponse());
+        echo waUtils::jsonEncode($response->toArray());
     }
 
 
