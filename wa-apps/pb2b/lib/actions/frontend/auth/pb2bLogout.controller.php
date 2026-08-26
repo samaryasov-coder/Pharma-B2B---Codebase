@@ -6,6 +6,6 @@ class pb2bLogoutController extends pb2bFrontendController
         wa()->getAuth()->clearAuth();
         wa()->getStorage()->close();
 
-        $this->response = ['result' => 1, 'message' => 'Уcпешный выход из системы'];
+        $this->setSuccessResponse()->withMessage('Уcпешный выход из системы');
     }
 }

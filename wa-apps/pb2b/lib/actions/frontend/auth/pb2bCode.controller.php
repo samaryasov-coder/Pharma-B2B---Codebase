@@ -1,21 +1,19 @@
 <?php
 class pb2bCodeController extends pb2bFrontendController
 {
-    private function errorResponse($fields = []){
-        return ['result' => 0, 'message' => 'Ошибка регистрации', 'fields' => $fields];
-    }
-
-    public function executeAction(){
+    public function executeAction()
+    {
+        $message = 'Ошибка регистрации';
         $token = waRequest::post('token','', 'string');;
         $code = waRequest::post('code', '', 'string');
 
         if (!trim($code))
-            return $this->response = $this->errorResponse(['code' => 'Обязательное поле']);
+            return $this->setErrorResponse($message)->withDetail('code', 'Обязательное поле');
 
         $serviceCode = new pb2bAuthCodeService();
         $is_verify = $serviceCode->verifyByToken($token, $code);
         if (!$is_verify)
-            return $this->response = $this->errorResponse(['code' => $serviceCode->getLastError()]);
+            return $this->setErrorResponse($message)->withDetail('code', $serviceCode->getLastError());
 
         $code = $serviceCode->getByToken($token);
         $identifier = [];
@@ -58,9 +56,9 @@ class pb2bCodeController extends pb2bFrontendController
 
         try {
             if (wa()->getAuth()->auth(['id' => $contact->getId()]))
-                return $this->response = ['result' => 1, 'message' => 'Успешная авторизация'];
-        } catch (waAuthException $e){}
-
-        $this->response = ['result' => 0, 'message' => 'Ошибка авторизации'];
+                $this->setSuccessResponse()->withDetail('message', 'Успешная авторизация');
+        } catch (waAuthException $e){
+            $this->setErrorResponse('Ошибка авторизации');
+        }
     }
 }

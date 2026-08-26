@@ -18,10 +18,10 @@
                         const phone = fData.get('phone');
                         if (phone) fData.set('phone', '7' + phone.replace(/\D/g, ''));
                     },
-                    onSuccess: function(reply) {
+                    onSuccess: function() {
                         window.location.href = '/cabinet/';
                     },
-                    onError: function (reply){
+                    onError: function (){
                         self.$helper.delay(200).fadeIn(400);
                     }
                 });
@@ -44,7 +44,7 @@
                         if (phone) fData.set('phone', '7' + phone.replace(/\D/g, ''));
                     },
                     onSuccess: function(reply) {
-                        window.location.href = '/auth/code?token='+reply.token;
+                        window.location.href = '/auth/code?token='+reply.data.token;
                     }
                 });
             }
@@ -123,7 +123,7 @@
                         return true;
                     },
 
-                    onSuccess: function(reply) {
+                    onSuccess: function() {
                         window.location.href = '/cabinet/';
                     }
 
@@ -175,7 +175,7 @@
                         fData.set('code', code);
                         fData.set('token', self.getTokenUrl());
                     },
-                    onSuccess: function(reply) {
+                    onSuccess: function() {
                         window.location.href = '/auth/password/';
                     }
                 });
@@ -193,7 +193,7 @@
                         button: self.$resendBtn,
                         onSuccess: (reply) => {
                             self.startTimer();
-                            const token = reply.token;
+                            const token = reply.data.token;
                             if (!token) return;
 
                             const url = new URL(window.location.href);
@@ -283,7 +283,7 @@
                         if (phone) fData.set('phone', '7' + phone.replace(/\D/g, ''));
                     },
                     onSuccess: function(reply) {
-                        window.location.href = '/auth/code?token='+reply.token;
+                        window.location.href = '/auth/code?token='+reply.data.token;
                     }
                 });
             }

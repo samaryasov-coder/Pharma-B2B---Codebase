@@ -2,26 +2,23 @@
 class pb2bFrontendController extends waJsonController
 {
     use pb2bFrontendTrait;
-    
-    private pb2bResponseType $responseType = pb2bResponseType::SUCCESS;
     protected $response = null;
 
-    protected function success(array $data = [], int $status = pb2bHttpStatus::OK): pb2bResponse
+    protected function setSuccessResponse(array $data = []): pb2bSuccessResponse
     {
-        return $this->response = pb2bResponse::success($data, $status);
+        return $this->response = pb2bResponse::success($data);
     }
 
-    protected function error(int $http_status, string $code, string $message): pb2bResponse
+    protected function setErrorResponse(string $message, string $code = ''): pb2bErrorResponse
     {
-        return $this->response = pb2bResponse::error($http_status, $code, $message);
+        return $this->response = pb2bResponse::error($code, $message);
     }
 
     public final function display(): void
     {
-        $response = $this->response ?? pb2bResponse::error(500, 'internalError', 'Не удалось сформировать ответ');
+        $response = $this->response;// ?? pb2bResponse::error(500, 'internalError', 'Не удалось сформировать ответ');
 
         $this->getResponse()->addHeader('Content-Type', 'application/json');
-        $this->getResponse()->setStatus($response->getStatus());
         $this->getResponse()->sendHeaders();
 
         echo waUtils::jsonEncode($response->toArray());

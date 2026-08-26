@@ -2,54 +2,82 @@
 	$.fn.fSend = function(options = {}) {
 		$(this).submit(function(e) {
 			e.preventDefault();
-			const showInputErrors = (errors = {}) => {
-				$('.input-wrap.error').each(function() {
-					const name = $(this).find('[name]').attr('name');
-					if (!(name in errors)) {
-						$(this).removeClass('error');
-						$(this).find('.input-hint').text('');
-					}
-				});
-				$.each(errors, function(field, message) {
-					const $input = $('[name="' + field + '"]');
-					const $wrap= $input.closest('.input-wrap');
-					const $hint = $wrap.find('.input-hint');
-					$wrap.addClass('error');
-					$hint.text(message);
-				});
-			}
-
-			const viewMessage = (status, message) => {
-				if (message === undefined || message === null || message === false || (Array.isArray(message) && message.length === 0))
-					return;
-
-				switch (status){
-					case 'success': $.AlertManager.showSuccess(message); break;
-					case 'warning': $.AlertManager.showWarning(message); break;
-					case 'info': $.AlertManager.showInfo(message); break;
-					case 'error': $.AlertManager.showError(message); break;
-				}
-			}
 
 			const config = {
 				prepareForm: null,
 				onSuccess: null,
-				onWarning: null,
-				onInfo: null,
 				onError: null,
 				action: null,
 				...options,
 			};
-			const formData = new FormData($(this)[0]);
+
 			const $form = $(this);
+			const formData = new FormData($form[0]);
 			const action_url = config.action ?? $form.attr('action');
+
 			let $submit_button = $form.find('[type="submit"], button[type="submit"]');
+
 			if (!$submit_button.length)
 				$submit_button = $(`[form="${$form.attr('id')}"]`);
 
-			$submit_button.addClass('loading').attr('disabled', true);
-			showInputErrors();
-			if (typeof config.prepareForm === 'function'){
+			const showDetails = (details = {}) => {
+				$form.find('.input-wrap').each(function() {
+					$(this).removeClass('error warning info success').find('.input-hint').text('');
+				});
+
+				$.each(details, function(target, detail) {
+					const $input = $form.find(`[name="${target}"]`);
+					const $wrap = $input.closest('.input-wrap');
+					if (!$wrap.length)
+						return;
+					$wrap.addClass(detail.type);
+					if (detail.message)
+						$wrap.find('.input-hint').text(detail.message);
+				});
+			};
+
+			const showMessage = (text, type) => {
+				if (!text || !type)
+					return;
+
+				switch (type) {
+					case 'success':
+						$.AlertManager.showSuccess(text);
+						break;
+
+					case 'warning':
+						$.AlertManager.showWarning(text);
+						break;
+
+					case 'info':
+						$.AlertManager.showInfo(text);
+						break;
+
+					case 'error':
+						$.AlertManager.showError(text);
+						break;
+				}
+			};
+
+			const handleMessage = (textMessage, typeMessage, callback, data) => {
+				if (typeof callback !== 'function') {
+					showMessage(textMessage, typeMessage);
+					return;
+				}
+
+				const callbackMessage = callback(data, $form);
+				if (callbackMessage === false)
+					return;
+
+				if (callbackMessage === undefined || callbackMessage === true)
+					showMessage(textMessage, typeMessage);
+			};
+
+			$submit_button.addClass('loading').prop('disabled', true);
+
+			showDetails();
+
+			if (typeof config.prepareForm === 'function') {
 				const prepared = config.prepareForm(formData, $form);
 				if (prepared === false) {
 					$submit_button.removeClass('loading').prop('disabled', false);
@@ -64,44 +92,29 @@
 				processData: false,
 				contentType: false,
 				dataType: 'json',
-				error: function (reply) {
-					viewMessage(reply.status, (callbackMessage === true || callbackMessage === undefined) ? reply_data.message : callbackMessage);
-				},
-				complete: function (){
-					$submit_button.removeClass('loading').prop('disabled', false);
-				},
+
 				success: function(reply) {
-					let replyStatus = reply.status;
-					let replyData = reply.data;
-					let callbackMessage = undefined;
+					showDetails(reply.details);
+					if (reply.status === 'ok')
+						handleMessage(reply.message?.text, reply.message?.type, config.onSuccess, reply);
+					else if (reply.status === 'fail')
+						handleMessage(reply.message, 'error', config.onError, reply);
+				},
 
-					switch (replyStatus){
-						case 'success': {
-							if (typeof config.onSuccess === 'function')
-								callbackMessage = config.onSuccess(replyData, $form);
-							break;
-						}
-						case 'warning': {
-							if (typeof config.onWarning === 'function')
-								callbackMessage = config.onWarning(replyData, $form);
-							break;
-						}
-						case 'info': {
-							if (typeof config.onInfo === 'function')
-								callbackMessage = config.onInfo(replyData, $form);
-							break;
-						}
-						case 'error': {
-							if (typeof config.onError === 'function')
-								callbackMessage = config.onError(replyData, $form);
-							break;
-						}
-					}
+				error: function(xhr) {
+					const reply = xhr.responseJSON;
+					console.log('XHR:', xhr);
+					console.log('Response JSON:', reply);
+					console.log('Response text:', xhr.responseText);
+					if (!reply)
+						return;
+				},
 
-					showInputErrors(replyData.fields ?? {});
-					viewMessage(replyStatus, (callbackMessage === true || callbackMessage === undefined) ? reply.message : callbackMessage);
+				complete: function() {
+					$submit_button.removeClass('loading').prop('disabled', false);
 				}
 			});
+
 			return false;
 		});
 	};

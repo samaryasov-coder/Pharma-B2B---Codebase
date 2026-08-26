@@ -199,6 +199,7 @@ html {
     --prefix-color-input: var(--gray-400);
     --label-color-input: var(--gray-600);
     --error-color-input: var(--error-base);
+    --success-color-input: var(--success-dark);
     --warning-color-input: var(--warning-dark);
     --icon-color-input: var(--gray-300);
     --input-placeholder-color: var(--prefix-color-input);
@@ -1286,6 +1287,9 @@ textarea {
     gap: var(--input-box-gap-sm);
     height: var(--input-height-sm);
 }
+.success .input-box{
+    border-color: var(--success-color-input);
+}
 .error .input-box{
     border-color: var(--error-color-input);
 }
@@ -1365,6 +1369,9 @@ textarea::placeholder{
     font-weight: var(--font-weight-regular);
 }
 
+.success .input-hint{
+    color: var(--success-color-input);
+}
 .error .input-hint{
     color: var(--error-color-input);
 }
