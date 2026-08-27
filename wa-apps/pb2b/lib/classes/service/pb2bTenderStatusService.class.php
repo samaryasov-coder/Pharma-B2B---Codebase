@@ -154,7 +154,7 @@ class pb2bTenderStatusService
 
         $types_by_id = (array) pb2bWaproHelper::getConfigOption('tender_types', 'id');
         $type_code = (string) ($types_by_id[(int) $data['type']]['code'] ?? '');
-        if (!in_array($type_code, array('prequalification', 'price_request'), true)) {
+        if (!pb2bTender::isMvpTypeCode($type_code)) {
             return array('error' => true, 'message' => 'Публикация для этого типа процедуры пока недоступна');
         }
         if ($type_code === 'prequalification' && (int) ($data['prequal_validity_months'] ?? 0) < 1) {

@@ -22,6 +22,55 @@ class pb2bTender extends pb2bWaproObject
         'retendering_enabled', 'itemized_enabled', 'budget',
     );
 
+    public static function getMvpTypeCodes(): array
+    {
+        return self::MVP_TYPE_CODES;
+    }
+
+    public static function isMvpTypeCode(string $type_code): bool
+    {
+        return in_array($type_code, self::MVP_TYPE_CODES, true);
+    }
+
+    /**
+     * Список способов для модалки создания (порядок и тексты из config tender_types).
+     */
+    public static function getCreateModalMethods(): array
+    {
+        $types = (array) pb2bWaproHelper::getConfigOption('tender_types');
+        $methods = array();
+
+        foreach ($types as $row) {
+            if (!is_array($row) || empty($row['code'])) {
+                continue;
+            }
+            if (empty($row['show_in_create_modal'])) {
+                continue;
+            }
+            $code = (string) $row['code'];
+            $methods[] = array(
+                'id' => (int) ($row['id'] ?? 0),
+                'code' => $code,
+                'label' => (string) ($row['modal_name'] ?? $row['name'] ?? $code),
+                'description' => (string) ($row['description'] ?? ''),
+                'create_title' => (string) ($row['create_title'] ?? ($row['name'] ?? $code)),
+                'available' => self::isMvpTypeCode($code),
+                'sort' => (int) ($row['create_modal_sort'] ?? 100),
+            );
+        }
+
+        usort($methods, static function (array $a, array $b): int {
+            return ($a['sort'] <=> $b['sort']) ?: ($a['id'] <=> $b['id']);
+        });
+
+        foreach ($methods as &$method) {
+            unset($method['sort']);
+        }
+        unset($method);
+
+        return $methods;
+    }
+
     private static function normalizeDatetimeFieldForMysql($raw): array
     {
         if ($raw === null || $raw === '') {
@@ -240,7 +289,7 @@ class pb2bTender extends pb2bWaproObject
 
     private function assertMvpTypeAllowed(string $type_code, array $data, int $type_id): ?array
     {
-        if (in_array($type_code, self::MVP_TYPE_CODES, true)) {
+        if (self::isMvpTypeCode($type_code)) {
             return null;
         }
 

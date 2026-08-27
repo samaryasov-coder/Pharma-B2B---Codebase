@@ -580,4 +580,12 @@
             });
         }
     });
+
+    $.Cabinet.registerPage('tenders', {
+        init: function (root) {
+            $(root).find('.js-tenders-list').hide().empty();
+            $(root).find('.js-tenders-error').hide();
+            $(root).find('.js-tenders-empty').show();
+        }
+    });
 })(jQuery);

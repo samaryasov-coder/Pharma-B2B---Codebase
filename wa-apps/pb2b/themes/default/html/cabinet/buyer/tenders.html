@@ -1,0 +1,1059 @@
+<div class="cabinet-container js-cabinet-page" data-page="tenders" data-role="buyer">
+    <div class="js-tenders-list-view buyer-tenders">
+<div class="buyer-tenders__top">
+                <nav class="breadcrumbs" aria-label="Навигация">
+                    <svg class="breadcrumbs-icon" aria-hidden="true"><use href="#icon-breadcrumbs"></use></svg>
+                    <svg class="breadcrumbs-icon-arrow" aria-hidden="true"><use href="#icon-breadcrumbs-arrow"></use></svg>
+                    <span class="breadcrumbs-current">Мои тендеры</span>
+                </nav>
+
+                <div class="buyer-tenders__header">
+                    <h1 class="buyer-tenders__title">Мои тендеры</h1>
+                    <button type="button" class="button primary js-tender-create-open">Создать новый тендер</button>
+                </div>
+
+                <div class="buyer-tenders__toolbar">
+                    <div class="buyer-tenders__search">
+                        <span class="buyer-tenders__search-icon" aria-hidden="true">
+                            <svg><use href="#icon-search"></use></svg>
+                        </span>
+                        <input type="search" class="buyer-tenders__search-input js-tenders-search" placeholder="Поиск" aria-label="Поиск тендеров">
+                    </div>
+                    <div class="buyer-tenders__filters">
+                        <button type="button" class="buyer-tenders__filters-btn js-tenders-filters-toggle" aria-expanded="false" aria-haspopup="dialog">
+                            <svg><use href="#icon-filter"></use></svg>
+                            Фильтры
+                        </button>
+                        <div class="buyer-tenders__filters-popover js-tenders-filters-popover" hidden>
+                            <div class="buyer-tenders__filters-head">
+                                <span class="buyer-tenders__filters-title">Фильтры</span>
+                                <button type="button" class="buyer-tenders__filters-close js-tenders-filters-close" aria-label="Закрыть фильтры">
+                                    <svg><use href="#icon-x-mark"></use></svg>
+                                </button>
+                            </div>
+                            <div class="buyer-tenders__filters-body">
+                                <label class="buyer-tenders__filter-field">
+                                    <span class="buyer-tenders__filter-label">Способ закупки</span>
+                                    <select class="js-tenders-filter-type">
+                                        <option value="">Выберите из списка</option>
+                                        {foreach $tender_type_filters as $type}
+                                            <option value="{$type.code|escape}">{$type.label|escape}</option>
+                                        {/foreach}
+                                    </select>
+                                </label>
+                                <label class="buyer-tenders__filter-field">
+                                    <span class="buyer-tenders__filter-label">Статус</span>
+                                    <select class="js-tenders-filter-status">
+                                        <option value="">Выберите из списка</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <button type="button" class="button secondary js-tenders-filters-reset" disabled>Сбросить</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="buyer-tenders__body">
+                <ul class="tabs large js-tenders-tabs">
+                    <li class="selected" data-bucket="all"><a href="#all">Все</a></li>
+                    <li data-bucket="draft"><a href="#draft">Черновики</a></li>
+                    <li data-bucket="active"><a href="#active">Активные</a></li>
+                    <li data-bucket="on_hold"><a href="#on_hold">Приостановленные</a></li>
+                    <li data-bucket="archived"><a href="#archived">Архив</a></li>
+                </ul>
+
+                <div class="buyer-tenders__list js-tenders-list"></div>
+
+                <div class="empty-container js-tenders-empty" style="display:none;">
+                    <span class="icon"><svg><use href="#icon-info"></use></svg></span>
+                    <span class="title js-tenders-empty-title">Нет тендеров</span>
+                    <span class="des js-tenders-empty-des">
+                        Здесь отображаются все процедуры вашей компании. Создайте тендер, чтобы начать закупку.
+                    </span>
+                    <button type="button" class="button primary js-tender-create-open js-tenders-empty-create">Создать новый тендер</button>
+                    <button type="button" class="button secondary js-tenders-empty-clear" style="display:none;">Сбросить фильтры</button>
+                </div>
+
+                <div class="empty-container js-tenders-error" style="display:none;">
+                    <span class="icon"><svg><use href="#icon-alert"></use></svg></span>
+                    <span class="title">Не удалось загрузить список</span>
+                    <span class="des js-tenders-error-text"></span>
+                    <button type="button" class="button primary js-tenders-reload">Повторить</button>
+                </div>
+            </div>
+    </div>
+
+    <div class="js-tender-create-view creation-container" style="display:none;">
+        <div class="breadcrumbs js-tender-create-back" style="cursor:pointer;">
+            <svg class="breadcrumbs-icon" aria-hidden="true"><use href="#icon-breadcrumbs"></use></svg>
+            <svg class="breadcrumbs-icon-arrow" aria-hidden="true"><use href="#icon-breadcrumbs-arrow"></use></svg>
+            <span class="breadcrumbs-current">К списку тендеров</span>
+        </div>
+
+        <div class="tender-creation-upper">
+            <div class="creation-title js-creation-title">Создание процедуры запроса цен</div>
+            <div class="tender-creation-upper-buttons">
+                <button type="button" class="button js-tender-save-draft">Сохранить в черновик</button>
+                <button type="button" class="button js-tender-apply-template">Применить шаблон</button>
+                <button type="button" class="button primary js-tender-publish" style="display:none;">Опубликовать</button>
+            </div>
+        </div>
+
+        <div class="creation-steps js-tender-steps">
+            <div class="creation-step" data-step="privacy">Доступ и видимость</div>
+            <div class="creation-step next" data-step="basic">Основные данные</div>
+            <div class="creation-step next" data-step="purchase_params">Параметры закупки</div>
+            <div class="creation-step next" data-step="payment_delivery">Условия оплаты и доставки</div>
+            <div class="creation-step next" data-step="lots">Заполнение позиций</div>
+            <div class="creation-step next" data-step="invitation">Рассылка</div>
+        </div>
+
+        <input type="hidden" class="js-tender-id" value="0">
+        <input type="hidden" class="js-tender-type" value="3">
+
+        <div class="js-tender-step-panel" data-step="privacy">
+            <div class="creation-card">
+                <div class="creation-card-title">Доступ к процедуре</div>
+                <div class="creation-card-hint mg-bt-24">Выберите, кто сможет видеть и участвовать в вашей закупке.</div>
+
+                <div class="tender-creation-radios">
+                    <div class="creation-radio-wrap">
+                        <label class="tender-creation-radio">
+                            <input type="radio" name="is_private" value="0" checked>
+                            <span class="radio-ui"></span>
+                            <span class="radio-text">Открытая процедура</span>
+                        </label>
+                        <div class="creation-card-hint">Заявки могут подавать все зарегистрированные пользователи</div>
+                    </div>
+                    <div class="creation-radio-wrap">
+                        <label class="tender-creation-radio">
+                            <input type="radio" name="is_private" value="1">
+                            <span class="radio-ui"></span>
+                            <span class="radio-text">Закрытая процедура</span>
+                        </label>
+                        <div class="creation-card-hint">Заявки могут подавать только приглашённые пользователи</div>
+                    </div>
+                </div>
+
+                <div class="tender-creation-closed-procedure js-private-invites">
+                    <div class="closed-procedure-title">Перечень участников, допущенных к процедуре</div>
+                    <div class="creation-card-hint">Введите наименование компании</div>
+                    <select class="js-invite-select" name="invitations[]" multiple data-placeholder="Введите название компании" style="width:100%;"></select>
+                    <div class="creation-card-hint">Добавьте названия компаний, которые будут допущены к процедуре</div>
+                </div>
+
+                <div class="tender-creation-checkbocks js-price-request-only">
+                    <div class="tender-creation-checkbox-wrap border-bottom js-past-prequal-wrap" style="display:none;">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="past_prequalification" value="1" class="js-field-past-prequal">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Проведена предварительная квалификация поставщиков</span>
+                        </label>
+                        <div class="creation-card-hint">Связать запрос с проведённой ранее предварительной квалификацией</div>
+                        <div class="tender-creation-prequalification js-past-prequal-block">
+                            <div class="creation-card-hint">Введите наименование или номер процедуры предварительной квалификации</div>
+                            <input type="text" class="input js-field-past-prequal-query" placeholder="Введите название или номер процедуры" style="width:100%;max-width:480px;">
+                        </div>
+                    </div>
+
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="approval_required" value="1" class="js-field-approval-required">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Требуется предварительная аккредитация поставщиков</span>
+                        </label>
+                        <div class="creation-card-hint">Подача заявок возможна только после аккредитации</div>
+
+                        <div class="tender-creation-checkbox-wrap inner js-approval-period-wrap">
+                            <label class="tender-creation-checkbox">
+                                <input type="checkbox" name="approval_custom_period" value="1" class="js-field-approval-period">
+                                <span class="checkbox-ui"></span>
+                                <span class="checkbox-text">Установить период предоставления документов отличным от срока завершения тендера</span>
+                            </label>
+                            <div class="tender-create-period js-approval-period-fields">
+                                <div class="date-picker">
+                                    <input type="date" class="input js-field-approval-date" name="approval_docs_date">
+                                </div>
+                                <div class="date-picker time">
+                                    <input type="time" class="input js-field-approval-time" name="approval_docs_time">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="creation-card js-price-request-only">
+                <div class="creation-card-title">Видимость</div>
+                <div class="creation-card-hint mg-bt-24">Выберите параметры видимости</div>
+
+                <div class="tender-creation-checkbocks">
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="hide_initial_price" value="1" class="js-field-hide-initial-price">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Скрывать начальную цену</span>
+                        </label>
+                        <div class="creation-card-hint">Участники не видят начальную цену. Участники могут подавать цену выше начальной.</div>
+                    </div>
+
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="hide_participants_count" value="1" class="js-field-hide-participants">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Скрывать количество участников</span>
+                        </label>
+                        <div class="creation-card-hint">Для участников количество поданных заявок скрыто.<br>Для организатора количество поступивших заявок отображается.</div>
+                    </div>
+
+                    <div class="tender-creation-checkbox-wrap checkboxes-container">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="hide_participant_prices" value="hidePrices" class="js-field-hide-prices">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Скрывать цены участников</span>
+                        </label>
+                        <div class="creation-card-hint">Участники не видят цены друг друга.<br>Настройки применяются в зависимости от типа процедуры.</div>
+                        <div class="tender-creation-radios inner js-hide-prices-options">
+                            <div class="creation-radio-wrap">
+                                <label class="tender-creation-radio">
+                                    <input type="radio" name="rank_prices" value="yes">
+                                    <span class="radio-ui"></span>
+                                    <span class="radio-text">Использовать ранги по ценам</span>
+                                </label>
+                                <div class="creation-card-hint">Для участников: вместо цен отображается ранг участника. Цены скрыты до объявления следующего этапа или подведения итогов.<br>Для организатора: вместо цен отображается ранг участника. Цены скрыты до окончания подачи заявок.<br>Использование числового параметра для распределения рангов недоступно.</div>
+                            </div>
+                            <div class="creation-radio-wrap">
+                                <label class="tender-creation-radio">
+                                    <input type="radio" name="rank_prices" value="no">
+                                    <span class="radio-ui"></span>
+                                    <span class="radio-text">Не использовать ранги по ценам</span>
+                                </label>
+                                <div class="creation-card-hint">Для участников: цены всегда скрыты.<br>Для организатора: цены скрыты до окончания подачи заявок.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="organizer_sees_names" value="1" class="js-field-organizer-sees-names">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Наименования участников в процессе подачи заявок видны организатору (доступно при ранжировании)</span>
+                        </label>
+                        <div class="creation-card-hint">Для участников наименования других участников скрыты.<br>Для организатора наименования участников отображаются.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="creation-manage-buttons">
+                <button type="button" class="manage-button button large js-tender-create-cancel">Отменить</button>
+                <button type="button" class="manage-button button large primary js-tender-step-next">Продолжить</button>
+            </div>
+        </div>
+
+        <div class="js-tender-step-panel" data-step="basic" style="display:none;">
+            <div class="creation-card">
+                <div class="creation-card-title">Основные данные</div>
+                <div class="creation-card-hint mg-bt-24">Заполните все основные данные извещения</div>
+
+                <div class="creation-card-primary-data is-full">
+                    <input type="hidden" class="js-field-number" name="number" value="">
+
+                    <div class="input-title">Наименование извещения</div>
+                    <div class="input-wrap tenders-search notification">
+                        <div class="input-box">
+                            <input type="text" class="input tenders js-field-title" name="title" placeholder="Введите наименование извещения">
+                        </div>
+                    </div>
+
+                    <div class="input-title svg">
+                        Релевантные теги
+                        <svg><use href="#icon-question"></use></svg>
+                    </div>
+                    <div class="js-tags-selected creation-card-results-tags" style="margin-bottom:10px;"></div>
+                    <div class="input-wrap tenders-search notification">
+                        <div class="input-box">
+                            <span class="input-prefix"><svg><use href="#icon-search"></use></svg></span>
+                            <input type="text" class="input tenders js-field-tags-search" placeholder="Поиск тега или синонима (HPLC, WFI, LIMS…)" autocomplete="off">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="creation-card">
+                <div class="creation-card-title">Категории</div>
+                <div class="creation-card-hint" style="margin-bottom:16px;">Выберите все подходящие категории из собственного классификатора или ЕСКЛП</div>
+
+                <div class="creation-card-categories">
+                    <div class="creation-card-categories-buttons">
+                        <button type="button" class="creation-card-categories-button active js-classifier-tab" data-tab="common">Общий классификатор</button>
+                        <button type="button" class="creation-card-categories-button js-classifier-tab" data-tab="esklp">ЕСКЛП</button>
+                    </div>
+
+                    <div class="creation-card-categories-results common-classifier active is-flat" data-tab="common">
+                        <div class="input-wrap tenders-search notification">
+                            <div class="input-box">
+                                <span class="input-prefix"><svg><use href="#icon-search"></use></svg></span>
+                                <input type="text" class="input tenders js-classifier-search" data-tab="common" placeholder="Поиск по классификатору">
+                            </div>
+                        </div>
+                        <div class="creation-card-categories-result js-classifier-tree" data-tab="common">
+                            <div class="tender-creation-checkbox-wrap" data-label="Консультационные услуги в сфере фармацевтики и БАД">
+                                <label class="tender-creation-checkbox">
+                                    <input type="checkbox" class="js-classifier-check" name="category[]" value="clf-75" data-label="Консультационные услуги в сфере фармацевтики и БАД">
+                                    <span class="checkbox-ui"></span>
+                                    <span class="checkbox-text">Консультационные услуги в сфере фармацевтики и БАД</span>
+                                </label>
+                            </div>
+                            <div class="tender-creation-checkbox-wrap" data-label="Сертификация и декларирование">
+                                <label class="tender-creation-checkbox">
+                                    <input type="checkbox" class="js-classifier-check" name="category[]" value="clf-71" data-label="Сертификация и декларирование">
+                                    <span class="checkbox-ui"></span>
+                                    <span class="checkbox-text">Сертификация и декларирование</span>
+                                </label>
+                            </div>
+                            <div class="tender-creation-checkbox-wrap" data-label="Фармацевтический инжиниринг">
+                                <label class="tender-creation-checkbox">
+                                    <input type="checkbox" class="js-classifier-check" name="category[]" value="clf-43" data-label="Фармацевтический инжиниринг">
+                                    <span class="checkbox-ui"></span>
+                                    <span class="checkbox-text">Фармацевтический инжиниринг</span>
+                                </label>
+                            </div>
+                            <div class="tender-creation-checkbox-wrap" data-label="Квалификация и валидация">
+                                <label class="tender-creation-checkbox">
+                                    <input type="checkbox" class="js-classifier-check" name="category[]" value="clf-80" data-label="Квалификация и валидация">
+                                    <span class="checkbox-ui"></span>
+                                    <span class="checkbox-text">Квалификация и валидация</span>
+                                </label>
+                            </div>
+                            <div class="tender-creation-checkbox-wrap" data-label="Услуги R&amp;D">
+                                <label class="tender-creation-checkbox">
+                                    <input type="checkbox" class="js-classifier-check" name="category[]" value="clf-131" data-label="Услуги R&amp;D">
+                                    <span class="checkbox-ui"></span>
+                                    <span class="checkbox-text">Услуги R&amp;D</span>
+                                </label>
+                            </div>
+                            <div class="tender-creation-checkbox-wrap" data-label="Товары для лабораторий">
+                                <label class="tender-creation-checkbox">
+                                    <input type="checkbox" class="js-classifier-check" name="category[]" value="clf-105" data-label="Товары для лабораторий">
+                                    <span class="checkbox-ui"></span>
+                                    <span class="checkbox-text">Товары для лабораторий</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="creation-card-results-tags-title">Выбранные категории</div>
+                        <div class="creation-card-results-tags js-classifier-selected" data-tab="common"></div>
+                        <div class="creation-card-results-empty js-classifier-empty" data-tab="common">Категории не выбраны</div>
+                    </div>
+
+                    <div class="creation-card-categories-results esklp is-flat" data-tab="esklp">
+                        <div class="input-wrap tenders-search notification">
+                            <div class="input-box">
+                                <span class="input-prefix"><svg><use href="#icon-search"></use></svg></span>
+                                <input type="text" class="input tenders js-classifier-search" data-tab="esklp" placeholder="Поиск по классификатору">
+                            </div>
+                        </div>
+                        <div class="creation-card-categories-result js-classifier-tree" data-tab="esklp">
+                            <div class="creation-card-hint" style="margin:8px 0;">Справочник ЕСКЛП будет подключён на следующем этапе.</div>
+                        </div>
+                        <div class="creation-card-results-tags-title">Выбранные категории</div>
+                        <div class="creation-card-results-tags js-classifier-selected" data-tab="esklp"></div>
+                        <div class="creation-card-results-empty js-classifier-empty" data-tab="esklp">Категории не выбраны</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="creation-card file-upload-card">
+                <div class="creation-card-title">Файлы технического задания</div>
+                <div class="creation-card-hint" style="margin-bottom:16px;">Загрузите все файлы технического задания</div>
+
+                <div class="creation-card-file-area">
+                    <div class="file-drop-zone js-tz-dropzone">
+                        <div class="file-drop-icon">
+                            <svg><use href="#icon-file-upload"></use></svg>
+                        </div>
+                        <div class="file-drop-text">
+                            <span class="file-browse-btn">Нажмите сюда</span>
+                            <span class="file-drop-primary"> или перетащите файл для загрузки файлов</span>
+                        </div>
+                        <div class="file-drop-hint">Поддерживаемый формат: .word, PDF<br>Макс. размер файлов: 10 МБ</div>
+                        <input type="file" class="file-input js-tz-file-input" multiple accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+                    </div>
+                </div>
+                <div class="file-list js-tz-file-list"></div>
+            </div>
+
+            <div class="creation-manage-buttons">
+                <button type="button" class="manage-button button large js-tender-create-cancel">Отменить</button>
+                <div class="manage-buttons-right">
+                    <button type="button" class="manage-button button large js-tender-step-prev">Назад</button>
+                    <button type="button" class="manage-button button large primary js-tender-step-next" disabled>Продолжить</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="js-tender-step-panel" data-step="purchase_params" style="display:none;">
+            <div class="creation-card">
+                <div class="creation-card-title">Параметры закупки</div>
+                <div class="creation-card-hint mg-bt-24">Заполните все основные данные извещения</div>
+
+                <div class="tender-creation-checkboxes js-price-request-only">
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="itemized_enabled" value="1" class="js-field-itemized">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Попозиционная закупка возможна</span>
+                        </label>
+                        <div class="creation-card-hint">Участники не видят начальную цену. Участники могут подавать цену выше начальной.</div>
+                    </div>
+
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="allow_analogues" value="1" class="js-field-allow-analogues">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Разрешена подача аналогов закупаемой позиции</span>
+                        </label>
+                        <div class="creation-card-hint">Участники не видят начальную цену. Участники могут подавать цену выше начальной.</div>
+                    </div>
+
+                    <div class="tender-creation-checkbox-wrap">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="auto_extend_no_offers" value="1" class="js-field-auto-extend-no-offers">
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Автопродление процедуры при отсутствии предложений</span>
+                        </label>
+                        <div class="creation-card-hint">Конкурс продляется на 24 часа в случае отсутствия предложений по истечению срока указанного в заявке</div>
+                    </div>
+
+                    <div class="tender-creation-checkbox-wrap renewal-offers">
+                        <label class="tender-creation-checkbox">
+                            <input type="checkbox" name="procedureRenewalPrices" value="procedureRenewalPrices" class="js-field-retendering" checked>
+                            <span class="checkbox-ui"></span>
+                            <span class="checkbox-text">Автопродление процедуры при изменении стоимости/ранга за 30 минут до окончания тендера</span>
+                        </label>
+
+                        <div class="tender-creation-renewal-inner visible js-renewal-inner">
+                            <div class="tender-creation-renewal-select">
+                                <div class="tender-creation-hint">Период автопродления</div>
+                                <select class="select2 filter-select renewal-period js-field-renewal-period" name="renewalPeriod" data-placeholder="Укажите период">
+                                    <option value="15">15 минут</option>
+                                    <option value="30" selected>30 минут</option>
+                                    <option value="60">1 час</option>
+                                </select>
+                            </div>
+
+                            <div class="tender-creation-checkbox-wrap">
+                                <label class="tender-creation-checkbox">
+                                    <input type="checkbox" name="minIncrement" value="1" class="js-field-min-step" checked>
+                                    <span class="checkbox-ui"></span>
+                                    <span class="checkbox-text">Минимальный шаг изменения предложения</span>
+                                </label>
+
+                                <div class="tender-creation-radios min-increment visible js-min-step-radios">
+                                    <div class="creation-radio-wrap">
+                                        <label class="tender-creation-radio">
+                                            <input type="radio" name="increment" value="own" class="js-field-min-step-base" checked>
+                                            <span class="radio-ui"></span>
+                                            <span class="radio-text">От своей цены</span>
+                                        </label>
+                                    </div>
+                                    <div class="creation-radio-wrap">
+                                        <label class="tender-creation-radio">
+                                            <input type="radio" name="increment" value="best" class="js-field-min-step-base">
+                                            <span class="radio-ui"></span>
+                                            <span class="radio-text">От лучшей цены</span>
+                                        </label>
+                                    </div>
+
+                                    <div class="tender-creation-increment visible js-min-step-value">
+                                        <div class="tender-creation-increment-buttons">
+                                            <button type="button" class="increment-button active js-min-step-type" data-type="amount">Сумма</button>
+                                            <button type="button" class="increment-button js-min-step-type" data-type="percent">Процент</button>
+                                        </div>
+                                        <div class="input-box js-min-step-amount">
+                                            <input type="text" class="js-field-min-step-value" name="minIncrementSum" value="1000" placeholder="1000">
+                                            <svg><use href="#icon-ruble"></use></svg>
+                                        </div>
+                                        <div class="input-box js-min-step-percent" style="display:none;">
+                                            <input type="text" class="js-field-min-step-percent" name="minIncrementPercent" placeholder="10">
+                                            <span class="input-suffix">%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="tender-creation-checkbox-wrap mg-bt-0">
+                                <label class="tender-creation-checkbox">
+                                    <input type="checkbox" name="onlyDecrease" value="1" class="js-field-only-reduction">
+                                    <span class="checkbox-ui"></span>
+                                    <span class="checkbox-text">Разрешать только уменьшение предложений при корректировке</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="creation-card-divider js-price-request-only"></div>
+
+                <div class="js-price-request-only">
+                    <div class="tender-creation-radio-title" style="margin-top:0;">При выборе победителя учитывается цена</div>
+                    <div class="tender-creation-radios purchase-options is-row">
+                        <div class="creation-radio-wrap">
+                            <label class="tender-creation-radio">
+                                <input type="radio" name="vat_option" value="with_vat" class="js-field-vat" checked>
+                                <span class="radio-ui"></span>
+                                <span class="radio-text">С НДС</span>
+                            </label>
+                        </div>
+                        <div class="creation-radio-wrap">
+                            <label class="tender-creation-radio">
+                                <input type="radio" name="vat_option" value="without_vat" class="js-field-vat">
+                                <span class="radio-ui"></span>
+                                <span class="radio-text">Без НДС</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="creation-card deadlines">
+                <div class="creation-card-title">Даты и время</div>
+                <div class="creation-card-hint">Заполните все данные по датам и времени</div>
+
+                <div class="creation-card-item">
+                    <div class="creation-card-subtitle text-p2">Конечный срок подачи заявок.</div>
+                    <div class="creation-card-hint">Минимальный срок 5 календарных дней</div>
+                    <div class="tender-create-period always-visible">
+                        <div class="date-picker-wrap">
+                            <div class="creation-card-hint-sm mg-bt-6">Дата</div>
+                            <div class="date-picker">
+                                <input type="text" class="date-select filter-date js-field-end-date" placeholder="ДД.ММ.ГГГГ" readonly>
+                                <svg><use href="#icon-calendar"></use></svg>
+                            </div>
+                        </div>
+                        <div class="date-picker-wrap">
+                            <div class="creation-card-hint-sm mg-bt-6">Время</div>
+                            <div class="date-picker time">
+                                <input type="text" class="time js-field-end-time" placeholder="00:00" readonly>
+                                <svg><use href="#icon-clock"></use></svg>
+                            </div>
+                            <div class="creation-card-hint-sm mg-top-6">Россия, Москва (UTC +3:00)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="creation-card-item">
+                    <div class="creation-card-subtitle text-p2">Окончание загрузки документов</div>
+                    <div class="creation-card-hint">Участники смогут обновить коммерческое предложение и другие документы после окончания приёма, если указать отдельную дату</div>
+                    <div class="tender-create-period always-visible">
+                        <div class="date-picker-wrap">
+                            <div class="creation-card-hint-sm mg-bt-6">Дата</div>
+                            <div class="date-picker">
+                                <input type="text" class="date-select filter-date js-field-docs-date" placeholder="ДД.ММ.ГГГГ" readonly>
+                                <svg><use href="#icon-calendar"></use></svg>
+                            </div>
+                        </div>
+                        <div class="date-picker-wrap">
+                            <div class="creation-card-hint-sm mg-bt-6">Время</div>
+                            <div class="date-picker time">
+                                <input type="text" class="time js-field-docs-time" placeholder="00:00" readonly>
+                                <svg><use href="#icon-clock"></use></svg>
+                            </div>
+                            <div class="creation-card-hint-sm mg-top-6">Россия, Москва (UTC +3:00)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="creation-card-item">
+                    <div class="creation-card-subtitle text-p2">Плановая дата подведения итогов</div>
+                    <div class="creation-card-hint">Укажите предполагаемую дату подведения итогов процедуры.</div>
+                    <div class="tender-create-period always-visible">
+                        <div class="date-picker-wrap">
+                            <div class="creation-card-hint-sm mg-bt-6">Дата</div>
+                            <div class="date-picker">
+                                <input type="text" class="date-select filter-date js-field-result-date" placeholder="ДД.ММ.ГГГГ" readonly>
+                                <svg><use href="#icon-calendar"></use></svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="creation-card add-info">
+                <div class="creation-card-title">Дополнительная информация</div>
+                <div class="creation-card-hint mg-bt-16">Заполните дополнительную информацию</div>
+
+                <div class="tender-creation-checkbox-wrap">
+                    <label class="tender-creation-checkbox">
+                        <input type="checkbox" name="require_add_docs" value="1" class="js-field-require-docs">
+                        <span class="checkbox-ui"></span>
+                        <span class="checkbox-text">Требуется предоставление дополнительной документации</span>
+                    </label>
+                </div>
+
+                <div class="tender-creation-input-field additional-info-text">
+                    <div class="tender-creation-hint mg-bt-8">Дополнительная информация</div>
+                    <div class="input-box">
+                        <input type="text" class="js-field-additional-info" name="additional_info" placeholder="Введите информацию для поставщиков">
+                    </div>
+                    <button class="button-add-more js-add-info-field" type="button">
+                        <svg><use href="#icon-plus"></use></svg>
+                        <span>Добавить дополнительные поля информации</span>
+                    </button>
+                </div>
+
+                <div class="tender-creation-input-field approver-appointment">
+                    <div class="tender-creation-hint mg-bt-8">Утверждение заявки перед началом конкурса</div>
+                    <div class="input-box">
+                        <input type="text" class="js-field-approver" name="approver" placeholder="Добавить утверждающего">
+                        <svg><use href="#icon-search"></use></svg>
+                    </div>
+                    <button class="button-add-more js-add-approver" type="button">
+                        <svg><use href="#icon-plus"></use></svg>
+                        <span>Добавить дополнительного утверждающего</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="creation-card js-price-request-only">
+                <div class="creation-card-upper">
+                    <div class="creation-card-upper-text">
+                        <div class="creation-card-title">Неценовые критерии</div>
+                        <div class="creation-card-hint">Добавьте требования, которые должен заполнить поставщик при подаче заявки</div>
+                    </div>
+                </div>
+
+                <div class="js-criteria-list" style="display:flex;flex-direction:column;gap:8px;margin:16px 0;"></div>
+
+                <button class="button-add-more criteria js-criterion-add" type="button">
+                    <svg><use href="#icon-plus"></use></svg>
+                    <span>Добавить критерий</span>
+                </button>
+            </div>
+
+            <div class="creation-manage-buttons">
+                <button type="button" class="manage-button button large js-tender-create-cancel">Отменить</button>
+                <div class="manage-buttons-right">
+                    <button type="button" class="manage-button button large js-tender-step-prev">Назад</button>
+                    <button type="button" class="manage-button button large primary js-tender-step-next">Продолжить</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="js-tender-step-panel" data-step="payment_delivery" style="display:none;">
+            <div class="creation-card">
+                <div class="creation-card-title">Условия оплаты и доставки</div>
+                <div style="display:grid;gap:16px;max-width:640px;">
+                    <div>
+                        <label class="creation-card-hint">НМЦ / бюджет</label>
+                        <input type="text" class="input js-field-budget" name="budget" placeholder="0.00" style="width:100%;">
+                    </div>
+                    <div>
+                        <label class="creation-card-hint">Условия оплаты</label>
+                        <textarea class="input js-field-payment" name="payment_terms" rows="3" style="width:100%;"></textarea>
+                    </div>
+                    <div>
+                        <label class="creation-card-hint">Условия поставки</label>
+                        <textarea class="input js-field-delivery" name="delivery_terms" rows="3" style="width:100%;"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="js-tender-step-panel" data-step="lots" style="display:none;">
+            <div class="creation-card">
+                <div class="creation-card-title">Заполнение позиций</div>
+                <div class="creation-card-hint">
+                    Сохранение позиций будет доступно после подключения таблиц спецификации (следующий этап).
+                    Этот шаг можно пропустить.
+                </div>
+            </div>
+        </div>
+
+        <div class="js-tender-step-panel" data-step="invitation" style="display:none;">
+            <div class="creation-card">
+                <div class="creation-card-title">Рассылка</div>
+                <div class="creation-card-hint mg-bt-24">При необходимости уточните список приглашённых поставщиков перед публикацией.</div>
+                <select class="js-invite-select-final" name="invitations_final[]" multiple data-placeholder="Выберите компании" style="width:100%;"></select>
+            </div>
+        </div>
+
+        <div class="creation-manage-buttons js-tender-steps-footer" style="display:none;">
+            <button type="button" class="manage-button button large js-tender-step-prev" style="display:none;">Назад</button>
+            <button type="button" class="manage-button button large primary js-tender-step-next">Далее</button>
+            <button type="button" class="manage-button button large primary js-tender-publish-footer" style="display:none;">Опубликовать</button>
+        </div>
+    </div>
+</div>
+
+<style>
+.buyer-tenders {
+    display: grid;
+    gap: 28px;
+}
+
+.buyer-tenders__top {
+    display: grid;
+    gap: 18px;
+    padding-top: 12px;
+}
+
+.buyer-tenders__body {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+}
+
+.buyer-tenders .breadcrumbs {
+    margin: 0;
+}
+
+.buyer-tenders__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.buyer-tenders__title {
+    margin: 0;
+    font-size: 28px;
+    font-weight: var(--font-weight-semibold);
+    line-height: 36px;
+    color: var(--gray-900);
+}
+
+.buyer-tenders__toolbar {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px;
+    border-radius: 27px;
+    background: var(--gray-50);
+}
+
+.buyer-tenders__search {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 300px;
+    max-width: 100%;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    padding: 12px;
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    background: var(--white);
+}
+
+.buyer-tenders__search-icon {
+    display: inline-flex;
+    flex-shrink: 0;
+    color: var(--gray-400);
+}
+
+.buyer-tenders__search-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.buyer-tenders__search-input {
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    outline: none;
+    box-shadow: none;
+    background: transparent;
+    font-size: 14px;
+    line-height: 20px;
+    color: var(--gray-900);
+}
+
+.buyer-tenders__search-input::placeholder {
+    color: var(--gray-400);
+}
+
+.buyer-tenders__filters {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.buyer-tenders__filters-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    background: var(--white);
+    font-size: 14px;
+    font-weight: var(--font-weight-semibold);
+    line-height: 20px;
+    color: var(--gray-900);
+    cursor: pointer;
+}
+
+.buyer-tenders__filters-btn svg {
+    width: 20px;
+    height: 20px;
+    color: var(--gray-600);
+}
+
+.buyer-tenders__filters-btn.is-open,
+.buyer-tenders__filters-btn[aria-expanded="true"] {
+    background: var(--gray-100);
+}
+
+.buyer-tenders__filters-popover {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    z-index: 30;
+    width: 287px;
+    max-width: calc(100vw - 24px);
+    box-sizing: border-box;
+    padding: 12px;
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    background: var(--white);
+    box-shadow: 0 8px 24px rgba(16, 24, 40, 0.08);
+    display: none;
+    gap: 16px;
+}
+
+.buyer-tenders__filters-popover.is-open {
+    display: grid;
+}
+
+.buyer-tenders__filters-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.buyer-tenders__filters-title {
+    flex: 1;
+    font-size: 16px;
+    font-weight: var(--font-weight-semibold);
+    line-height: 24px;
+    color: var(--gray-900);
+}
+
+.buyer-tenders__filters-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--gray-900);
+    cursor: pointer;
+}
+
+.buyer-tenders__filters-close:hover {
+    background: var(--gray-50);
+}
+
+.buyer-tenders__filters-close svg {
+    width: 20px;
+    height: 20px;
+}
+
+.buyer-tenders__filters-body {
+    display: grid;
+    gap: 16px;
+    margin-top: 8px;
+}
+
+.buyer-tenders__filter-field {
+    display: grid;
+    gap: 6px;
+}
+
+.buyer-tenders__filter-label {
+    font-size: 12px;
+    line-height: 16px;
+    color: var(--gray-500);
+}
+
+.buyer-tenders__filter-field select {
+    width: 100%;
+    min-height: 40px;
+    box-sizing: border-box;
+}
+
+.buyer-tenders__filters-popover .js-tenders-filters-reset {
+    width: 100%;
+}
+
+.buyer-tenders__list {
+    display: grid;
+    gap: 12px;
+}
+
+.buyer-tender-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) max-content max-content max-content minmax(14rem, 24rem) auto;
+    align-items: center;
+    column-gap: 24px;
+    row-gap: 16px;
+    padding: 12px 16px;
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    background: var(--white);
+}
+
+.buyer-tender-card__main {
+    min-width: 0;
+    display: grid;
+    gap: 8px;
+}
+
+.buyer-tender-card__title-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    min-width: 0;
+}
+
+.buyer-tender-card__title {
+    margin: 0;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font: var(--text-font-h3);
+    font-weight: var(--font-weight-semibold);
+    color: var(--gray-900);
+}
+
+.buyer-tender-card__status {
+    flex-shrink: 0;
+    padding: 4px 8px;
+    border-radius: 10px;
+    font: var(--text-font-p3);
+    font-weight: var(--font-weight-semibold);
+    white-space: nowrap;
+    background: var(--gray-50);
+    color: var(--gray-900);
+}
+
+.buyer-tender-card__status--info {
+    background: var(--primary-100);
+    color: var(--primary-700);
+}
+
+.buyer-tender-card__status--success {
+    background: var(--green-100);
+    color: var(--success-dark);
+}
+
+.buyer-tender-card__status--warning {
+    background: var(--orange-100, #fff4e5);
+    color: var(--orange-600);
+}
+
+.buyer-tender-card__status--error {
+    background: var(--red-100, #fee4e2);
+    color: var(--error-dark, #b42318);
+}
+
+.buyer-tender-card__status--neutral {
+    background: var(--gray-50);
+    color: var(--gray-900);
+}
+
+.buyer-tender-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    font: var(--text-font-p3);
+    color: var(--gray-500);
+}
+
+.buyer-tender-card__dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--gray-400);
+}
+
+.buyer-tender-card__metric,
+.buyer-tender-card__deadline {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 12px;
+    background: var(--gray-50);
+    min-width: 0;
+}
+
+.buyer-tender-card__metric-label {
+    font: var(--text-font-p2);
+    font-weight: var(--font-weight-medium);
+    color: var(--gray-400);
+    white-space: nowrap;
+}
+
+.buyer-tender-card__metric-value {
+    font: var(--text-font-p1);
+    font-weight: var(--font-weight-medium);
+    color: var(--gray-900);
+    white-space: nowrap;
+}
+
+.buyer-tender-card__metric-value.is-expired {
+    color: var(--gray-400);
+}
+
+.buyer-tender-card__deadline-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.buyer-tender-card__days {
+    padding: 6px 10px;
+    border: 1px solid var(--gray-200);
+    border-radius: 10px;
+    font: var(--text-font-p4);
+    font-weight: var(--font-weight-medium);
+    color: var(--gray-900);
+    white-space: nowrap;
+}
+
+.buyer-tender-card__days.is-expired {
+    background: var(--gray-50);
+    color: var(--gray-400);
+}
+
+.buyer-tender-card__more {
+    border: 0;
+    background: transparent;
+    color: var(--gray-500);
+    font-size: 22px;
+    line-height: 1;
+    padding: 4px 8px;
+    cursor: default;
+}
+
+@media (max-width: 1200px) {
+    .buyer-tender-card {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .buyer-tender-card__metric,
+    .buyer-tender-card__deadline {
+        grid-column: 1 / -1;
+    }
+}
+</style>

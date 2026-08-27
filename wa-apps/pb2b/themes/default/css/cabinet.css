@@ -1253,7 +1253,7 @@ input.supplier {
 
 .js-cabinet-page .breadcrumbs {
     display: flex;
-    text-align: center;
+    align-items: center;
     gap: 8px;
     color: var(--gray-900);
     margin-bottom: 4px;
@@ -1261,16 +1261,25 @@ input.supplier {
 
 .js-cabinet-page .breadcrumbs svg {
     color: var(--gray-500);
+    display: block;
+    flex-shrink: 0;
 }
 
 .js-cabinet-page .breadcrumbs svg.breadcrumbs-icon {
-    width: 22px;
-    height: 22px;
+    width: 16px;
+    height: 16px;
 }
 
 .js-cabinet-page .breadcrumbs svg.breadcrumbs-icon-arrow {
     width: 14px;
     height: 14px;
+}
+
+.js-cabinet-page .breadcrumbs .breadcrumbs-current {
+    font: var(--text-font-p3);
+    font-weight: var(--font-weight-medium);
+    line-height: 24px;
+    color: var(--gray-900);
 }
 
 .creation-title {
@@ -1603,6 +1612,11 @@ input.supplier {
     border-top: 1px solid var(--gray-200);
 }
 
+.manage-buttons-right {
+    display: flex;
+    gap: 12px;
+}
+
 .manage-button.cancel {
     border: 1px solid var(--gray-300);
 }
@@ -1857,10 +1871,18 @@ input.supplier {
     box-shadow: none;
 }
 
+.creation-card-primary-data {
+    max-width: 490px;
+}
+
+.creation-card-primary-data.is-full {
+    max-width: none;
+}
+
 .creation-card-categories-button.active {
     color: var(--gray-900);
     background-color: var(--white);
-    box-shadow: none;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
 }
 
 .creation-card-categories-results {
@@ -1877,6 +1899,49 @@ input.supplier {
     padding: 16px;
     border-radius: var(--input-radius-md);
     border: 1px solid var(--gray-200);
+}
+
+.creation-card-categories-results.active.is-flat {
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    max-height: none;
+}
+
+.creation-card-results-empty {
+    color: var(--gray-400);
+    font-size: var(--font-size-p3);
+    line-height: 143%;
+}
+
+.creation-card-results-empty.is-hidden {
+    display: none;
+}
+
+.file-upload-card .file-item {
+    border: 1px solid var(--gray-200);
+    border-radius: var(--input-radius-sm);
+    padding: 12px;
+}
+
+.file-upload-card .file-icon {
+    border: 1px solid var(--gray-200);
+    background: var(--gray-50);
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    color: var(--gray-500);
+}
+
+.manage-button.button.primary:disabled,
+.manage-button.button.primary[disabled] {
+    opacity: 1;
+    cursor: not-allowed;
+    background: var(--gray-100);
+    border-color: var(--gray-100);
+    color: var(--gray-400);
+    box-shadow: none;
 }
 
 .creation-card-categories-result {
@@ -1953,6 +2018,10 @@ input.supplier {
     align-items: center;
 
     cursor: pointer;
+}
+
+.file-drop-zone.is-dragover {
+    background: var(--gray-50);
 }
 
 .file-input {
@@ -2110,6 +2179,83 @@ input.supplier {
     flex-direction: column;
     gap: 16px;
     margin-bottom: 0;
+}
+
+.tender-creation-radios.purchase-options.is-row {
+    flex-direction: row;
+    align-items: center;
+    gap: 24px;
+}
+
+.creation-card-divider {
+    height: 1px;
+    width: 100%;
+    background: var(--gray-200);
+    margin: 24px 0;
+}
+
+.tender-creation-checkboxes {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.tender-creation-hint {
+    font-size: var(--font-size-p3);
+    line-height: 143%;
+    color: var(--gray-600);
+    margin-bottom: 8px;
+}
+
+.tender-creation-checkboxes > .tender-creation-checkbox-wrap {
+    margin-bottom: 0;
+}
+
+.tender-creation-increment .input-suffix {
+    color: var(--gray-500);
+    font-size: var(--font-size-p2);
+    margin-right: 8px;
+}
+
+.js-criteria-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--input-radius-sm);
+    background: var(--white);
+}
+
+.js-criteria-item .criteria-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.js-criteria-item .criteria-name {
+    font-weight: var(--font-weight-medium);
+    color: var(--gray-900);
+}
+
+.js-criteria-item .criteria-meta {
+    color: var(--gray-500);
+    font-size: var(--font-size-p3);
+}
+
+.js-criteria-item .criteria-badge {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 1px 6px;
+    border-radius: 6px;
+    background: var(--error-light, #fee4e2);
+    color: var(--error-base, #d92d20);
+    font-size: 11px;
+    font-weight: var(--font-weight-medium);
+}
+
+.js-criteria-item .criteria-actions {
+    display: flex;
+    gap: 4px;
 }
 
 .tender-creation-radios.purchase-options .creation-radio-wrap {

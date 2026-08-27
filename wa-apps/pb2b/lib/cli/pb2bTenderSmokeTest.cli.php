@@ -42,6 +42,17 @@ class pb2bTenderSmokeTestCli extends waCliController
 
         $row_check = (new pb2bTenderModel())->getById($tender_id);
         $this->assert('Tender row in DB after save', !empty($row_check['id']));
+        $this->assert('Saved type is price_request (3)', (int) ($row_check['type'] ?? 0) === 3);
+
+        $no_crit_save = $company->tenderSaveWizardFromBuyer('basic', array(
+            'type' => 3,
+            'title' => 'Smoke no criteria',
+            'number' => 'SMOKE-NOCRIT-' . time(),
+            'responsible_contact_id' => $buyer_contact_id,
+        ), 0);
+        $no_crit_id = (int) ($no_crit_save['tender_id'] ?? 0);
+        $pub_no_crit = $company->tenderPublishFromBuyer($no_crit_id);
+        $this->assert('Price request publish without criteria blocked', !empty($pub_no_crit['error']), $pub_no_crit['message'] ?? '');
 
         $tender_obj = new pb2bTender($tender_id);
         $this->assert('pb2bTender loads by id', (int) ($tender_obj->id ?? 0) === $tender_id);
@@ -52,6 +63,10 @@ class pb2bTenderSmokeTestCli extends waCliController
             empty($publish['error']) && (int) ($publish['to_status'] ?? 0) === 3,
             $publish['message'] ?? ''
         );
+
+        $log_model = new pb2bTenderStateLogModel();
+        $log_row = $log_model->getByField('tender_id', $tender_id);
+        $this->assert('State log after publish', !empty($log_row['id']));
 
         $save2 = $company->tenderSaveWizardFromBuyer('basic', array(
             'type' => 3,

@@ -1,0 +1,172 @@
+<div id="dialog" class="tender-method-modal" data-title="Выберите способ закупки">
+    <div class="tender-method-modal__body">
+        <p class="tender-method-modal__subtitle">
+            От выбранного способа зависят этапы и условия проведения процедуры
+        </p>
+
+        <div class="tender-method-modal__list" role="radiogroup" aria-label="Способ закупки">
+            {foreach $methods as $method}
+                <label class="tender-method-option{if !$method.available} is-disabled{/if}">
+                    <input
+                        type="radio"
+                        class="tender-method-option__input"
+                        name="procurement_method"
+                        value="{$method.code|escape}"
+                        data-id="{$method.id|escape}"
+                        data-code="{$method.code|escape}"
+                        data-label="{$method.label|escape}"
+                        data-title="{$method.create_title|escape}"
+                        data-available="{if $method.available}1{else}0{/if}"
+                        {if !$method.available}disabled{/if}
+                    >
+                    <span class="tender-method-option__radio" aria-hidden="true"></span>
+                    <span class="tender-method-option__text">
+                        <span class="tender-method-option__label">{$method.label|escape}</span>
+                        {if !$method.available}
+                            <span class="tender-method-option__badge">Пока недоступно</span>
+                        {/if}
+                        <span class="tender-method-option__desc">{$method.description|escape}</span>
+                    </span>
+                </label>
+            {/foreach}
+        </div>
+    </div>
+
+    <div class="form-actions tender-method-modal__actions">
+        <button type="button" class="button secondary large modal-cancel">Отменить</button>
+        <button type="button" class="button primary large js-tender-method-continue" disabled>Продолжить</button>
+    </div>
+</div>
+
+<style>
+.modal-html-container:has(.tender-method-modal) {
+    text-align: left;
+}
+
+.modal-html-container:has(.tender-method-modal) .content,
+.tender-method-modal {
+    display: block;
+    margin: 0;
+    padding: 0;
+    max-width: none;
+    width: 100%;
+    text-align: left;
+}
+
+.modal:has(.tender-method-modal) .modal-title {
+    padding: 24px 32px 4px;
+    border-bottom: none;
+}
+
+.tender-method-modal__body {
+    padding: 0 32px 12px;
+}
+
+.tender-method-modal__subtitle {
+    margin: 0 0 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--gray-200);
+    font: var(--text-font-p3);
+    font-weight: var(--font-weight-regular);
+    color: var(--gray-500);
+    text-align: left;
+}
+
+.tender-method-modal__list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.tender-method-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 12px;
+    border-radius: 8px;
+    background: var(--gray-50);
+    cursor: pointer;
+    transition: background 0.15s ease;
+    text-align: left;
+}
+
+.tender-method-option:hover:not(.is-disabled) {
+    background: var(--gray-100);
+}
+
+.tender-method-option:has(.tender-method-option__input:checked) {
+    background: var(--gray-100);
+}
+
+.tender-method-option.is-disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.tender-method-option__input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.tender-method-option__radio {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    margin-top: 1px;
+    border-radius: 50%;
+    box-sizing: border-box;
+    border: 1.5px solid var(--gray-400);
+    background: var(--white);
+}
+
+.tender-method-option__input:checked + .tender-method-option__radio {
+    border-color: var(--primary-900);
+    background: var(--primary-900);
+    box-shadow: inset 0 0 0 4px var(--white);
+}
+
+.tender-method-option__text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    flex: 1;
+}
+
+.tender-method-option__label {
+    font: var(--text-font-p2);
+    font-weight: var(--font-weight-medium);
+    color: var(--gray-900);
+}
+
+.tender-method-option__badge {
+    font: var(--text-font-p4);
+    color: var(--gray-500);
+}
+
+.tender-method-option__desc {
+    font: var(--text-font-p3);
+    font-weight: var(--font-weight-regular);
+    color: var(--gray-500);
+}
+
+.tender-method-modal__actions {
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.tender-method-modal__actions .button {
+    min-width: 140px;
+    flex: 0 0 auto;
+}
+
+.tender-method-modal__actions .button:disabled,
+.tender-method-modal__actions .button[disabled] {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+</style>

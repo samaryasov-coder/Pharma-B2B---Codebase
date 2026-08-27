@@ -18,6 +18,7 @@ return [
 
 
     "cabinet/$ROLE_BOTH/tenders/" => 'frontend/cabinetTenders',
+    "cabinet/$ROLE_BUYER/tenders/form/<section>/" => 'frontend/cabinetTendersBuyerForm',
 
     "cabinet/$ROLE_BOTH/company-data/" => 'frontend/cabinetData',
     'cabinet/company-data/save/' => 'frontend/cabinetDataSave',
@@ -57,9 +58,14 @@ return [
     "api/$ROLE_BUYER/docflow/request/<id>/document/list/" => 'frontend/apiBuyerDocflowRequestDocumentList',
     "api/$ROLE_BUYER/docflow/request/<id>/files/download/" => 'frontend/apiBuyerDocflowRequestFilesDownload',
 
-
-
-
+    "api/$ROLE_BUYER/tender/list/" => 'frontend/apiBuyerTenderList',
+    "api/$ROLE_BUYER/tender/create/" => 'frontend/apiBuyerTenderCreate',
+    "api/$ROLE_BUYER/tender/save/" => 'frontend/apiBuyerTenderSave',
+    "api/$ROLE_BUYER/tender/publish/" => 'frontend/apiBuyerTenderPublish',
+    "api/$ROLE_BUYER/tender/<id>/" => 'frontend/apiBuyerTenderGet',
+    "api/$ROLE_BUYER/tender/<id>/criterion/save/" => 'frontend/apiBuyerTenderCriterionSave',
+    "api/$ROLE_BUYER/tender/<id>/invitation/save/" => 'frontend/apiBuyerTenderInvitationSave',
+    "api/$ROLE_BUYER/tender/<id>/classifier/save/" => 'frontend/apiBuyerTenderClassifierSave',
 
 
     "api/$ROLE_SUPPLIER/docflow/request/list/" => 'frontend/apiSupplierDocflowRequestList',
