@@ -4,20 +4,6 @@ class pb2bTender extends pb2bWaproObject
 {
     private const MVP_TYPE_CODES = array('prequalification', 'price_request');
 
-    private const TYPE_OPTIONAL_WIZARD_STEPS = array('privacy', 'payment_delivery');
-
-    private const WIZARD_STEP_FIELDS = array(
-        'privacy' => array('is_private', 'approval_required', 'type', 'submission_form'),
-        'basic' => array('title', 'number', 'type', 'submission_form'),
-        'purchase_params' => array(
-            'prequal_validity_months', 'retendering_enabled', 'itemized_enabled',
-            'start_at', 'end_at', 'opening_at', 'type',
-        ),
-        'payment_delivery' => array('payment_terms', 'delivery_terms', 'budget', 'currency'),
-        'lots' => array(),
-        'invitation' => array(),
-    );
-
     private const PREQUAL_FORBIDDEN_FIELDS = array(
         'retendering_enabled', 'itemized_enabled', 'budget',
     );
@@ -131,11 +117,8 @@ class pb2bTender extends pb2bWaproObject
 
     protected function preSave(array &$data): array
     {
-        $wizard_step = isset($data['_wizard_step']) ? (string) $data['_wizard_step'] : null;
-        unset($data['_wizard_step']);
-
         $status_via_service = !empty($data['_status_via_service']);
-        unset($data['_status_via_service']);
+        unset($data['_status_via_service'], $data['_wizard_step']);
         if (!empty($this->id) && array_key_exists('status', $data) && !$status_via_service) {
             $new_status = (int) $data['status'];
             $old_status = (int) ($this->data['status'] ?? 0);
@@ -165,14 +148,7 @@ class pb2bTender extends pb2bWaproObject
             }
         }
 
-        if (wa()->getEnv() === 'frontend') {
-            $buyer_check = $this->assertBuyerInCabinetContext();
-            if ($buyer_check !== null) {
-                return $buyer_check;
-            }
-        }
-
-        $type_check = $this->applyTypeRules($data, $wizard_step);
+        $type_check = $this->applyTypeRules($data);
         if ($type_check !== null) {
             return $type_check;
         }
@@ -181,7 +157,7 @@ class pb2bTender extends pb2bWaproObject
         if (!is_array($tender_fields)) {
             $tender_fields = array();
         }
-        foreach (array('start_at', 'end_at', 'opening_at') as $dt_field) {
+        foreach (array('start_at', 'end_at', 'opening_at', 'docs_end_at', 'published_at') as $dt_field) {
             if (!array_key_exists($dt_field, $data)) {
                 continue;
             }
@@ -200,18 +176,6 @@ class pb2bTender extends pb2bWaproObject
         return parent::preSave($data);
     }
 
-    private function assertBuyerInCabinetContext(): ?array
-    {
-        $company = pb2bCabinetContextFactory::build()->company();
-        if (!$company || !$company->id) {
-            return array('error' => true, 'message' => 'Компания не выбрана');
-        }
-        if (!$company->isBuyer()) {
-            return array('error' => true, 'message' => 'Создавать тендер может только компания-покупатель');
-        }
-        return null;
-    }
-
     protected function afterSave(array &$result): void
     {
         parent::afterSave($result);
@@ -220,14 +184,11 @@ class pb2bTender extends pb2bWaproObject
         }
     }
 
-    private function applyTypeRules(array &$data, ?string $wizard_step = null): ?array
+    private function applyTypeRules(array &$data): ?array
     {
         $type_id = $this->resolveTypeId($data);
         if ($type_id <= 0) {
             if (empty($this->id)) {
-                if ($wizard_step !== null && in_array($wizard_step, self::TYPE_OPTIONAL_WIZARD_STEPS, true)) {
-                    return null;
-                }
                 return array('error' => true, 'message' => 'Не указан тип процедуры');
             }
             return null;
@@ -525,150 +486,7 @@ class pb2bTender extends pb2bWaproObject
         return (new pb2bTenderStatusService())->publish($this, $reason, $actor);
     }
 
-    public function saveWizardStep(string $step, array $data, int $organizer_company_id): array
-    {
-        unset($data['status'], $data['_status_via_service'], $data['organizer_company_id']);
-
-        $invitations_payload = null;
-        if (array_key_exists('invitations', $data)) {
-            $invitations_payload = (array) $data['invitations'];
-            unset($data['invitations']);
-        }
-        $criteria_payload = null;
-        if (array_key_exists('criteria', $data)) {
-            $criteria_payload = (array) $data['criteria'];
-            unset($data['criteria']);
-        }
-
-        $tender_id = (int) ($data['id'] ?? 0);
-        $responsible_contact_id = (int) ($data['responsible_contact_id'] ?? 0);
-        unset($data['id']);
-        $data = $this->filterDataForWizardStep($step, $data);
-
-        $data['organizer_company_id'] = $organizer_company_id;
-        if ($responsible_contact_id > 0) {
-            $data['responsible_contact_id'] = $responsible_contact_id;
-        } elseif (empty($data['responsible_contact_id'])) {
-            $contact_id = (int) wa()->getUser()->getId();
-            if ($contact_id > 0) {
-                $data['responsible_contact_id'] = $contact_id;
-            }
-        }
-
-        if (!$tender_id) {
-            if (empty($data['type'])) {
-                return array('error' => true, 'message' => 'Не указан тип процедуры');
-            }
-            if (empty($data['number'])) {
-                $data['number'] = 'DRAFT-'.date('YmdHis').'-'.$organizer_company_id;
-            }
-            if (empty(trim((string) ($data['title'] ?? '')))) {
-                $data['title'] = 'Черновик';
-            }
-        }
-
-        $tender = new pb2bTender($tender_id ?: null);
-        if ($tender_id && (int) ($tender->data['organizer_company_id'] ?? 0) !== $organizer_company_id) {
-            return array('error' => true, 'message' => 'Нет доступа к этому тендеру');
-        }
-
-        if ($tender_id > 0 && (int) ($tender->id ?? 0) > 0) {
-            foreach (array('title', 'number', 'responsible_contact_id', 'type', 'organizer_company_id') as $preserve_field) {
-                if (!array_key_exists($preserve_field, $data) && array_key_exists($preserve_field, $tender->data)) {
-                    $data[$preserve_field] = $tender->data[$preserve_field];
-                }
-            }
-        }
-
-        $data['_wizard_step'] = $step;
-        $save_result = $tender->save($data);
-        if (!empty($save_result['error'])) {
-            return $save_result;
-        }
-
-        $saved_tender_id = (int) $tender->id;
-        if ($invitations_payload !== null && $saved_tender_id > 0) {
-            $inv_result = $tender->replaceInvitations($invitations_payload, $organizer_company_id);
-            if (!empty($inv_result['error'])) {
-                return $inv_result;
-            }
-        }
-        if ($criteria_payload !== null && $saved_tender_id > 0) {
-            $crit_result = $tender->replaceCriteria($criteria_payload, $organizer_company_id);
-            if (!empty($crit_result['error'])) {
-                return $crit_result;
-            }
-        }
-
-        return array(
-            'error' => false,
-            'message' => $save_result['message'] ?? 'Сохранено',
-            'tender_id' => $saved_tender_id,
-            'status' => (int) ($tender->data['status'] ?? 0),
-        );
-    }
-
-    public function validateStep(string $step, array $data): array
-    {
-        $merged = array_merge($this->data, $data);
-        $types_by_id = (array) pb2bWaproHelper::getConfigOption('tender_types', 'id');
-        $type_code = (string) ($types_by_id[(int) ($merged['type'] ?? 0)]['code'] ?? '');
-
-        switch ($step) {
-            case 'privacy':
-                if (!empty($merged['is_private']) && (int) $this->id > 0) {
-                    $invitation_check = self::requireInvitationsForPrivate((int) $this->id, true);
-                    if ($invitation_check !== null) {
-                        return $invitation_check;
-                    }
-                }
-                break;
-
-            case 'basic':
-                if ((int) ($merged['type'] ?? 0) <= 0) {
-                    return array('error' => true, 'message' => 'Не указан тип процедуры');
-                }
-                if (trim((string) ($merged['title'] ?? '')) === '') {
-                    return array('error' => true, 'message' => 'Укажите наименование');
-                }
-                if (trim((string) ($merged['number'] ?? '')) === '') {
-                    return array('error' => true, 'message' => 'Укажите реестровый номер');
-                }
-                $dup = $this->findDuplicateNumber(
-                    trim((string) $merged['number']),
-                    (int) ($merged['organizer_company_id'] ?? 0)
-                );
-                if ($dup) {
-                    return array('error' => true, 'message' => 'Тендер с таким номером уже существует');
-                }
-                break;
-
-            case 'purchase_params':
-                if ((int) ($merged['type'] ?? 0) <= 0) {
-                    return array('error' => true, 'message' => 'Не указан тип процедуры');
-                }
-                if ($type_code === 'prequalification' && (int) ($merged['prequal_validity_months'] ?? 0) < 1) {
-                    return array('error' => true, 'message' => 'Укажите срок действия предквалификации');
-                }
-                break;
-
-            case 'lots':
-                return array('error' => true, 'message' => 'Сохранение лотов будет доступно после подключения таблиц позиций');
-
-            case 'invitation':
-                if (!empty($merged['is_private']) && (int) $this->id > 0) {
-                    $invitation_check = self::requireInvitationsForPrivate((int) $this->id, true);
-                    if ($invitation_check !== null) {
-                        return $invitation_check;
-                    }
-                }
-                break;
-        }
-
-        return array('error' => false);
-    }
-
-    private function findDuplicateNumber(string $number, int $organizer_company_id): bool
+    public function findDuplicateNumber(string $number, int $organizer_company_id): bool
     {
         if ($number === '' || $organizer_company_id <= 0) {
             return false;
@@ -802,20 +620,5 @@ class pb2bTender extends pb2bWaproObject
         }
 
         return array('error' => false, 'ids' => $ids);
-    }
-
-    private function filterDataForWizardStep(string $step, array $data): array
-    {
-        $allowed = self::WIZARD_STEP_FIELDS[$step] ?? null;
-        if ($allowed === null) {
-            return $data;
-        }
-        $filtered = array();
-        foreach ($allowed as $field) {
-            if (array_key_exists($field, $data)) {
-                $filtered[$field] = $data[$field];
-            }
-        }
-        return $filtered;
     }
 }
