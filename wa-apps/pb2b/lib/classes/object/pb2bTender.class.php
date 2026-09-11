@@ -435,7 +435,7 @@ class pb2bTender extends pb2bWaproObject
                 if ($type === '') {
                     $type = 'non_price';
                 }
-                $model->insert(array(
+                $insert = array(
                     'tender_id' => (int) $this->id,
                     'type' => $type,
                     'name' => $name,
@@ -443,18 +443,15 @@ class pb2bTender extends pb2bWaproObject
                         ? (float) $row['weight']
                         : null,
                     'is_mandatory' => !empty($row['is_mandatory']) ? 1 : 0,
-                ));
+                );
+                if (array_key_exists('description', $row)) {
+                    $insert['description'] = trim((string) $row['description']);
+                }
+                $model->insert($insert);
                 $saved++;
             }
 
-            if ($saved < 1) {
-                $types_by_id = (array) pb2bWaproHelper::getConfigOption('tender_types', 'id');
-                $type_code = (string) ($types_by_id[(int) ($this->data['type'] ?? 0)]['code'] ?? '');
-                if ($type_code === 'price_request') {
-                    return array('error' => true, 'message' => 'Добавьте хотя бы один критерий оценки');
-                }
-            }
-
+            // Пустой набор допустим в черновике; обязательность для ЗЦ — на publish.
             return array(
                 'error' => false,
                 'message' => 'Критерии сохранены',

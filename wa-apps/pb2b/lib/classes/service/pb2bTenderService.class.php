@@ -216,6 +216,13 @@ class pb2bTenderService extends pb2bBaseService
             }
         }
 
+        if ($dto->hasCriteria()) {
+            $crit_result = $tender->replaceCriteria($dto->criteria, $company_id);
+            if (!empty($crit_result['error'])) {
+                $this->throwSaveError($crit_result, 'Не удалось сохранить критерии');
+            }
+        }
+
         return $tender;
     }
 

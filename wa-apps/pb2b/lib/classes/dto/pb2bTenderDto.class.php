@@ -43,6 +43,9 @@ readonly class pb2bTenderDto extends pb2bBaseDto
     /** @var list<int> */
     public array $invitations;
 
+    /** @var list<array{name?:string,type?:string,description?:string,is_mandatory?:int|bool,weight?:float|null}> */
+    public array $criteria;
+
     public function __construct(array $data = [])
     {
         if (array_key_exists('invitations', $data)) {
@@ -51,14 +54,17 @@ readonly class pb2bTenderDto extends pb2bBaseDto
                 ? array_values(array_map('intval', $invitations))
                 : [];
         }
+        if (array_key_exists('criteria', $data)) {
+            $data['criteria'] = self::normalizeCriteria($data['criteria']);
+        }
         parent::__construct($data);
     }
 
-    /** Поля для `$tender->save()` — без type и invitations. */
+    /** Поля для `$tender->save()` — без type / invitations / criteria. */
     public function toSaveArray(): array
     {
         $row = $this->toArray();
-        unset($row['type'], $row['invitations']);
+        unset($row['type'], $row['invitations'], $row['criteria']);
 
         return $row;
     }
@@ -66,5 +72,48 @@ readonly class pb2bTenderDto extends pb2bBaseDto
     public function hasInvitations(): bool
     {
         return (new ReflectionProperty($this, 'invitations'))->isInitialized($this);
+    }
+
+    public function hasCriteria(): bool
+    {
+        return (new ReflectionProperty($this, 'criteria'))->isInitialized($this);
+    }
+
+    /**
+     * @param mixed $raw
+     * @return list<array{name:string,type:string,description:string,is_mandatory:int,weight:?float}>
+     */
+    private static function normalizeCriteria($raw): array
+    {
+        if (!is_array($raw)) {
+            return [];
+        }
+        $out = [];
+        foreach ($raw as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $name = trim((string) ($row['name'] ?? ''));
+            if ($name === '') {
+                continue;
+            }
+            $type = trim((string) ($row['type'] ?? 'non_price'));
+            if ($type === '') {
+                $type = 'non_price';
+            }
+            $weight = null;
+            if (array_key_exists('weight', $row) && $row['weight'] !== '' && $row['weight'] !== null) {
+                $weight = (float) $row['weight'];
+            }
+            $out[] = [
+                'name' => $name,
+                'type' => $type,
+                'description' => trim((string) ($row['description'] ?? '')),
+                'is_mandatory' => !empty($row['is_mandatory']) || !empty($row['required']) ? 1 : 0,
+                'weight' => $weight,
+            ];
+        }
+
+        return $out;
     }
 }

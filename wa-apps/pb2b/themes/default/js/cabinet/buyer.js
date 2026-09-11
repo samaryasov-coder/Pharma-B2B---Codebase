@@ -558,6 +558,7 @@
             this.initPurchaseParamsUi();
             this.initPaymentDeliveryUi();
             this.initLotsUi();
+            this.initInvitationUi();
             this.loadList();
         },
 
@@ -567,6 +568,16 @@
 
             $root.find('.js-tenders-reload').click(function () {
                 self.loadList();
+            });
+
+            $root.find('.js-tenders-list').on('click', '.buyer-tender-card', function (e) {
+                if ($(e.target).closest('.buyer-tender-card__more').length) {
+                    return;
+                }
+                const id = parseInt($(this).data('id'), 10) || 0;
+                if (id > 0) {
+                    window.location.href = '/cabinet/buyer/tender/' + id + '/';
+                }
             });
 
             $root.find('.js-tenders-tabs').on('click', 'a', function (e) {
@@ -873,10 +884,6 @@
             $root.find('.js-tender-save-draft').click(function () {
                 self.saveDraft();
             });
-
-            $root.find('.js-tender-publish-footer').click(function () {
-                self.publish();
-            });
         },
 
         initPurchaseParamsUi: function () {
@@ -1009,6 +1016,269 @@
                 $(this).remove();
             });
             $contactList.find('.js-tender-contact').val(null).trigger('change');
+        },
+
+        /* ── Рассылка: инициализация UI ── */
+        invitationSelected: [],   // { id, name }
+
+        initInvitationUi: function () {
+            const self = this;
+            const $root = $(this.root);
+            const $step = $root.find('.zc-step-invitation');
+            if (!$step.length) return;
+
+            /* Mock-данные поставщиков (в будущем загружать с API) */
+            self._invSuppliersMock = {
+                all: [
+                    { id: 's1', name: 'АО «Металлоснаб»' },
+                    { id: 's2', name: 'ООО «СнабСервис»' },
+                    { id: 's3', name: 'ИП Козлов А.А.' },
+                    { id: 's4', name: 'ООО «ТехноГрупп»' },
+                    { id: 's5', name: 'ЗАО «СтальТрейд»' }
+                ],
+                my: [
+                    { id: 's1', name: 'АО «Металлоснаб»' },
+                    { id: 's4', name: 'ООО «ТехноГрупп»' }
+                ],
+                groups: [
+                    { id: 'g1', name: 'Группа «Стройматериалы»' },
+                    { id: 'g2', name: 'Группа «Металлоизделия»' }
+                ]
+            };
+            self._invActiveTab = 'all';
+            self.invitationSelected = [];
+
+            $root.off('click.invTab', '.zc-inv-tab')
+                .on('click.invTab', '.zc-inv-tab', function () {
+                    self._invActiveTab = $(this).data('tab');
+                    $step.find('.zc-inv-tab').removeClass('active');
+                    $(this).addClass('active');
+                    $step.find('.js-inv-search').val('');
+                    self.renderInvSupplierList();
+                });
+
+            $root.off('input.invSearch', '.js-inv-search')
+                .on('input.invSearch', '.js-inv-search', function () {
+                    self.renderInvSupplierList();
+                });
+
+            $root.off('click.invItem', '.zc-inv-list__item')
+                .on('click.invItem', '.zc-inv-list__item', function () {
+                    var id = $(this).data('id');
+                    var name = $(this).data('name');
+                    var idx = self.invitationSelected.findIndex(function (s) { return s.id === id; });
+                    if (idx >= 0) {
+                        self.invitationSelected.splice(idx, 1);
+                    } else {
+                        self.invitationSelected.push({ id: id, name: name });
+                    }
+                    self.renderInvSupplierList();
+                    self.renderInvSelected();
+                    self.syncInvPublishBtn();
+                });
+
+            $root.off('click.invRemove', '.js-inv-remove')
+                .on('click.invRemove', '.js-inv-remove', function () {
+                    var id = $(this).data('id');
+                    self.invitationSelected = self.invitationSelected.filter(function (s) { return s.id !== id; });
+                    self.renderInvSelected();
+                    self.renderInvSupplierList();
+                    self.syncInvPublishBtn();
+                });
+
+            $root.off('click.invClear', '.js-inv-clear-all')
+                .on('click.invClear', '.js-inv-clear-all', function () {
+                    self.invitationSelected = [];
+                    self.renderInvSelected();
+                    self.renderInvSupplierList();
+                    self.syncInvPublishBtn();
+                });
+
+            $root.off('click.invEmailAdd', '.js-inv-email-add')
+                .on('click.invEmailAdd', '.js-inv-email-add', function () {
+                    self.addInvEmail();
+                });
+            $root.off('keydown.invEmail', '.js-inv-email-input')
+                .on('keydown.invEmail', '.js-inv-email-input', function (e) {
+                    if (e.key === 'Enter') { e.preventDefault(); self.addInvEmail(); }
+                });
+
+            $root.off('input.invMsg', '.js-inv-msg-textarea')
+                .on('input.invMsg', '.js-inv-msg-textarea', function () {
+                    var len = String($(this).val() || '').length;
+                    var max = parseInt($(this).attr('maxlength'), 10) || 700;
+                    var $counter = $step.find('.js-inv-msg-counter');
+                    $counter.text(len + ' / ' + max);
+                    $counter.toggleClass('is-limit', len >= max);
+                    var text = $.trim($(this).val() || '');
+                    var $extra = $step.find('.js-inv-preview-extra');
+                    var $hint = $step.find('.js-inv-preview-hint');
+                    if (text) {
+                        $extra.text(text).show();
+                        $hint.hide();
+                    } else {
+                        $extra.hide();
+                        $hint.show();
+                    }
+                });
+
+            $root.off('change.invSendType', '.js-inv-send-type-radio')
+                .on('change.invSendType', '.js-inv-send-type-radio', function () {
+                    self.syncInvPublishBtn();
+                });
+
+            $root.off('click.invPublish', '.js-tender-publish')
+                .on('click.invPublish', '.js-tender-publish', function () {
+                    if ($(this).prop('disabled')) return;
+                    self.publish();
+                });
+
+            $root.off('click.invUpload', '.js-inv-upload-btn')
+                .on('click.invUpload', '.js-inv-upload-btn', function () {
+                    var input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = '.xlsx,.xls,.csv';
+                    input.click();
+                });
+            $root.off('click.invChevron', '.js-inv-upload-chevron')
+                .on('click.invChevron', '.js-inv-upload-chevron', function (e) {
+                    e.stopPropagation();
+                    var $dd = $step.find('.js-inv-upload-dropdown');
+                    var $combo = $step.find('.js-inv-upload-combo');
+                    var isOpen = $dd.is(':visible');
+                    $dd.toggle(!isOpen);
+                    $combo.toggleClass('is-open', !isOpen);
+                });
+            $root.off('click.invTemplate', '.zc-inv-upload-dropdown__item')
+                .on('click.invTemplate', '.zc-inv-upload-dropdown__item', function (e) {
+                    e.preventDefault();
+                });
+            $(document).off('click.invDropdown').on('click.invDropdown', function () {
+                $step.find('.js-inv-upload-dropdown').hide();
+                $step.find('.js-inv-upload-combo').removeClass('is-open');
+            });
+
+            self.renderInvSupplierList();
+            self.syncInvPublishBtn();
+        },
+
+        addInvEmail: function () {
+            var self = this;
+            var $root = $(this.root);
+            var $input = $root.find('.js-inv-email-input');
+            var email = $.trim($input.val() || '');
+            if (!email || !email.includes('@')) return;
+            if (self.invitationSelected.some(function (s) { return s.id === email; })) {
+                $input.val('');
+                return;
+            }
+            self.invitationSelected.push({ id: email, name: email });
+            $input.val('');
+            self.renderInvSelected();
+            self.syncInvPublishBtn();
+        },
+
+        renderInvSupplierList: function () {
+            var self = this;
+            var $root = $(this.root);
+            var $list = $root.find('.js-inv-supplier-list');
+            if (!$list.length) return;
+
+            var tab = self._invActiveTab || 'all';
+            var suppliers = (self._invSuppliersMock || {})[tab] || [];
+            var q = $.trim($root.find('.js-inv-search').val() || '').toLowerCase();
+            if (q) {
+                suppliers = suppliers.filter(function (s) {
+                    return s.name.toLowerCase().includes(q);
+                });
+            }
+
+            var $empty = $list.find('.js-inv-list-empty');
+            $list.find('.zc-inv-list__item').remove();
+
+            if (!suppliers.length) {
+                $empty.show();
+                return;
+            }
+            $empty.hide();
+
+            var checkSvg = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6L5 8.5L9.5 4" stroke="var(--white,#fff)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+            suppliers.forEach(function (s) {
+                var isChecked = self.invitationSelected.some(function (sel) { return sel.id === s.id; });
+                var $item = $('<button type="button" class="zc-inv-list__item' + (isChecked ? ' is-checked' : '') + '">'
+                    + '<span class="zc-inv-list__checkbox">' + (isChecked ? checkSvg : '') + '</span>'
+                    + '<span class="zc-inv-list__name"></span>'
+                    + '</button>');
+                $item.data('id', s.id).data('name', s.name);
+                $item.find('.zc-inv-list__name').text(s.name);
+                $list.append($item);
+            });
+        },
+
+        renderInvSelected: function () {
+            var self = this;
+            var $root = $(this.root);
+            var $count = $root.find('.js-inv-selected-count');
+            var $empty = $root.find('.js-inv-selected-empty');
+            var $panel = $root.find('.js-inv-selected-list');
+            var $items = $root.find('.js-inv-selected-items');
+            var $emailTags = $root.find('.js-inv-email-tags');
+
+            /* Счётчик */
+            var systemSelected = self.invitationSelected.filter(function (s) { return !s.id.includes('@'); });
+            var emailSelected = self.invitationSelected.filter(function (s) { return s.id.includes('@'); });
+
+            $count.text(self.invitationSelected.length);
+
+            if (self.invitationSelected.length === 0) {
+                $empty.show();
+                $panel.hide();
+            } else {
+                $empty.hide();
+                $panel.show();
+                $items.empty();
+                systemSelected.forEach(function (s) {
+                    var $item = $('<div class="zc-inv-selected__item">'
+                        + '<span class="zc-inv-selected__item-name"></span>'
+                        + '<button type="button" class="zc-inv-selected__item-remove js-inv-remove" title="Убрать">'
+                        + '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>'
+                        + '</button>'
+                        + '</div>');
+                    $item.find('.zc-inv-selected__item-name').text(s.name);
+                    $item.find('.js-inv-remove').data('id', s.id);
+                    $items.append($item);
+                });
+            }
+
+            /* E-mail теги */
+            $emailTags.empty();
+            if (emailSelected.length) {
+                emailSelected.forEach(function (s) {
+                    var $tag = $('<span class="zc-inv-email-tag">'
+                        + '<span class="zc-inv-email-tag__text"></span>'
+                        + '<button type="button" class="zc-inv-email-tag__remove js-inv-remove">'
+                        + '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>'
+                        + '</button>'
+                        + '</span>');
+                    $tag.find('.zc-inv-email-tag__text').text(s.name);
+                    $tag.find('.js-inv-remove').data('id', s.id);
+                    $emailTags.append($tag);
+                });
+                $emailTags.show();
+            } else {
+                $emailTags.hide();
+            }
+        },
+
+        syncInvPublishBtn: function () {
+            var $root = $(this.root);
+            var $btn = $root.find('.js-tender-publish');
+            var sendType = $root.find('input[name="inv_send_type"]:checked').val() || 'manual';
+            /* Вручную — можно публиковать всегда; Автоматически — нужны получатели */
+            var enabled = sendType === 'manual' || this.invitationSelected.length > 0;
+            $btn.prop('disabled', !enabled);
+            /* Надпись на кнопке */
+            $btn.text(sendType === 'auto' ? 'Опубликовать' : 'Опубликовать без рассылки');
         },
 
         initLotsUi: function () {
@@ -1637,7 +1907,7 @@
             if (!isPrequal) {
                 priceRow = '<div class="zc-lots-field zc-lots-field--price"><div class="zc-lots-field__label">Макс. цена без НДС</div>'
                     + this.lotsInputHtml({ field: 'maxPriceNoVat', placeholder: '0' }) + '</div>'
-                    + '<div class="zc-lots-field"><div class="zc-lots-field__label">НДС</div>'
+                    + '<div class="zc-lots-field zc-lots-field--vat"><div class="zc-lots-field__label">НДС</div>'
                     + this.lotsInputHtml({ field: 'vatRate', select: true, options: vatOpts }) + '</div>';
             }
 
@@ -1651,17 +1921,17 @@
                 + '<button type="button" class="zc-lot-item__icon-btn js-lot-del" title="Удалить" data-id="' + pos.id + '"><svg><use href="#icon-trash"></use></svg></button>'
                 + '</div></div></div>'
                 + '<div class="zc-lots-editor__body"><div class="zc-lots-editor__body-inner">'
-                + '<div class="zc-lots-field"><div class="zc-lots-field__label">Наименование позиции<span class="zc-lots-field__req">*</span></div>'
+                + '<div class="zc-lots-field"><div class="zc-lots-field__label">Наименование позиции</div>'
                 + this.lotsInputHtml({ field: 'name', placeholder: 'Введите наименование позиции' }) + '</div>'
                 + '<div class="zc-lots-field-row">'
-                + '<div class="zc-lots-field"><div class="zc-lots-field__label">Количество<span class="zc-lots-field__req">*</span></div>'
+                + '<div class="zc-lots-field"><div class="zc-lots-field__label">Количество</div>'
                 + this.lotsInputHtml({ field: 'quantity', placeholder: isPrequal ? '0' : '1' }) + '</div>'
-                + '<div class="zc-lots-field"><div class="zc-lots-field__label">Ед. измерения<span class="zc-lots-field__req">*</span></div>'
+                + '<div class="zc-lots-field"><div class="zc-lots-field__label">Ед. измерения</div>'
                 + this.lotsInputHtml({ field: 'unit', select: true, options: unitOpts }) + '</div>'
                 + priceRow
                 + '</div>'
                 + (isPrequal ? '' : (
-                    '<div class="zc-lots-field"><div class="zc-lots-field__label">Место поставки<span class="zc-lots-field__req">*</span></div>'
+                    '<div class="zc-lots-field"><div class="zc-lots-field__label">Место поставки</div>'
                     + this.lotsInputHtml({ field: 'deliveryPlace', placeholder: 'Введите или выберите из списка', endIcon: searchIcon }) + '</div>'
                     + '<button type="button" class="zc-lots-add-field js-lots-add-field">'
                     + '<svg viewBox="0 0 20 20" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M10 3.125C10.3452 3.125 10.625 3.40482 10.625 3.75V9.375H16.25C16.5952 9.375 16.875 9.65482 16.875 10C16.875 10.3452 16.5952 10.625 16.25 10.625H10.625V16.25C10.625 16.5952 10.3452 16.875 10 16.875C9.65482 16.875 9.375 16.5952 9.375 16.25V10.625H3.75C3.40482 10.625 3.125 10.3452 3.125 10C3.125 9.65482 3.40482 9.375 3.75 9.375H9.375V3.75C9.375 3.40482 9.65482 3.125 10 3.125Z" fill="currentColor"/></svg>'
@@ -2327,7 +2597,7 @@
         },
 
         initInviteSelects: function () {
-            $(this.root).find('.js-invite-select, .js-invite-select-final').each(function () {
+            $(this.root).find('.js-invite-select').each(function () {
                 const $select = $(this);
                 if ($select.hasClass('select2-hidden-accessible')) {
                     $select.select2('destroy');
@@ -2692,7 +2962,7 @@
             $root.find('.js-field-hide-initial-price, .js-field-hide-participants, .js-field-hide-prices, .js-field-organizer-sees-names').prop('checked', false);
             $root.find('input[name="rank_prices"]').prop('checked', false);
             $root.find('input[name="is_private"][value="0"]').prop('checked', true);
-            $root.find('.js-invite-select, .js-invite-select-final').val(null).trigger('change');
+            $root.find('.js-invite-select').val(null).trigger('change');
             $root.find('.js-private-invites, .js-past-prequal-block, .js-approval-period-wrap, .js-approval-period-fields, .js-hide-prices-options').removeClass('visible');
             $root.find('.js-price-request-only').toggle(this.selectedTypeCode === 'price_request');
             $root.find('.js-prequal-only').toggle(this.selectedTypeCode === 'prequalification');
@@ -2710,6 +2980,7 @@
             this.tzFiles = [];
             this.renderTzFiles();
             this.criteria = [];
+            this.invitationSelected = [];
             this.extraInfoFields = [];
             this.extraApprovers = [];
             this.renderExtraInfoFields();
@@ -2727,6 +2998,7 @@
         closeCreate: function () {
             const $root = $(this.root);
             $root.removeClass('tender-create');
+            $root.find('.js-tender-create-body').removeClass('is-wide');
             $root.find('.js-tender-create-view').hide();
             $root.find('.js-tenders-list-view').show();
             this.loadList();
@@ -2738,8 +3010,9 @@
             const step = this.steps[index];
             const self = this;
             const $root = $(this.root);
-            const hasOwnFooter = step === 'privacy' || step === 'basic' || step === 'purchase_params' || step === 'payment_delivery' || step === 'lots';
-            const isLast = index === this.steps.length - 1;
+            const isWide = step === 'lots' || step === 'invitation';
+
+            $root.find('.js-tender-create-body').toggleClass('is-wide', isWide);
 
             $root.find('.js-tender-step-panel').hide();
             $root.find('.js-tender-step-panel[data-step="' + step + '"]').show();
@@ -2751,11 +3024,12 @@
                 else if (i > self.stepIndex) $el.addClass('next');
             });
 
-            $root.find('.js-tender-steps-footer').toggle(!hasOwnFooter);
-            $root.find('.js-tender-steps-footer .js-tender-step-prev').toggle(!hasOwnFooter && index > 0);
-            $root.find('.js-tender-steps-footer .js-tender-step-next').toggle(!hasOwnFooter && !isLast);
-            $root.find('.js-tender-publish-footer').toggle(isLast);
             if (step === 'basic') this.syncBasicContinue();
+            if (step === 'invitation') {
+                this.renderInvSupplierList();
+                this.renderInvSelected();
+                this.syncInvPublishBtn();
+            }
             if (step === 'lots') {
                 if (!this.lotPositions.length) {
                     this.resetLotsUi();
@@ -2817,8 +3091,16 @@
                 data.additional_delivery_info = $.trim($root.find('.js-field-additional-delivery').val() || '');
                 data.currency = 'RUB';
             } else if (step === 'invitation') {
-                const invites = $root.find('.js-invite-select-final').val() || [];
-                if (invites.length) data.invitations = invites;
+                /* Выбранные поставщики (ID из системы + email вне системы) */
+                const systemIds = this.invitationSelected
+                    .filter(function (s) { return !s.id.includes('@'); })
+                    .map(function (s) { return s.id; });
+                if (systemIds.length) data.invitations = systemIds;
+                /* Дополнительное сообщение */
+                const addMsg = $.trim($root.find('.js-inv-msg-textarea').val() || '');
+                if (addMsg) data.invitation_message = addMsg;
+                /* Тип отправки */
+                data.invitation_send_type = $root.find('input[name="inv_send_type"]:checked').val() || 'manual';
             }
             return data;
         },
@@ -2831,6 +3113,18 @@
                 if (step === 'lots') return;
                 Object.assign(data, self.collectStepData(step));
             });
+            if (this.selectedTypeCode === 'price_request' || this.selectedTypeCode === 'proposal_request') {
+                data.criteria = (this.criteria || []).map(function (item) {
+                    return {
+                        name: item.name || '',
+                        type: item.type || 'non_price',
+                        is_mandatory: item.required ? 1 : 0,
+                        description: item.description || ''
+                    };
+                }).filter(function (row) {
+                    return $.trim(row.name) !== '';
+                });
+            }
             return data;
         },
 
@@ -2851,14 +3145,19 @@
                 $root.find('.js-field-number').val(data.number);
             }
 
+            if (opts.publish
+                && (this.selectedTypeCode === 'price_request' || this.selectedTypeCode === 'proposal_request')
+                && !(data.criteria && data.criteria.length)
+            ) {
+                $.AlertManager.showError('Добавьте хотя бы один критерий оценки для запроса цен');
+                const paramsIndex = this.steps.indexOf('purchase_params');
+                if (paramsIndex >= 0) this.goStep(paramsIndex);
+                return Promise.resolve(false);
+            }
+
             const persist = function () {
-                return self.postSave(data, { silent: !!opts.publish }).then(function (ok) {
-                    if (!ok) return false;
-                    if (self.selectedTypeCode === 'price_request') {
-                        return self.saveCriterion();
-                    }
-                    return true;
-                });
+                // Ошибки save всегда показываем (критерии/поля); silent только глушил и их.
+                return self.postSave(data, { silent: false });
             };
 
             const chain = !this.tenderId
@@ -2919,26 +3218,6 @@
                     $root.find('.js-tender-id').val(String(self.tenderId));
                     return opts.silent ? false : (reply.message || 'Сохранено');
                 }
-            }).then(function (reply) {
-                return !reply.error;
-            });
-        },
-
-        saveCriterion: function () {
-            if (!this.tenderId || !this.criteria.length) return Promise.resolve(true);
-            const criteria = this.criteria.map(function (item) {
-                return {
-                    name: item.name,
-                    type: 'non_price',
-                    is_mandatory: item.required ? 1 : 0,
-                    description: item.description || ''
-                };
-            });
-            return $.fRequest({
-                url: '/api/buyer/tender/' + this.tenderId + '/criterion/save/',
-                method: 'POST',
-                data: { criteria: criteria },
-                showMessages: false
             }).then(function (reply) {
                 return !reply.error;
             });

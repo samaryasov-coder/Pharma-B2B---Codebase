@@ -2,7 +2,7 @@
 
 class pb2bTenderClassifier extends pb2bWaproObject
 {
-    private const ALLOWED_TYPES = array('esklp', 'okpd2');
+    private const ALLOWED_TYPES = array('esklp', 'okpd2', 'category');
 
     public function __construct(?int $id = null)
     {
@@ -61,6 +61,14 @@ class pb2bTenderClassifier extends pb2bWaproObject
 
         if ($code === 'okpd2') {
             return self::validateOkpd2NodeExists($classifier_id);
+        }
+
+        if ($code === 'category') {
+            $category = new pb2bCategory($classifier_id);
+            if (!$category->id) {
+                return array('error' => true, 'message' => 'Категория не найдена');
+            }
+            return array('error' => false);
         }
 
         return array('error' => false);
