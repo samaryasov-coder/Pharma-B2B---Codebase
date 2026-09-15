@@ -585,9 +585,15 @@
                     return;
                 }
                 const id = parseInt($(this).data('id'), 10) || 0;
-                if (id > 0) {
-                    window.location.href = '/cabinet/buyer/tender/' + id + '/';
+                if (id <= 0) return;
+                const item = self.items.find(function (row) {
+                    return parseInt(row.id, 10) === id;
+                });
+                if (item && String(item.status_code || '') === 'draft') {
+                    self.openDraft(id);
+                    return;
                 }
+                window.location.href = '/cabinet/buyer/tender/' + id + '/';
             });
 
             $root.find('.js-tenders-tabs').on('click', 'a', function (e) {
@@ -2308,6 +2314,21 @@
             $root.find('.js-min-step-radios').toggleClass('visible', on);
         },
 
+        splitDatetime: function (value) {
+            const raw = String(value || '').trim();
+            if (!raw || raw.indexOf('0000-00-00') === 0) {
+                return { date: '', time: '' };
+            }
+            const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/);
+            if (!m) {
+                return { date: '', time: '' };
+            }
+            return {
+                date: m[3] + '.' + m[2] + '.' + m[1],
+                time: (m[4] && m[5]) ? (m[4] + ':' + m[5]) : ''
+            };
+        },
+
         composeDatetime: function (dateStr, timeStr) {
             const rawDate = $.trim(dateStr || '');
             if (!rawDate) return '';
@@ -3516,7 +3537,190 @@
             });
         },
 
-        openCreate: function (method) {
+        openDraft: function (tenderId) {
+            const self = this;
+            return $.fRequest({
+                url: '/api/buyer/tender/' + tenderId + '/',
+                method: 'GET',
+                showMessages: false
+            }).then(function (reply) {
+                if (!reply || reply.error || !reply.tender) {
+                    $.AlertManager.showError((reply && reply.message) || 'Не удалось открыть черновик');
+                    return false;
+                }
+                const type = reply.tender.type || {};
+                self.openCreate({
+                    id: parseInt(type.id, 10) || 3,
+                    code: type.code || 'price_request',
+                    title: 'Редактирование процедуры'
+                }, reply);
+                return true;
+            });
+        },
+
+        applyLotsFromDetail: function (items, documents) {
+            const self = this;
+            this.lotIdSeq = 0;
+            const rows = Array.isArray(items) ? items : [];
+            this.lotPositions = rows.map(function (row) {
+                const qty = row.qty != null && row.qty !== '' ? String(row.qty) : '';
+                return {
+                    id: self.nextLotId('pos_'),
+                    dbId: parseInt(row.id, 10) || 0,
+                    name: row.name || '',
+                    quantity: qty,
+                    unit: row.unit || 'шт.',
+                    maxPriceNoVat: row.max_price_no_vat != null && row.max_price_no_vat !== ''
+                        ? String(row.max_price_no_vat)
+                        : '0',
+                    vatRate: row.vat_rate || '0%',
+                    deliveryPlace: row.delivery_place || '',
+                    comment: row.comment || '',
+                    fileName: row.file_name || '',
+                    fileSize: 0,
+                    file_link_id: parseInt(row.file_link_id, 10) || null
+                };
+            });
+            if (!this.lotPositions.length) {
+                const posId = this.nextLotId('pos_');
+                this.lotPositions = [{
+                    id: posId,
+                    name: this.isLotsPrequal() ? 'Позиция №1' : 'Позиция N1',
+                    quantity: '',
+                    unit: 'шт.',
+                    maxPriceNoVat: '0',
+                    vatRate: '0%',
+                    deliveryPlace: '',
+                    comment: '',
+                    fileName: '',
+                    fileSize: 0,
+                    file_link_id: null
+                }];
+            }
+
+            this.techSpecFiles = [];
+            this.lotDocuments = [];
+            (Array.isArray(documents) ? documents : []).forEach(function (doc) {
+                const kind = String(doc.kind || '');
+                const fileLinkId = parseInt(doc.file_link_id, 10) || 0;
+                if (kind === 'tech_spec') {
+                    if (fileLinkId > 0) {
+                        self.techSpecFiles.push({
+                            id: self.nextLotId('ts_'),
+                            name: doc.file_name || doc.name || 'Техническое задание',
+                            file_link_id: fileLinkId
+                        });
+                    }
+                    return;
+                }
+                self.lotDocuments.push({
+                    id: self.nextLotId('doc_'),
+                    name: doc.name || '',
+                    description: doc.description || '',
+                    fileName: doc.file_name || '',
+                    fileSize: 0,
+                    file_link_id: fileLinkId || null,
+                    isRequired: !!parseInt(doc.is_required, 10)
+                });
+            });
+            this.selectedLotId = this.lotPositions[0] ? this.lotPositions[0].id : '';
+            this.selectedDocId = this.lotDocuments[0] ? this.lotDocuments[0].id : '';
+            this.renderTechSpecFiles();
+            this.syncLotsStepUi();
+        },
+
+        applyDraftDetail: function (detail) {
+            const $root = $(this.root);
+            const tender = (detail && detail.tender) || {};
+            const flagOn = function (value) {
+                return value === true || value === 1 || value === '1';
+            };
+
+            this.tenderId = parseInt(tender.id || tender.tender_id, 10) || 0;
+            $root.find('.js-tender-id').val(String(this.tenderId));
+            $root.find('.js-field-title').val(tender.title || '');
+            $root.find('.js-field-number').val(tender.number || '');
+
+            $root.find('input[name="is_private"][value="' + (flagOn(tender.is_private) ? '1' : '0') + '"]')
+                .prop('checked', true);
+            $root.find('.js-private-invites').toggleClass('visible', flagOn(tender.is_private));
+            $root.find('.js-field-approval-required').prop('checked', flagOn(tender.approval_required));
+            $root.find('.js-approval-period-wrap').toggleClass('visible', flagOn(tender.approval_required));
+            $root.find('.js-field-hide-initial-price').prop('checked', flagOn(tender.hide_initial_price));
+            $root.find('.js-field-hide-participants').prop('checked', flagOn(tender.hide_participants_count));
+            $root.find('.js-field-hide-prices').prop('checked', flagOn(tender.hide_participant_prices));
+            $root.find('.js-hide-prices-options').toggleClass('visible', flagOn(tender.hide_participant_prices));
+            if (tender.rank_prices_mode === 'use') {
+                $root.find('input[name="rank_prices"][value="yes"]').prop('checked', true);
+            } else if (flagOn(tender.hide_participant_prices)) {
+                $root.find('input[name="rank_prices"][value="no"]').prop('checked', true);
+            }
+            $root.find('.js-field-organizer-sees-names').prop('checked', flagOn(tender.organizer_sees_names));
+            $root.find('.js-field-itemized').prop('checked', flagOn(tender.itemized_enabled));
+            $root.find('.js-field-allow-analogues').prop('checked', flagOn(tender.allow_analogues));
+            $root.find('.js-field-require-docs').prop('checked', flagOn(tender.require_additional_docs));
+            $root.find('.js-field-only-reduction').prop('checked', flagOn(tender.only_price_reduction));
+            $root.find('.js-field-auto-extend-no-offers').prop('checked', flagOn(tender.auto_extend_no_offers));
+            $root.find('.js-field-auto-extend-change').prop('checked', flagOn(tender.auto_extend_on_change));
+            $root.find('.js-renewal-inner').toggleClass('visible', flagOn(tender.auto_extend_on_change));
+            if (tender.auto_extend_period_min) {
+                $root.find('.js-field-renewal-period').val(String(tender.auto_extend_period_min)).trigger('change');
+            }
+            $root.find('.js-field-min-step').prop('checked', flagOn(tender.min_step_enabled));
+            if (tender.vat_mode) {
+                $root.find('input.js-field-vat[value="' + tender.vat_mode + '"]').prop('checked', true);
+            }
+            if (tender.budget != null && tender.budget !== '') {
+                $root.find('.js-field-budget').val(tender.budget);
+            }
+            $root.find('.js-field-payment').val(tender.payment_terms || '');
+            $root.find('.js-field-additional-delivery').val(tender.additional_delivery_info || '');
+            if (tender.delivery_terms) {
+                const addresses = String(tender.delivery_terms).split('\n').filter(Boolean);
+                $root.find('.js-delivery-address').each(function (idx) {
+                    $(this).val(addresses[idx] || '');
+                });
+            }
+            if (tender.additional_info) {
+                $root.find('.js-field-additional-info').val(tender.additional_info);
+            }
+
+            const endParts = this.splitDatetime(tender.end_at);
+            $root.find('.js-field-end-date').val(endParts.date);
+            $root.find('.js-field-end-time').val(endParts.time);
+            const docsParts = this.splitDatetime(tender.docs_end_at);
+            $root.find('.js-field-docs-date').val(docsParts.date);
+            $root.find('.js-field-docs-time').val(docsParts.time);
+            const openParts = this.splitDatetime(tender.opening_at);
+            $root.find('.js-field-result-date').val(openParts.date);
+
+            this.criteria = (detail.criteria || []).map(function (row, index) {
+                return {
+                    id: row.id ? ('crit_' + row.id) : ('npc_' + Date.now() + '_' + index),
+                    name: row.name || '',
+                    description: row.description || '',
+                    type: row.type || 'non_price',
+                    required: !!parseInt(row.is_mandatory, 10)
+                };
+            });
+            this.renderCriteria();
+
+            this.invitationSelected = (detail.invitations || []).map(function (row) {
+                const id = String(row.supplier_company_id || row.id || '');
+                return {
+                    id: id,
+                    name: row.company_name || ('ID ' + id)
+                };
+            }).filter(function (row) { return row.id && row.id !== '0'; });
+            const inviteIds = this.invitationSelected.map(function (row) { return row.id; });
+            $root.find('.js-invite-select').val(inviteIds.length ? inviteIds : null).trigger('change');
+
+            this.applyLotsFromDetail(detail.items, detail.documents);
+            this.syncMinStepUi();
+            this.syncBasicContinue();
+        },
+
+        openCreate: function (method, detail) {
             const self = this;
             const $root = $(this.root);
             method = method || {};
@@ -3558,9 +3762,6 @@
             $root.find('.js-field-tags-search').val('');
             $root.find('.js-tags-selected').empty();
             this.categoryExpandedIds = null;
-            this.loadCategoryTree().then(function () {
-                self.setSelectedCategoryIds([]);
-            });
             this.techSpecFiles = [];
             this.renderTechSpecFiles();
             this.criteria = [];
@@ -3572,6 +3773,23 @@
             this.renderCriteria();
             this.syncMinStepUi();
             this.syncBasicContinue();
+
+            if (detail && detail.tender) {
+                this.applyDraftDetail(detail);
+            }
+
+            this.loadCategoryTree().then(function () {
+                if (detail && detail.classifiers && detail.classifiers.length) {
+                    const type = parseInt(self.categoryClassifierType, 10) || 4;
+                    const ids = detail.classifiers.map(function (row) {
+                        if (parseInt(row.classifier_type, 10) !== type) return 0;
+                        return parseInt(row.classifier_id, 10) || 0;
+                    }).filter(Boolean);
+                    self.setSelectedCategoryIds(ids);
+                } else {
+                    self.setSelectedCategoryIds([]);
+                }
+            });
 
             $root.find('.js-tenders-list-view').hide();
             $root.find('.js-tender-create-view').show();

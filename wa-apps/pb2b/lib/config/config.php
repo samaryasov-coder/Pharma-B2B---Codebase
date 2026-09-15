@@ -396,6 +396,63 @@ return [
             'cases' => ['документ тендера', 'документа тендера', 'документу тендера', 'документ тендера', 'документом тендера', 'документе тендера', 'документы тендера', 'документов тендера', 'документам тендера', 'документы тендера', 'документами тендера', 'документах тендера'],
         ],
 
+        /** КП / заявка участия. Таблица pb2b_application (2.1). type=string: в БД code, не id. */
+        'tender_application' => [
+            'fields' => [
+                'tender_id' => ['type' => 'int', 'name' => 'ID тендера', 'nullable' => false, 'required' => true],
+                'supplier_company_id' => ['type' => 'int', 'name' => 'ID компании-поставщика', 'nullable' => false, 'required' => true],
+                'status' => ['type' => 'string', 'name' => 'Статус заявки', 'nullable' => false, 'required' => true, 'max_length' => 32],
+                'nonprice_done' => ['type' => 'checkbox', 'name' => 'Неценовые заполнены', 'nullable' => true, 'required' => false],
+                'approval_status' => ['type' => 'string', 'name' => 'Одобрение', 'nullable' => false, 'required' => true, 'max_length' => 32],
+                'qualification_status' => ['type' => 'string', 'name' => 'Квалификация', 'nullable' => false, 'required' => true, 'max_length' => 32],
+                'admission_status' => ['type' => 'string', 'name' => 'Допуск', 'nullable' => false, 'required' => true, 'max_length' => 32],
+                'approval_comment' => ['type' => 'text', 'name' => 'Комментарий одобрения', 'nullable' => true, 'required' => false],
+                'qualification_comment' => ['type' => 'text', 'name' => 'Комментарий квалификации', 'nullable' => true, 'required' => false],
+                'admission_comment' => ['type' => 'text', 'name' => 'Комментарий допуска', 'nullable' => true, 'required' => false],
+                'submitted_at' => ['type' => 'datetime', 'name' => 'Дата подачи', 'nullable' => true, 'required' => false],
+                'withdrawn_at' => ['type' => 'datetime', 'name' => 'Дата отзыва', 'nullable' => true, 'required' => false],
+                'create_datetime' => ['type' => 'datetime', 'name' => 'Дата создания', 'nullable' => true, 'required' => false],
+                'update_datetime' => ['type' => 'datetime', 'name' => 'Дата изменения', 'nullable' => true, 'required' => false],
+            ],
+            'cases' => ['заявка на участие', 'заявки на участие', 'заявке на участие', 'заявку на участие', 'заявкой на участие', 'заявке на участие', 'заявки на участие', 'заявок на участие', 'заявкам на участие', 'заявки на участие', 'заявками на участие', 'заявках на участие'],
+        ],
+
+        'tender_application_item' => [
+            'fields' => [
+                'application_id' => ['type' => 'int', 'name' => 'ID заявки', 'nullable' => false, 'required' => true],
+                'tender_item_id' => ['type' => 'int', 'name' => 'ID позиции извещения', 'nullable' => false, 'required' => true],
+                'qty' => ['type' => 'decimal', 'name' => 'Количество (снимок)', 'nullable' => true, 'required' => false],
+                'unit' => ['type' => 'string', 'name' => 'Единица (снимок)', 'nullable' => true, 'required' => false, 'max_length' => 32],
+                'price_per_unit' => ['type' => 'decimal', 'name' => 'Цена за единицу', 'nullable' => true, 'required' => false],
+                'vat_rate' => ['type' => 'string', 'name' => 'Ставка НДС', 'nullable' => true, 'required' => false, 'max_length' => 16],
+                'sort' => ['type' => 'int', 'name' => 'Сортировка', 'nullable' => true, 'required' => false],
+            ],
+            'cases' => ['строка цены', 'строки цены', 'строке цены', 'строку цены', 'строкой цены', 'строке цены', 'строки цен', 'строк цен', 'строкам цен', 'строки цен', 'строками цен', 'строках цен'],
+        ],
+
+        'tender_application_document' => [
+            'fields' => [
+                'application_id' => ['type' => 'int', 'name' => 'ID заявки', 'nullable' => false, 'required' => true],
+                'tender_document_id' => ['type' => 'int', 'name' => 'ID требования извещения', 'nullable' => true, 'required' => false],
+                'name' => ['type' => 'string', 'name' => 'Название', 'nullable' => false, 'required' => true, 'max_length' => 255],
+                'comment' => ['type' => 'text', 'name' => 'Комментарий', 'nullable' => true, 'required' => false],
+                'file_link_id' => ['type' => 'int', 'name' => 'ID ссылки на файл', 'nullable' => true, 'required' => false],
+                'sort' => ['type' => 'int', 'name' => 'Сортировка', 'nullable' => true, 'required' => false],
+            ],
+            'cases' => ['документ заявки', 'документа заявки', 'документу заявки', 'документ заявки', 'документом заявки', 'документе заявки', 'документы заявки', 'документов заявки', 'документам заявки', 'документы заявки', 'документами заявки', 'документах заявки'],
+        ],
+
+        'tender_application_criterion' => [
+            'fields' => [
+                'application_id' => ['type' => 'int', 'name' => 'ID заявки', 'nullable' => false, 'required' => true],
+                'criterion_id' => ['type' => 'int', 'name' => 'ID критерия', 'nullable' => false, 'required' => true],
+                'value' => ['type' => 'text', 'name' => 'Ответ', 'nullable' => true, 'required' => false],
+                'file_link_id' => ['type' => 'int', 'name' => 'ID ссылки на файл', 'nullable' => true, 'required' => false],
+                'confirmed' => ['type' => 'checkbox', 'name' => 'Подтверждено', 'nullable' => true, 'required' => false],
+            ],
+            'cases' => ['ответ на критерий', 'ответа на критерий', 'ответу на критерий', 'ответ на критерий', 'ответом на критерий', 'ответе на критерий', 'ответы на критерии', 'ответов на критерии', 'ответам на критерии', 'ответы на критерии', 'ответами на критерии', 'ответах на критерии'],
+        ],
+
         'prequal' => [
             'fields' => [
                 'procedure_code' => ['type' => 'string', 'name' => 'Код процедуры', 'nullable' => true, 'required' => false, 'max_length' => 32],
@@ -621,6 +678,34 @@ return [
     'tender_document_kinds' => [
         1 => ['id' => 1, 'code' => 'tech_spec', 'name' => 'Техническое задание'],
         2 => ['id' => 2, 'code' => 'requirement', 'name' => 'Запрашиваемый документ'],
+    ],
+    /** status в pb2b_application — строковый code, не id tender_statuses. */
+    'tender_application_statuses' => [
+        1 => ['id' => 1, 'code' => 'draft', 'name' => 'Черновик'],
+        2 => ['id' => 2, 'code' => 'submitted', 'name' => 'Подана'],
+        3 => ['id' => 3, 'code' => 'withdrawn', 'name' => 'Отозвана'],
+    ],
+    'tender_application_status_transitions' => [
+        'draft' => ['submitted', 'withdrawn'],
+        'submitted' => ['draft', 'withdrawn'],
+        'withdrawn' => [],
+    ],
+    'tender_application_approval_statuses' => [
+        1 => ['id' => 1, 'code' => 'pending', 'name' => 'Ожидает'],
+        2 => ['id' => 2, 'code' => 'approved', 'name' => 'Одобрено'],
+        3 => ['id' => 3, 'code' => 'rejected', 'name' => 'Отклонено'],
+        4 => ['id' => 4, 'code' => 'not_required', 'name' => 'Не требуется'],
+    ],
+    'tender_application_qualification_statuses' => [
+        1 => ['id' => 1, 'code' => 'pending', 'name' => 'Ожидает'],
+        2 => ['id' => 2, 'code' => 'passed', 'name' => 'Пройдена'],
+        3 => ['id' => 3, 'code' => 'failed', 'name' => 'Не пройдена'],
+        4 => ['id' => 4, 'code' => 'not_required', 'name' => 'Не требуется'],
+    ],
+    'tender_application_admission_statuses' => [
+        1 => ['id' => 1, 'code' => 'pending', 'name' => 'Ожидает'],
+        2 => ['id' => 2, 'code' => 'admitted', 'name' => 'Допущен'],
+        3 => ['id' => 3, 'code' => 'rejected', 'name' => 'Отклонён'],
     ],
     'tender_status_transitions' => [
         'draft' => ['na_soglasovanii', 'opublikovan', 'otmenen'],

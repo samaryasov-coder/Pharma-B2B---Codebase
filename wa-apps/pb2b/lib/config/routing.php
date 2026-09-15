@@ -77,6 +77,15 @@ return [
     "api/$ROLE_SUPPLIER/docflow/request/cancel/" => 'frontend/apiSupplierDocflowRequestCancel',
     "api/$ROLE_SUPPLIER/docflow/request/file/upload/" => 'frontend/apiSupplierDocflowRequestItemUpload',
 
+    "api/$ROLE_SUPPLIER/tender/list/" => 'frontend/apiSupplierTenderList',
+    // Специфичные пути до generic tender/<id>/ — иначе apply/save ловятся Get.
+    "api/$ROLE_SUPPLIER/tender/<id>/apply/" => 'frontend/apiSupplierTenderApply',
+    "api/$ROLE_SUPPLIER/tender/<id>/save/" => 'frontend/apiSupplierTenderSave',
+    "api/$ROLE_SUPPLIER/tender/<id>/submit/" => 'frontend/apiSupplierTenderSubmit',
+    "api/$ROLE_SUPPLIER/tender/<id>/withdraw/" => 'frontend/apiSupplierTenderWithdraw',
+    "api/$ROLE_SUPPLIER/tender/<id>/file/upload/" => 'frontend/apiSupplierTenderFileUpload',
+    "api/$ROLE_SUPPLIER/tender/<id>/" => 'frontend/apiSupplierTenderGet',
+
     'api/common/company/select/' => 'frontend/apiCompanySelect',
     "api/common/docflow/request/template/download/" => 'frontend/apiCommonDocflowRequestTemplateDownload',
 

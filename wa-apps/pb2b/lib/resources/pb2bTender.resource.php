@@ -19,9 +19,7 @@ class pb2bTenderResource extends pb2bBaseJsonResource
 
     public function toArray(): array
     {
-        $row = is_array($this->resource)
-            ? $this->resource
-            : (array) ($this->data ?? []);
+        $row = $this->tenderRow();
 
         $typeId = (int) ($row['type'] ?? 0);
         $statusId = (int) ($row['status'] ?? 0);
@@ -51,6 +49,24 @@ class pb2bTenderResource extends pb2bBaseJsonResource
             'approval_required' => (int) ($row['approval_required'] ?? 0),
             'retendering_enabled' => (int) ($row['retendering_enabled'] ?? 0),
             'itemized_enabled' => (int) ($row['itemized_enabled'] ?? 0),
+            'hide_initial_price' => (int) ($row['hide_initial_price'] ?? 0),
+            'hide_participants_count' => (int) ($row['hide_participants_count'] ?? 0),
+            'hide_participant_prices' => (int) ($row['hide_participant_prices'] ?? 0),
+            'rank_prices_mode' => (string) ($row['rank_prices_mode'] ?? ''),
+            'organizer_sees_names' => (int) ($row['organizer_sees_names'] ?? 0),
+            'allow_analogues' => (int) ($row['allow_analogues'] ?? 0),
+            'vat_mode' => (string) ($row['vat_mode'] ?? ''),
+            'auto_extend_no_offers' => (int) ($row['auto_extend_no_offers'] ?? 0),
+            'auto_extend_on_change' => (int) ($row['auto_extend_on_change'] ?? 0),
+            'auto_extend_period_min' => (int) ($row['auto_extend_period_min'] ?? 0),
+            'min_step_enabled' => (int) ($row['min_step_enabled'] ?? 0),
+            'min_step_base' => (string) ($row['min_step_base'] ?? ''),
+            'min_step_type' => (string) ($row['min_step_type'] ?? ''),
+            'min_step_value' => $row['min_step_value'] ?? null,
+            'only_price_reduction' => (int) ($row['only_price_reduction'] ?? 0),
+            'require_additional_docs' => (int) ($row['require_additional_docs'] ?? 0),
+            'additional_info' => (string) ($row['additional_info'] ?? ''),
+            'additional_delivery_info' => (string) ($row['additional_delivery_info'] ?? ''),
             'start_at' => $row['start_at'] ?? null,
             'end_at' => $row['end_at'] ?? null,
             'opening_at' => $row['opening_at'] ?? null,
@@ -63,5 +79,32 @@ class pb2bTenderResource extends pb2bBaseJsonResource
             'create_datetime' => $row['create_datetime'] ?? null,
             'update_datetime' => $row['update_datetime'] ?? null,
         ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function tenderRow(): array
+    {
+        $resource = $this->resource;
+        if (is_array($resource)) {
+            return $resource;
+        }
+        if (!is_object($resource)) {
+            return array();
+        }
+
+        // data/id у WaproObject protected: isset()/?? снаружи ложны,
+        // читать только через __get.
+        $data = $resource->data;
+        $row = is_array($data) ? $data : array();
+        if (empty($row['id'])) {
+            $id = (int) $resource->id;
+            if ($id > 0) {
+                $row['id'] = $id;
+            }
+        }
+
+        return $row;
     }
 }

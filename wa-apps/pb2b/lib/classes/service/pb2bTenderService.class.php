@@ -268,17 +268,20 @@ class pb2bTenderService extends pb2bBaseService
      */
     public function getFromBuyer(int $tender_id, int $company_id): pb2bTender
     {
-        return $this->loadOrganizerTender(
+        $tender = $this->loadOrganizerTender(
             $tender_id,
             $company_id,
             [pb2bTenderPolicy::class, 'view']
         );
+        $this->statusService->ensureReceptionOpen($tender);
+
+        return $tender;
     }
 
     /**
-     * Карточка + classifiers/invitations/criteria для GET.
+     * Карточка + classifiers/invitations/criteria/items для GET.
      *
-     * @return array{tender: array, classifiers: array, invitations: array, criteria: array}
+     * @return array{tender: array, classifiers: array, invitations: array, criteria: array, items: array, documents: array}
      * @throws waException
      */
     public function getDetailFromBuyer(int $tender_id, int $company_id): array
@@ -297,6 +300,8 @@ class pb2bTenderService extends pb2bBaseService
             'classifiers' => (array) ($payload['classifiers'] ?? []),
             'invitations' => (array) ($payload['invitations'] ?? []),
             'criteria' => (array) ($payload['criteria'] ?? []),
+            'items' => $this->serializeItems($tender),
+            'documents' => $this->serializeDocuments($tender),
         ];
     }
 
@@ -425,5 +430,60 @@ class pb2bTenderService extends pb2bBaseService
         $result['tender_id'] = (int) $tender->id;
 
         return $result;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function serializeItems(pb2bTender $tender): array
+    {
+        $out = array();
+        foreach ($tender->getItemsForView() as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $file_link_id = (int) ($row['file_link_id'] ?? 0);
+            $out[] = array(
+                'id' => (int) ($row['id'] ?? 0),
+                'name' => (string) ($row['name'] ?? ''),
+                'qty' => $row['qty'] ?? null,
+                'unit' => $row['unit'] ?? null,
+                'max_price_no_vat' => $row['max_price_no_vat'] ?? null,
+                'vat_rate' => $row['vat_rate'] ?? null,
+                'delivery_place' => $row['delivery_place'] ?? null,
+                'comment' => $row['comment'] ?? null,
+                'file_link_id' => $file_link_id > 0 ? $file_link_id : null,
+                'file_name' => (string) ($row['file_name'] ?? ''),
+                'sort' => (int) ($row['sort'] ?? 0),
+            );
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function serializeDocuments(pb2bTender $tender): array
+    {
+        $out = array();
+        foreach ($tender->getDocumentsForView() as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $file_link_id = (int) ($row['file_link_id'] ?? 0);
+            $out[] = array(
+                'id' => (int) ($row['id'] ?? 0),
+                'kind' => (string) ($row['kind'] ?? ''),
+                'name' => (string) ($row['name'] ?? ''),
+                'description' => (string) ($row['description'] ?? ''),
+                'is_required' => !empty($row['is_required']) ? 1 : 0,
+                'file_link_id' => $file_link_id > 0 ? $file_link_id : null,
+                'file_name' => (string) ($row['file_name'] ?? ''),
+                'sort' => (int) ($row['sort'] ?? 0),
+            );
+        }
+
+        return $out;
     }
 }

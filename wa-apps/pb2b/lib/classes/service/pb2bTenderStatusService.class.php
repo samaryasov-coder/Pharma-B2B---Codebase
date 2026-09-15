@@ -118,7 +118,67 @@ class pb2bTenderStatusService
             return $resolved;
         }
 
-        return $this->transition($tender, (int) $resolved['status_id'], $reason, $actor);
+        $result = $this->transition($tender, (int) $resolved['status_id'], $reason, $actor);
+        if (!empty($result['error'])) {
+            return $result;
+        }
+
+        $reception = $this->ensureReceptionOpen($tender, $reason, $actor);
+        if (!empty($reception['error'])) {
+            return $reception;
+        }
+        if (empty($reception['skipped'])) {
+            return $reception;
+        }
+
+        return $result;
+    }
+
+    /**
+     * ЗЦ после публикации: opublikovan → priem_zayavok, если start_at уже наступил.
+     *
+     * @return array{error:bool,skipped?:bool,message?:string,from_status?:int,to_status?:int,item?:array}
+     */
+    public function ensureReceptionOpen(pb2bTender $tender, ?string $reason = null, ?waContact $actor = null): array
+    {
+        if ($this->typeCode($tender) !== 'price_request') {
+            return array('error' => false, 'skipped' => true);
+        }
+        if ($this->statusCode($tender) !== 'opublikovan') {
+            return array('error' => false, 'skipped' => true);
+        }
+
+        $start_at = trim((string) ($tender->data['start_at'] ?? ''));
+        if ($start_at !== '' && strpos($start_at, '0000-00-00') !== 0 && strtotime($start_at) > time()) {
+            return array('error' => false, 'skipped' => true);
+        }
+
+        $statuses = (array) pb2bWaproHelper::getConfigOption('tender_statuses', 'code');
+        $priem_id = (int) ($statuses['priem_zayavok']['id'] ?? 0);
+        if ($priem_id <= 0) {
+            return array('error' => true, 'message' => 'Статус приёма заявок не настроен');
+        }
+
+        return $this->transition(
+            $tender,
+            $priem_id,
+            $reason ?: 'Автоматическое открытие приёма заявок',
+            $actor
+        );
+    }
+
+    private function typeCode(pb2bTender $tender): string
+    {
+        $types = (array) pb2bWaproHelper::getConfigOption('tender_types', 'id');
+
+        return (string) ($types[(int) ($tender->data['type'] ?? 0)]['code'] ?? '');
+    }
+
+    private function statusCode(pb2bTender $tender): string
+    {
+        $statuses = (array) pb2bWaproHelper::getConfigOption('tender_statuses', 'id');
+
+        return (string) ($statuses[(int) ($tender->data['status'] ?? 0)]['code'] ?? '');
     }
 
     private function isAllowedTransition(int $from_status_id, int $to_status_id): bool
