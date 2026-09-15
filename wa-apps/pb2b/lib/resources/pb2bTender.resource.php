@@ -12,6 +12,7 @@ class pb2bTenderResource extends pb2bBaseJsonResource
             'start_at',
             'end_at',
             'opening_at',
+            'docs_end_at',
             'published_at',
         ],
     ];
@@ -53,6 +54,7 @@ class pb2bTenderResource extends pb2bBaseJsonResource
             'start_at' => $row['start_at'] ?? null,
             'end_at' => $row['end_at'] ?? null,
             'opening_at' => $row['opening_at'] ?? null,
+            'docs_end_at' => $row['docs_end_at'] ?? null,
             'published_at' => $row['published_at'] ?? null,
             'budget' => $row['budget'] ?? null,
             'currency' => (string) ($row['currency'] ?? ''),

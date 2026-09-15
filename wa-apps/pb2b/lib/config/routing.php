@@ -63,10 +63,12 @@ return [
     "api/$ROLE_BUYER/tender/create/" => 'frontend/apiBuyerTenderCreate',
     "api/$ROLE_BUYER/tender/save/" => 'frontend/apiBuyerTenderSave',
     "api/$ROLE_BUYER/tender/publish/" => 'frontend/apiBuyerTenderPublish',
-    "api/$ROLE_BUYER/tender/<id>/" => 'frontend/apiBuyerTenderGet',
+    // Специфичные пути до generic tender/<id>/ — иначе upload/save ловятся Get.
     "api/$ROLE_BUYER/tender/<id>/criterion/save/" => 'frontend/apiBuyerTenderCriterionSave',
     "api/$ROLE_BUYER/tender/<id>/invitation/save/" => 'frontend/apiBuyerTenderInvitationSave',
     "api/$ROLE_BUYER/tender/<id>/classifier/save/" => 'frontend/apiBuyerTenderClassifierSave',
+    "api/$ROLE_BUYER/tender/<id>/file/upload/" => 'frontend/apiBuyerTenderFileUpload',
+    "api/$ROLE_BUYER/tender/<id>/" => 'frontend/apiBuyerTenderGet',
     "api/$ROLE_BUYER/category/tree/" => 'frontend/apiBuyerCategoryTree',
 
 

@@ -37,6 +37,21 @@ class pb2bTenderPolicy
         return self::ownsActive($tender, $company);
     }
 
+    public static function replaceItems(pb2bTender $tender, pb2bCompany $company): bool
+    {
+        return self::ownsActive($tender, $company);
+    }
+
+    public static function replaceDocuments(pb2bTender $tender, pb2bCompany $company): bool
+    {
+        return self::ownsActive($tender, $company);
+    }
+
+    public static function uploadFile(pb2bTender $tender, pb2bCompany $company): bool
+    {
+        return self::ownsActive($tender, $company);
+    }
+
     private static function ownsActive(pb2bTender $tender, pb2bCompany $company): bool
     {
         if ((int) $company->id <= 0) {

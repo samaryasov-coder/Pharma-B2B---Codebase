@@ -223,6 +223,20 @@ class pb2bTenderService extends pb2bBaseService
             }
         }
 
+        if ($dto->hasItems()) {
+            $items_result = $tender->replaceItems($dto->items, $company_id);
+            if (!empty($items_result['error'])) {
+                $this->throwSaveError($items_result, 'Не удалось сохранить позиции');
+            }
+        }
+
+        if ($dto->hasDocuments()) {
+            $docs_result = $tender->replaceDocuments($dto->documents, $company_id);
+            if (!empty($docs_result['error'])) {
+                $this->throwSaveError($docs_result, 'Не удалось сохранить документы');
+            }
+        }
+
         return $tender;
     }
 
@@ -294,6 +308,60 @@ class pb2bTenderService extends pb2bBaseService
         $company = $this->getBuyerCompanyWithAssert($company_id);
 
         return (new pb2bTenderCollection())->getBuyerList((int) $company->id, $filters);
+    }
+
+    /**
+     * Загрузка файла черновика тендера (ТЗ / позиция / документ).
+     * Связь с item/document — на save; GC сирот — отдельно.
+     *
+     * @return array{file_link_id:int,filename:string,size:int,ext:string}
+     * @throws waException
+     */
+    public function uploadFileFromBuyer(int $tender_id, int $company_id, waRequestFile $upload_file): array
+    {
+        $tender = $this->loadOrganizerTender(
+            $tender_id,
+            $company_id,
+            [pb2bTenderPolicy::class, 'uploadFile']
+        );
+        $this->assertDraftEditable($tender);
+
+        if (!$upload_file->uploaded()) {
+            throw new waException('Файл не загружен', pb2bHttpStatus::BAD_REQUEST);
+        }
+
+        $ext = strtolower((string) $upload_file->extension);
+        $allowed = array('pdf', 'doc', 'docx');
+        if (!in_array($ext, $allowed, true)) {
+            throw new waException(
+                'Допустимые форматы: PDF, DOC, DOCX',
+                pb2bHttpStatus::BAD_REQUEST
+            );
+        }
+
+        $max_bytes = 10 * 1024 * 1024;
+        if ((int) $upload_file->size > $max_bytes) {
+            throw new waException(
+                'Максимальный размер файла: 10 МБ',
+                pb2bHttpStatus::BAD_REQUEST
+            );
+        }
+
+        $storage = new pb2bFileStorageService();
+        $file_link = $storage->saveFileAndCreateLink(
+            $upload_file,
+            'tenders',
+            $company_id
+        );
+
+        $file = $file_link->getFile();
+
+        return array(
+            'file_link_id' => (int) $file_link->id,
+            'filename' => (string) ($file_link->data['filename'] ?? $upload_file->name),
+            'size' => (int) ($file->data['size'] ?? $upload_file->size),
+            'ext' => (string) ($file->data['ext'] ?? $ext),
+        );
     }
 
     /**

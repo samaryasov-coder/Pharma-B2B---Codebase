@@ -20,7 +20,7 @@ class pb2bCategoryCollection extends pb2bWaproCollection
     {
         $model = new pb2bCategoryModel();
         $rows = $model->query(
-            'SELECT id, parent_id, name, depth
+            'SELECT id, parent_id, name, depth, left_key, right_key
              FROM pb2b_category
              ORDER BY left_key ASC, id ASC'
         )->fetchAll();
@@ -39,6 +39,8 @@ class pb2bCategoryCollection extends pb2bWaproCollection
                 'parent_id' => (int) ($row['parent_id'] ?? 0),
                 'name' => (string) ($row['name'] ?? ''),
                 'depth' => (int) ($row['depth'] ?? 0),
+                'left_key' => (int) ($row['left_key'] ?? 0),
+                'right_key' => (int) ($row['right_key'] ?? 0),
             );
         }
 

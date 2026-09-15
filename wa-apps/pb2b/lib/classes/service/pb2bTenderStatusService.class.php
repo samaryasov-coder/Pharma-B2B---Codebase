@@ -51,6 +51,13 @@ class pb2bTenderStatusService
         unset($save_data['create_datetime'], $save_data['update_datetime']);
         $save_data['status'] = $to_status_id;
         $save_data['_status_via_service'] = 1;
+
+        $statuses_by_id = (array) pb2bWaproHelper::getConfigOption('tender_statuses', 'id');
+        $to_code = (string) ($statuses_by_id[$to_status_id]['code'] ?? '');
+        if ($to_code === 'opublikovan' && empty($save_data['published_at'])) {
+            $save_data['published_at'] = date('Y-m-d H:i:s');
+        }
+
         $save_result = $tender->save($save_data);
         if (!empty($save_result['error'])) {
             return $save_result;
@@ -162,11 +169,18 @@ class pb2bTenderStatusService
         }
 
         if (!empty($data['is_private'])) {
-            return pb2bTender::requireInvitationsForPrivate((int) ($tender['id'] ?? 0), true);
+            $inv_check = pb2bTender::requireInvitationsForPrivate((int) ($tender['id'] ?? 0), true);
+            if ($inv_check !== null) {
+                return $inv_check;
+            }
         }
 
         if ($type_code === 'price_request') {
-            return pb2bTender::requirePriceRequestCriteria((int) ($tender['id'] ?? 0));
+            $criteria_check = pb2bTender::requirePriceRequestCriteria((int) ($tender['id'] ?? 0));
+            if ($criteria_check !== null) {
+                return $criteria_check;
+            }
+            return pb2bTender::requirePriceRequestItems((int) ($tender['id'] ?? 0));
         }
 
         return null;

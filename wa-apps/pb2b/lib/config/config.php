@@ -367,6 +367,35 @@ return [
             'cases' => ['привязка классификатора', 'привязки классификатора', 'привязке классификатора', 'привязку классификатора', 'привязкой классификатора', 'привязке классификатора', 'привязки классификаторов', 'привязок классификаторов', 'привязкам классификаторов', 'привязки классификаторов', 'привязками классификаторов', 'привязках классификаторов'],
         ],
 
+        'tender_item' => [
+            'fields' => [
+                'tender_id' => ['type' => 'int', 'name' => 'ID тендера', 'nullable' => false, 'required' => true],
+                'name' => ['type' => 'string', 'name' => 'Наименование позиции', 'nullable' => false, 'required' => true, 'max_length' => 255],
+                'qty' => ['type' => 'decimal', 'name' => 'Количество', 'nullable' => false, 'required' => true],
+                'unit' => ['type' => 'string', 'name' => 'Единица измерения', 'nullable' => true, 'required' => false, 'max_length' => 32],
+                'max_price_no_vat' => ['type' => 'decimal', 'name' => 'Макс. цена без НДС', 'nullable' => true, 'required' => false],
+                'vat_rate' => ['type' => 'string', 'name' => 'Ставка НДС', 'nullable' => true, 'required' => false, 'max_length' => 16],
+                'delivery_place' => ['type' => 'string', 'name' => 'Место поставки', 'nullable' => true, 'required' => false, 'max_length' => 255],
+                'comment' => ['type' => 'text', 'name' => 'Комментарий', 'nullable' => true, 'required' => false],
+                'file_link_id' => ['type' => 'int', 'name' => 'ID ссылки на файл', 'nullable' => true, 'required' => false],
+                'sort' => ['type' => 'int', 'name' => 'Сортировка', 'nullable' => true, 'required' => false],
+            ],
+            'cases' => ['позиция тендера', 'позиции тендера', 'позиции тендера', 'позицию тендера', 'позицией тендера', 'позиции тендера', 'позиции тендера', 'позиций тендера', 'позициям тендера', 'позиции тендера', 'позициями тендера', 'позициях тендера'],
+        ],
+
+        'tender_document' => [
+            'fields' => [
+                'tender_id' => ['type' => 'int', 'name' => 'ID тендера', 'nullable' => false, 'required' => true],
+                'kind' => ['type' => 'string', 'name' => 'Тип документа', 'nullable' => false, 'required' => true, 'max_length' => 32],
+                'name' => ['type' => 'string', 'name' => 'Название', 'nullable' => false, 'required' => true, 'max_length' => 255],
+                'description' => ['type' => 'text', 'name' => 'Описание', 'nullable' => true, 'required' => false],
+                'is_required' => ['type' => 'checkbox', 'name' => 'Обязательный', 'nullable' => true, 'required' => false],
+                'file_link_id' => ['type' => 'int', 'name' => 'ID ссылки на файл', 'nullable' => true, 'required' => false],
+                'sort' => ['type' => 'int', 'name' => 'Сортировка', 'nullable' => true, 'required' => false],
+            ],
+            'cases' => ['документ тендера', 'документа тендера', 'документу тендера', 'документ тендера', 'документом тендера', 'документе тендера', 'документы тендера', 'документов тендера', 'документам тендера', 'документы тендера', 'документами тендера', 'документах тендера'],
+        ],
+
         'prequal' => [
             'fields' => [
                 'procedure_code' => ['type' => 'string', 'name' => 'Код процедуры', 'nullable' => true, 'required' => false, 'max_length' => 32],
@@ -587,6 +616,11 @@ return [
         2 => ['id' => 2, 'code' => 'okpd2', 'name' => 'ОКПД2', 'target_table' => null],
         3 => ['id' => 3, 'code' => 'atc', 'name' => 'АТХ', 'target_table' => null],
         4 => ['id' => 4, 'code' => 'category', 'name' => 'Категория (внутренний классификатор)', 'target_table' => 'pb2b_category'],
+    ],
+    /** kind в pb2b_tender_document — строковый code (не id). */
+    'tender_document_kinds' => [
+        1 => ['id' => 1, 'code' => 'tech_spec', 'name' => 'Техническое задание'],
+        2 => ['id' => 2, 'code' => 'requirement', 'name' => 'Запрашиваемый документ'],
     ],
     'tender_status_transitions' => [
         'draft' => ['na_soglasovanii', 'opublikovan', 'otmenen'],

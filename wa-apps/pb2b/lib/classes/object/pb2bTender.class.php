@@ -465,6 +465,225 @@ class pb2bTender extends pb2bWaproObject
         }
     }
 
+    public function replaceItems(array $rows, ?int $organizer_company_id = null): array
+    {
+        if (empty($this->id)) {
+            return array('error' => true, 'message' => 'Сначала сохраните тендер');
+        }
+
+        if ($organizer_company_id !== null && (int) ($this->data['organizer_company_id'] ?? 0) !== (int) $organizer_company_id) {
+            return array('error' => true, 'message' => 'Нет доступа к этому тендеру');
+        }
+
+        try {
+            $model = new pb2bTenderItemModel();
+            $model->deleteByField('tender_id', $this->id);
+            $saved = 0;
+            $sort = 0;
+            foreach ($rows as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+                $name = trim((string) ($row['name'] ?? ''));
+                if ($name === '') {
+                    continue;
+                }
+                $qty = (float) ($row['qty'] ?? $row['quantity'] ?? 0);
+                if ($qty <= 0) {
+                    $qty = 1;
+                }
+                $file_link_id = (int) ($row['file_link_id'] ?? 0);
+                $insert = array(
+                    'tender_id' => (int) $this->id,
+                    'name' => $name,
+                    'qty' => $qty,
+                    'unit' => trim((string) ($row['unit'] ?? '')) ?: null,
+                    'max_price_no_vat' => array_key_exists('max_price_no_vat', $row) && $row['max_price_no_vat'] !== '' && $row['max_price_no_vat'] !== null
+                        ? (float) $row['max_price_no_vat']
+                        : (array_key_exists('maxPriceNoVat', $row) && $row['maxPriceNoVat'] !== '' && $row['maxPriceNoVat'] !== null
+                            ? (float) $row['maxPriceNoVat']
+                            : null),
+                    'vat_rate' => trim((string) ($row['vat_rate'] ?? $row['vatRate'] ?? '')) ?: null,
+                    'delivery_place' => trim((string) ($row['delivery_place'] ?? $row['deliveryPlace'] ?? '')) ?: null,
+                    'comment' => trim((string) ($row['comment'] ?? '')) ?: null,
+                    'file_link_id' => $file_link_id > 0 ? $file_link_id : null,
+                    'sort' => array_key_exists('sort', $row) ? (int) $row['sort'] : $sort,
+                );
+                $model->insert($insert);
+                $saved++;
+                $sort++;
+            }
+
+            return array(
+                'error' => false,
+                'message' => 'Позиции сохранены',
+                'count' => $saved,
+            );
+        } catch (Exception $e) {
+            return array(
+                'error' => true,
+                'message' => 'Таблица позиций недоступна. Обратитесь к администратору',
+            );
+        }
+    }
+
+    public function replaceDocuments(array $rows, ?int $organizer_company_id = null): array
+    {
+        if (empty($this->id)) {
+            return array('error' => true, 'message' => 'Сначала сохраните тендер');
+        }
+
+        if ($organizer_company_id !== null && (int) ($this->data['organizer_company_id'] ?? 0) !== (int) $organizer_company_id) {
+            return array('error' => true, 'message' => 'Нет доступа к этому тендеру');
+        }
+
+        try {
+            $model = new pb2bTenderDocumentModel();
+            $model->deleteByField('tender_id', $this->id);
+            $saved = 0;
+            $sort = 0;
+            foreach ($rows as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+                $kind = trim((string) ($row['kind'] ?? ''));
+                if (!pb2bTenderDocument::isAllowedKind($kind)) {
+                    continue;
+                }
+                $name = trim((string) ($row['name'] ?? ''));
+                if ($name === '') {
+                    continue;
+                }
+                $file_link_id = (int) ($row['file_link_id'] ?? 0);
+                $model->insert(array(
+                    'tender_id' => (int) $this->id,
+                    'kind' => $kind,
+                    'name' => $name,
+                    'description' => trim((string) ($row['description'] ?? '')) ?: null,
+                    'is_required' => !empty($row['is_required']) || !empty($row['isRequired']) ? 1 : 0,
+                    'file_link_id' => $file_link_id > 0 ? $file_link_id : null,
+                    'sort' => array_key_exists('sort', $row) ? (int) $row['sort'] : $sort,
+                ));
+                $saved++;
+                $sort++;
+            }
+
+            return array(
+                'error' => false,
+                'message' => 'Документы сохранены',
+                'count' => $saved,
+            );
+        } catch (Exception $e) {
+            return array(
+                'error' => true,
+                'message' => 'Таблица документов тендера недоступна. Обратитесь к администратору',
+            );
+        }
+    }
+
+    public function getItems(): array
+    {
+        if (empty($this->id)) {
+            return array();
+        }
+        try {
+            $model = new pb2bTenderItemModel();
+            $rows = $model->getByField('tender_id', (int) $this->id, true);
+            if (!is_array($rows)) {
+                return array();
+            }
+            usort($rows, static function ($a, $b) {
+                return ((int) ($a['sort'] ?? 0)) <=> ((int) ($b['sort'] ?? 0));
+            });
+            return array_values($rows);
+        } catch (Exception $e) {
+            return array();
+        }
+    }
+
+    /** Позиции для карточки: + имя файла по file_link_id. */
+    public function getItemsForView(): array
+    {
+        return self::attachFileMetaToRows($this->getItems());
+    }
+
+    public function getDocuments(?string $kind = null): array
+    {
+        if (empty($this->id)) {
+            return array();
+        }
+        try {
+            $model = new pb2bTenderDocumentModel();
+            $rows = $model->getByField('tender_id', (int) $this->id, true);
+            if (!is_array($rows)) {
+                return array();
+            }
+            $out = array_values($rows);
+            if ($kind !== null && $kind !== '') {
+                $out = array_values(array_filter($out, static function ($row) use ($kind) {
+                    return (string) ($row['kind'] ?? '') === $kind;
+                }));
+            }
+            usort($out, static function ($a, $b) {
+                return ((int) ($a['sort'] ?? 0)) <=> ((int) ($b['sort'] ?? 0));
+            });
+            return $out;
+        } catch (Exception $e) {
+            return array();
+        }
+    }
+
+    /** Документы для карточки: + имя файла по file_link_id. */
+    public function getDocumentsForView(?string $kind = null): array
+    {
+        return self::attachFileMetaToRows($this->getDocuments($kind));
+    }
+
+    /** Сумма qty × max_price_no_vat по позициям (НМЦ из лотов). */
+    public function getItemsMaxTotal(): float
+    {
+        $total = 0.0;
+        foreach ($this->getItems() as $row) {
+            $qty = (float) ($row['qty'] ?? 0);
+            $price = (float) ($row['max_price_no_vat'] ?? 0);
+            if ($qty > 0 && $price > 0) {
+                $total += $qty * $price;
+            } elseif ($price > 0) {
+                $total += $price;
+            }
+        }
+        return $total;
+    }
+
+    /**
+     * @param list<array<string,mixed>> $rows
+     * @return list<array<string,mixed>>
+     */
+    private static function attachFileMetaToRows(array $rows): array
+    {
+        foreach ($rows as &$row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $row['file_name'] = '';
+            $file_link_id = (int) ($row['file_link_id'] ?? 0);
+            if ($file_link_id <= 0) {
+                continue;
+            }
+            try {
+                $link = new pb2bFileLink($file_link_id);
+                if (!empty($link->id)) {
+                    $row['file_name'] = (string) ($link->data['filename'] ?? '');
+                }
+            } catch (Exception $e) {
+                // файл недоступен — оставляем пустое имя
+            }
+        }
+        unset($row);
+
+        return $rows;
+    }
+
     public function getClassifiers(): array
     {
         if (empty($this->id)) {
@@ -558,6 +777,29 @@ class pb2bTender extends pb2bWaproObject
         }
     }
 
+    public static function requirePriceRequestItems(int $tender_id): ?array
+    {
+        if ($tender_id <= 0) {
+            return null;
+        }
+        try {
+            $model = new waModel();
+            $row = $model->query(
+                'SELECT COUNT(*) AS cnt FROM pb2b_tender_item WHERE tender_id = ?',
+                $tender_id
+            )->fetchAssoc();
+            if ((int) ($row['cnt'] ?? 0) < 1) {
+                return array('error' => true, 'message' => 'Добавьте хотя бы одну позицию для запроса цен');
+            }
+            return null;
+        } catch (Exception $e) {
+            return array(
+                'error' => true,
+                'message' => 'Таблица позиций недоступна. Обратитесь к администратору',
+            );
+        }
+    }
+
     public static function getInvitationsForTender(int $tender_id): array
     {
         if ($tender_id <= 0) {
@@ -566,7 +808,29 @@ class pb2bTender extends pb2bWaproObject
         try {
             $model = new pb2bInvitationModel();
             $rows = $model->getByField('tender_id', $tender_id, true);
-            return is_array($rows) ? $rows : array();
+            if (!is_array($rows)) {
+                return array();
+            }
+            $out = array();
+            foreach ($rows as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+                $company_id = (int) ($row['supplier_company_id'] ?? 0);
+                $row['company_name'] = '';
+                if ($company_id > 0) {
+                    try {
+                        $company = new pb2bCompany($company_id);
+                        if (!empty($company->id)) {
+                            $row['company_name'] = $company->getFullName();
+                        }
+                    } catch (Exception $e) {
+                        // компания недоступна
+                    }
+                }
+                $out[] = $row;
+            }
+            return $out;
         } catch (Exception $e) {
             return array();
         }
