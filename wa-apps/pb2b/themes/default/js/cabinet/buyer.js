@@ -3639,7 +3639,6 @@
             this.tenderId = parseInt(tender.id || tender.tender_id, 10) || 0;
             $root.find('.js-tender-id').val(String(this.tenderId));
             $root.find('.js-field-title').val(tender.title || '');
-            $root.find('.js-field-number').val(tender.number || '');
 
             $root.find('input[name="is_private"][value="' + (flagOn(tender.is_private) ? '1' : '0') + '"]')
                 .prop('checked', true);
@@ -3733,7 +3732,7 @@
             $root.find('.js-tender-type').val(String(this.selectedTypeId));
             $root.find('.js-creation-title').text(method.title || 'Создание процедуры');
 
-            $root.find('.js-field-title, .js-field-number').val('');
+            $root.find('.js-field-title').val('');
             this.resetPaymentDeliveryUi();
             this.resetLotsUi();
             $root.find('.js-field-end-date, .js-field-end-time, .js-field-docs-date, .js-field-docs-time, .js-field-result-date').val('');
@@ -3873,7 +3872,6 @@
                 }
             } else if (step === 'basic') {
                 data.title = $.trim($root.find('.js-field-title').val() || '');
-                data.number = $.trim($root.find('.js-field-number').val() || '');
             } else if (step === 'purchase_params') {
                 data.end_at = this.composeDatetime(
                     $root.find('.js-field-end-date').val(),
@@ -3979,7 +3977,6 @@
         saveDraft: function (options) {
             const self = this;
             const opts = options || {};
-            const $root = $(this.root);
             let data = this.collectAllFormData();
 
             if (!data.title) {
@@ -3987,10 +3984,6 @@
                 const basicIndex = this.steps.indexOf('basic');
                 if (basicIndex >= 0) this.goStep(basicIndex);
                 return Promise.resolve(false);
-            }
-            if (!data.number) {
-                data.number = 'DRAFT-' + Date.now();
-                $root.find('.js-field-number').val(data.number);
             }
 
             if (opts.publish
@@ -4026,9 +4019,6 @@
             }).then(function (ok) {
                 if (!ok) return false;
                 data = self.collectAllFormData();
-                if (!data.number) {
-                    data.number = $root.find('.js-field-number').val() || ('DRAFT-' + Date.now());
-                }
                 return self.postSave(data, { silent: false });
             }).then(function (ok) {
                 if (!ok) return false;
@@ -4050,8 +4040,7 @@
                 showMessages: false,
                 data: {
                     type: form.type || this.selectedTypeId,
-                    title: form.title,
-                    number: form.number
+                    title: form.title
                 },
                 onSuccess: function (reply) {
                     self.tenderId = parseInt(reply.tender_id || 0, 10) || self.tenderId;
@@ -4069,6 +4058,7 @@
 
             const payload = Object.assign({ id: this.tenderId }, data || {});
             delete payload.type;
+            delete payload.number;
 
             return $.fRequest({
                 url: '/api/buyer/tender/save/',

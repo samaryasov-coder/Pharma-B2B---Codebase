@@ -579,11 +579,15 @@ return [
             'id' => 1, 
             'name' => 'Одобрение поставщиков', 
             'reviewer_company_type' => 'buyer',
-            'tender_type_id' => 4
+            'tender_type_id' => 4,
+            'procedure_code_type' => 'supplier_approval',
         ],
     ],
-    'tender_codes' => [
-        4 => ['id' => 4, 'code' => '04'],
+    'procedure_codes' => [
+        'price_request' => ['code' => '01', 'name' => 'Запрос цен'],
+        'proposal_request' => ['code' => '02', 'name' => 'Запрос предложений'],
+        'prequalification' => ['code' => '03', 'name' => 'Предварительная квалификация'],
+        'supplier_approval' => ['code' => '04', 'name' => 'Одобрение поставщиков'],
     ],
     'tender_types' => [
         1 => [

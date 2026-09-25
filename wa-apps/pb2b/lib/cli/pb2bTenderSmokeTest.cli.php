@@ -207,7 +207,6 @@ class pb2bTenderSmokeTestCli extends waCliController
 
         $types = (array) pb2bWaproHelper::getConfigOption('tender_types', 'code');
         $type_id = (int) ($types['price_request']['id'] ?? 3);
-        $number = 'SMOKE-ZC-' . date('YmdHis');
         $title = 'Smoke ЗЦ ' . date('H:i:s');
 
         $service = new pb2bTenderService();
@@ -219,7 +218,6 @@ class pb2bTenderSmokeTestCli extends waCliController
                 new pb2bTenderDto(array(
                     'type' => $type_id,
                     'title' => $title,
-                    'number' => $number,
                 )),
                 $actor
             );
@@ -230,7 +228,6 @@ class pb2bTenderSmokeTestCli extends waCliController
                 (int) $company->id,
                 new pb2bTenderDto(array(
                     'title' => $title,
-                    'number' => $number,
                     'end_at' => date('Y-m-d H:i:s', time() + 7 * 86400),
                     'criteria' => array(
                         array(

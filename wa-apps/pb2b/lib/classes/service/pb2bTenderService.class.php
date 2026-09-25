@@ -3,10 +3,14 @@
 class pb2bTenderService extends pb2bBaseService
 {
     protected pb2bTenderStatusService $statusService;
+    protected pb2bProcedureCodeService $procedureCodeService;
 
-    public function __construct(?pb2bTenderStatusService $statusService = null)
-    {
+    public function __construct(
+        ?pb2bTenderStatusService $statusService = null,
+        ?pb2bProcedureCodeService $procedureCodeService = null
+    ) {
         $this->statusService = $statusService ?? new pb2bTenderStatusService();
+        $this->procedureCodeService = $procedureCodeService ?? new pb2bProcedureCodeService();
     }
 
     private function getBuyerCompanyWithAssert(int $company_id): pb2bCompany
@@ -133,10 +137,7 @@ class pb2bTenderService extends pb2bBaseService
             throw new waException('Укажите наименование', pb2bHttpStatus::BAD_REQUEST);
         }
 
-        $number = $this->dtoHas($dto, 'number') ? trim((string) $dto->number) : '';
-        if ($number === '') {
-            $number = 'DRAFT-'.date('YmdHis').'-'.(int) $company->id;
-        }
+        $number = $this->procedureCodeService->issue($type_code);
 
         $contact_id = $this->resolveActorContactId($actor);
         if ($contact_id <= 0) {
@@ -179,15 +180,7 @@ class pb2bTenderService extends pb2bBaseService
         if ($this->dtoHas($dto, 'title') && trim((string) $dto->title) === '') {
             throw new waException('Укажите наименование', pb2bHttpStatus::BAD_REQUEST);
         }
-        if (array_key_exists('number', $patch)) {
-            $patch['number'] = trim((string) $patch['number']);
-            if ($patch['number'] === '') {
-                throw new waException('Укажите реестровый номер', pb2bHttpStatus::BAD_REQUEST);
-            }
-            if ($tender->findDuplicateNumber($patch['number'], $company_id)) {
-                throw new waException('Реестровый номер уже используется', pb2bHttpStatus::BAD_REQUEST);
-            }
-        }
+        unset($patch['number']);
         if (array_key_exists('title', $patch)) {
             $patch['title'] = trim((string) $patch['title']);
         }

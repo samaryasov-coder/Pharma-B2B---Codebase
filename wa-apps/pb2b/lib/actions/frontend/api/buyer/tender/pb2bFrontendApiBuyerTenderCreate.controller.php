@@ -9,17 +9,10 @@ class pb2bFrontendApiBuyerTenderCreateController extends pb2bFrontendCabinetCont
         $this->assertBuyerCompanySelected();
 
         $payload = $this->tenderDtoPayloadFromRequest();
-        $dto_data = [
+        $dto = new pb2bTenderDto([
             'type' => $payload['type'] ?? waRequest::post('type', 0, waRequest::TYPE_INT),
             'title' => $payload['title'] ?? waRequest::post('title', '', waRequest::TYPE_STRING_TRIM),
-        ];
-        $number = array_key_exists('number', $payload)
-            ? $payload['number']
-            : waRequest::post('number', null, waRequest::TYPE_STRING_TRIM);
-        if ($number !== null && $number !== '') {
-            $dto_data['number'] = $number;
-        }
-        $dto = new pb2bTenderDto($dto_data);
+        ]);
 
         $tender = $this->tenderService()->createFromBuyer(
             $this->tenderCompanyId(),

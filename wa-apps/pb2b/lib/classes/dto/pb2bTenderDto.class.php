@@ -6,7 +6,6 @@ readonly class pb2bTenderDto extends pb2bBaseDto
     public int $type;
 
     public string $title;
-    public string $number;
     public int $is_private;
     public int $submission_form;
     public int $retendering_enabled;

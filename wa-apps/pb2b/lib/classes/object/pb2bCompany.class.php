@@ -685,6 +685,7 @@ class pb2bCompany extends pb2bWaproObject
 
         $save_data = array(
             'process_type' => $process_type,
+            'procedure_code' => (new pb2bProcedureCodeService())->issueForDocflowProcess($process_type),
             'reviewer_id' => (int) $this->id,
             'provider_id' => $provider_id,
             'template_id' => $template_id,
@@ -784,6 +785,7 @@ class pb2bCompany extends pb2bWaproObject
         $docflowRequest = new pb2bDocflowRequest();
         $save_result = $docflowRequest->save(array(
             'process_type' => $template_process_type,
+            'procedure_code' => (new pb2bProcedureCodeService())->issueForDocflowProcess($template_process_type),
             'reviewer_id' => $reviewer_id,
             'provider_id' => (int) $this->id,
             'template_id' => (int) $docflowTemplate->id,

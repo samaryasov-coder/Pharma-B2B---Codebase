@@ -35,6 +35,7 @@ class pb2bTenderApplicationService extends pb2bBaseService
                 'application' => $application
                     ? $this->serializeApplication($application, false)
                     : null,
+                'card' => $this->supplierListCard($tender),
             );
         }
 
@@ -357,6 +358,64 @@ class pb2bTenderApplicationService extends pb2bBaseService
         throw new waException(
             (string) ($result['message'] ?? $fallback),
             pb2bHttpStatus::BAD_REQUEST
+        );
+    }
+
+    /**
+     * Поля карточки списка, которых нет в общем resource тендера.
+     *
+     * @return array{organizer: string, city: string, category: string, mnn: list<string>, requires_prequalification: int}
+     */
+    private function supplierListCard(pb2bTender $tender): array
+    {
+        $row = $this->tenderRow($tender);
+        $organizer = '';
+        $organizer_id = (int) ($row['organizer_company_id'] ?? 0);
+        if ($organizer_id > 0) {
+            $company = new pb2bCompany($organizer_id);
+            if ((int) $company->id) {
+                $organizer = trim($company->getFullName());
+            }
+        }
+
+        $city = '';
+        foreach ($tender->getItemsForView() as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            $place = trim((string) ($item['delivery_place'] ?? ''));
+            if ($place !== '') {
+                $city = $place;
+                break;
+            }
+        }
+
+        $mnn = array();
+        $category = '';
+        $classifiers = (new pb2bTenderClassifierCollection())->getByTenderId((int) $tender->id);
+        foreach ($classifiers as $classifier) {
+            if (!is_array($classifier)) {
+                continue;
+            }
+            $name = trim((string) ($classifier['classifier_name'] ?? ''));
+            if ($name === '') {
+                continue;
+            }
+            $code = (string) ($classifier['classifier_type_code'] ?? '');
+            if ($code === 'esklp' && count($mnn) < 2) {
+                $mnn[] = $name;
+            }
+            if ($code === 'category' && $category === '') {
+                $category = $name;
+            }
+        }
+
+        return array(
+            'organizer' => $organizer,
+            'city' => $city,
+            'category' => $category,
+            'mnn' => array_values($mnn),
+            'requires_prequalification' => (int) ($row['past_prequal_tender_id'] ?? 0) > 0 ? 1 : 0,
         );
     }
 

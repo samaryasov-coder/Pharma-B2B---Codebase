@@ -133,6 +133,7 @@ class pb2bDocflowRequestService extends pb2bBaseService
         $request = new pb2bDocflowRequest();
         $result_save = $request->save([
             'process_type' => $process_type,
+            'procedure_code' => (new pb2bProcedureCodeService())->issueForDocflowProcess($process_type),
             'reviewer_company_id' => (int) $reviewer_company->id,
             'provider_company_id' => (int) $provider_company->id,
             'template_id' => $reviewer_template->id,
