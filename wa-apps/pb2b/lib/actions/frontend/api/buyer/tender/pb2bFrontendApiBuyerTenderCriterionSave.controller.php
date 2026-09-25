@@ -6,14 +6,25 @@ class pb2bFrontendApiBuyerTenderCriterionSaveController extends pb2bFrontendCabi
 
     public function executeBuyer(): void
     {
-        $access = $this->assertBuyerAccess();
-        if ($access !== null) {
-            $this->response = $access;
-            return;
+        $this->assertBuyerCompanySelected();
+
+        $tender_id = waRequest::param('id', 0, waRequest::TYPE_INT);
+        if ($tender_id <= 0) {
+            throw new waException('Не указан тендер', pb2bHttpStatus::BAD_REQUEST);
         }
 
-        $tender_id = (int) waRequest::param('id', 0, waRequest::TYPE_INT);
-        $rows = waRequest::post('criteria', array(), waRequest::TYPE_ARRAY);
-        $this->response = $this->context->company()->tenderReplaceCriteriaFromBuyer($tender_id, $rows);
+        $criteria = waRequest::post('criteria', [], waRequest::TYPE_ARRAY);
+        $result = $this->tenderService()->replaceCriteriaFromBuyer(
+            $tender_id,
+            $this->tenderCompanyId(),
+            is_array($criteria) ? $criteria : []
+        );
+
+        $this->response = [
+            'error' => false,
+            'message' => (string) ($result['message'] ?? 'Критерии сохранены'),
+            'tender_id' => (int) ($result['tender_id'] ?? $tender_id),
+            'count' => (int) ($result['count'] ?? 0),
+        ];
     }
 }

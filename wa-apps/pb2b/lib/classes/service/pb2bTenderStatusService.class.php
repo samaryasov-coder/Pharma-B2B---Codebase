@@ -51,6 +51,13 @@ class pb2bTenderStatusService
         unset($save_data['create_datetime'], $save_data['update_datetime']);
         $save_data['status'] = $to_status_id;
         $save_data['_status_via_service'] = 1;
+
+        $statuses_by_id = (array) pb2bWaproHelper::getConfigOption('tender_statuses', 'id');
+        $to_code = (string) ($statuses_by_id[$to_status_id]['code'] ?? '');
+        if ($to_code === 'opublikovan' && empty($save_data['published_at'])) {
+            $save_data['published_at'] = date('Y-m-d H:i:s');
+        }
+
         $save_result = $tender->save($save_data);
         if (!empty($save_result['error'])) {
             return $save_result;
@@ -111,7 +118,67 @@ class pb2bTenderStatusService
             return $resolved;
         }
 
-        return $this->transition($tender, (int) $resolved['status_id'], $reason, $actor);
+        $result = $this->transition($tender, (int) $resolved['status_id'], $reason, $actor);
+        if (!empty($result['error'])) {
+            return $result;
+        }
+
+        $reception = $this->ensureReceptionOpen($tender, $reason, $actor);
+        if (!empty($reception['error'])) {
+            return $reception;
+        }
+        if (empty($reception['skipped'])) {
+            return $reception;
+        }
+
+        return $result;
+    }
+
+    /**
+     * ЗЦ после публикации: opublikovan → priem_zayavok, если start_at уже наступил.
+     *
+     * @return array{error:bool,skipped?:bool,message?:string,from_status?:int,to_status?:int,item?:array}
+     */
+    public function ensureReceptionOpen(pb2bTender $tender, ?string $reason = null, ?waContact $actor = null): array
+    {
+        if ($this->typeCode($tender) !== 'price_request') {
+            return array('error' => false, 'skipped' => true);
+        }
+        if ($this->statusCode($tender) !== 'opublikovan') {
+            return array('error' => false, 'skipped' => true);
+        }
+
+        $start_at = trim((string) ($tender->data['start_at'] ?? ''));
+        if ($start_at !== '' && strpos($start_at, '0000-00-00') !== 0 && strtotime($start_at) > time()) {
+            return array('error' => false, 'skipped' => true);
+        }
+
+        $statuses = (array) pb2bWaproHelper::getConfigOption('tender_statuses', 'code');
+        $priem_id = (int) ($statuses['priem_zayavok']['id'] ?? 0);
+        if ($priem_id <= 0) {
+            return array('error' => true, 'message' => 'Статус приёма заявок не настроен');
+        }
+
+        return $this->transition(
+            $tender,
+            $priem_id,
+            $reason ?: 'Автоматическое открытие приёма заявок',
+            $actor
+        );
+    }
+
+    private function typeCode(pb2bTender $tender): string
+    {
+        $types = (array) pb2bWaproHelper::getConfigOption('tender_types', 'id');
+
+        return (string) ($types[(int) ($tender->data['type'] ?? 0)]['code'] ?? '');
+    }
+
+    private function statusCode(pb2bTender $tender): string
+    {
+        $statuses = (array) pb2bWaproHelper::getConfigOption('tender_statuses', 'id');
+
+        return (string) ($statuses[(int) ($tender->data['status'] ?? 0)]['code'] ?? '');
     }
 
     private function isAllowedTransition(int $from_status_id, int $to_status_id): bool
@@ -154,7 +221,7 @@ class pb2bTenderStatusService
 
         $types_by_id = (array) pb2bWaproHelper::getConfigOption('tender_types', 'id');
         $type_code = (string) ($types_by_id[(int) $data['type']]['code'] ?? '');
-        if (!in_array($type_code, array('prequalification', 'price_request'), true)) {
+        if (!pb2bTender::isMvpTypeCode($type_code)) {
             return array('error' => true, 'message' => 'Публикация для этого типа процедуры пока недоступна');
         }
         if ($type_code === 'prequalification' && (int) ($data['prequal_validity_months'] ?? 0) < 1) {
@@ -162,11 +229,18 @@ class pb2bTenderStatusService
         }
 
         if (!empty($data['is_private'])) {
-            return pb2bTender::requireInvitationsForPrivate((int) ($tender['id'] ?? 0), true);
+            $inv_check = pb2bTender::requireInvitationsForPrivate((int) ($tender['id'] ?? 0), true);
+            if ($inv_check !== null) {
+                return $inv_check;
+            }
         }
 
         if ($type_code === 'price_request') {
-            return pb2bTender::requirePriceRequestCriteria((int) ($tender['id'] ?? 0));
+            $criteria_check = pb2bTender::requirePriceRequestCriteria((int) ($tender['id'] ?? 0));
+            if ($criteria_check !== null) {
+                return $criteria_check;
+            }
+            return pb2bTender::requirePriceRequestItems((int) ($tender['id'] ?? 0));
         }
 
         return null;

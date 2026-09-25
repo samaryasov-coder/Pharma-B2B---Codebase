@@ -35,6 +35,7 @@ class pb2bTenderClassifierCollection extends pb2bWaproCollection
         $types_by_id = (array) pb2bWaproHelper::getConfigOption('tender_classifier_types', 'id');
         $esklp_ids = array();
         $okpd2_ids = array();
+        $category_ids = array();
 
         foreach ($rows as &$row) {
             $type_id = (int) ($row['classifier_type'] ?? 0);
@@ -49,12 +50,15 @@ class pb2bTenderClassifierCollection extends pb2bWaproCollection
                 $esklp_ids[$node_id] = $node_id;
             } elseif ($code === 'okpd2' && $node_id > 0) {
                 $okpd2_ids[$node_id] = $node_id;
+            } elseif ($code === 'category' && $node_id > 0) {
+                $category_ids[$node_id] = $node_id;
             }
         }
         unset($row);
 
         $esklp_names = $this->loadEsklpNames($esklp_ids);
         $okpd2_names = $this->loadOkpd2Names($okpd2_ids);
+        $category_names = $this->loadCategoryNames($category_ids);
 
         foreach ($rows as &$row) {
             $node_id = (int) ($row['classifier_id'] ?? 0);
@@ -63,6 +67,8 @@ class pb2bTenderClassifierCollection extends pb2bWaproCollection
                 $row['classifier_name'] = (string) ($esklp_names[$node_id] ?? '');
             } elseif ($code === 'okpd2') {
                 $row['classifier_name'] = (string) ($okpd2_names[$node_id] ?? '');
+            } elseif ($code === 'category') {
+                $row['classifier_name'] = (string) ($category_names[$node_id] ?? '');
             }
         }
         unset($row);
@@ -108,5 +114,27 @@ class pb2bTenderClassifierCollection extends pb2bWaproCollection
         } catch (Exception $e) {
             return array();
         }
+    }
+
+    private function loadCategoryNames(array $ids): array
+    {
+        if (empty($ids)) {
+            return array();
+        }
+
+        $model = new pb2bCategoryModel();
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $rows = $model->query(
+            'SELECT id, name FROM pb2b_category WHERE id IN ('.$placeholders.')',
+            array_values($ids)
+        )->fetchAll('id');
+
+        $names = array();
+        foreach ($rows as $id => $row) {
+            if (!empty($row['name'])) {
+                $names[(int) $id] = (string) $row['name'];
+            }
+        }
+        return $names;
     }
 }
