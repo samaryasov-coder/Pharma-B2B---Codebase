@@ -4,23 +4,58 @@ class pb2bTender extends pb2bWaproObject
 {
     private const MVP_TYPE_CODES = array('prequalification', 'price_request');
 
-    private const TYPE_OPTIONAL_WIZARD_STEPS = array('privacy', 'payment_delivery');
-
-    private const WIZARD_STEP_FIELDS = array(
-        'privacy' => array('is_private', 'approval_required', 'type', 'submission_form'),
-        'basic' => array('title', 'number', 'type', 'submission_form'),
-        'purchase_params' => array(
-            'prequal_validity_months', 'retendering_enabled', 'itemized_enabled',
-            'start_at', 'end_at', 'opening_at', 'type',
-        ),
-        'payment_delivery' => array('payment_terms', 'delivery_terms', 'budget', 'currency'),
-        'lots' => array(),
-        'invitation' => array(),
-    );
-
     private const PREQUAL_FORBIDDEN_FIELDS = array(
         'retendering_enabled', 'itemized_enabled', 'budget',
     );
+
+    public static function getMvpTypeCodes(): array
+    {
+        return self::MVP_TYPE_CODES;
+    }
+
+    public static function isMvpTypeCode(string $type_code): bool
+    {
+        return in_array($type_code, self::MVP_TYPE_CODES, true);
+    }
+
+    /**
+     * Список способов для модалки создания (порядок и тексты из config tender_types).
+     */
+    public static function getCreateModalMethods(): array
+    {
+        $types = (array) pb2bWaproHelper::getConfigOption('tender_types');
+        $methods = array();
+
+        foreach ($types as $row) {
+            if (!is_array($row) || empty($row['code'])) {
+                continue;
+            }
+            if (empty($row['show_in_create_modal'])) {
+                continue;
+            }
+            $code = (string) $row['code'];
+            $methods[] = array(
+                'id' => (int) ($row['id'] ?? 0),
+                'code' => $code,
+                'label' => (string) ($row['modal_name'] ?? $row['name'] ?? $code),
+                'description' => (string) ($row['description'] ?? ''),
+                'create_title' => (string) ($row['create_title'] ?? ($row['name'] ?? $code)),
+                'available' => self::isMvpTypeCode($code),
+                'sort' => (int) ($row['create_modal_sort'] ?? 100),
+            );
+        }
+
+        usort($methods, static function (array $a, array $b): int {
+            return ($a['sort'] <=> $b['sort']) ?: ($a['id'] <=> $b['id']);
+        });
+
+        foreach ($methods as &$method) {
+            unset($method['sort']);
+        }
+        unset($method);
+
+        return $methods;
+    }
 
     private static function normalizeDatetimeFieldForMysql($raw): array
     {
@@ -82,11 +117,8 @@ class pb2bTender extends pb2bWaproObject
 
     protected function preSave(array &$data): array
     {
-        $wizard_step = isset($data['_wizard_step']) ? (string) $data['_wizard_step'] : null;
-        unset($data['_wizard_step']);
-
         $status_via_service = !empty($data['_status_via_service']);
-        unset($data['_status_via_service']);
+        unset($data['_status_via_service'], $data['_wizard_step']);
         if (!empty($this->id) && array_key_exists('status', $data) && !$status_via_service) {
             $new_status = (int) $data['status'];
             $old_status = (int) ($this->data['status'] ?? 0);
@@ -116,14 +148,7 @@ class pb2bTender extends pb2bWaproObject
             }
         }
 
-        if (wa()->getEnv() === 'frontend') {
-            $buyer_check = $this->assertBuyerInCabinetContext();
-            if ($buyer_check !== null) {
-                return $buyer_check;
-            }
-        }
-
-        $type_check = $this->applyTypeRules($data, $wizard_step);
+        $type_check = $this->applyTypeRules($data);
         if ($type_check !== null) {
             return $type_check;
         }
@@ -132,7 +157,7 @@ class pb2bTender extends pb2bWaproObject
         if (!is_array($tender_fields)) {
             $tender_fields = array();
         }
-        foreach (array('start_at', 'end_at', 'opening_at') as $dt_field) {
+        foreach (array('start_at', 'end_at', 'opening_at', 'docs_end_at', 'published_at') as $dt_field) {
             if (!array_key_exists($dt_field, $data)) {
                 continue;
             }
@@ -151,18 +176,6 @@ class pb2bTender extends pb2bWaproObject
         return parent::preSave($data);
     }
 
-    private function assertBuyerInCabinetContext(): ?array
-    {
-        $company = pb2bCabinetContextFactory::build()->company();
-        if (!$company || !$company->id) {
-            return array('error' => true, 'message' => 'Компания не выбрана');
-        }
-        if (!$company->isBuyer()) {
-            return array('error' => true, 'message' => 'Создавать тендер может только компания-покупатель');
-        }
-        return null;
-    }
-
     protected function afterSave(array &$result): void
     {
         parent::afterSave($result);
@@ -171,14 +184,11 @@ class pb2bTender extends pb2bWaproObject
         }
     }
 
-    private function applyTypeRules(array &$data, ?string $wizard_step = null): ?array
+    private function applyTypeRules(array &$data): ?array
     {
         $type_id = $this->resolveTypeId($data);
         if ($type_id <= 0) {
             if (empty($this->id)) {
-                if ($wizard_step !== null && in_array($wizard_step, self::TYPE_OPTIONAL_WIZARD_STEPS, true)) {
-                    return null;
-                }
                 return array('error' => true, 'message' => 'Не указан тип процедуры');
             }
             return null;
@@ -240,7 +250,7 @@ class pb2bTender extends pb2bWaproObject
 
     private function assertMvpTypeAllowed(string $type_code, array $data, int $type_id): ?array
     {
-        if (in_array($type_code, self::MVP_TYPE_CODES, true)) {
+        if (self::isMvpTypeCode($type_code)) {
             return null;
         }
 
@@ -425,7 +435,7 @@ class pb2bTender extends pb2bWaproObject
                 if ($type === '') {
                     $type = 'non_price';
                 }
-                $model->insert(array(
+                $insert = array(
                     'tender_id' => (int) $this->id,
                     'type' => $type,
                     'name' => $name,
@@ -433,18 +443,15 @@ class pb2bTender extends pb2bWaproObject
                         ? (float) $row['weight']
                         : null,
                     'is_mandatory' => !empty($row['is_mandatory']) ? 1 : 0,
-                ));
+                );
+                if (array_key_exists('description', $row)) {
+                    $insert['description'] = trim((string) $row['description']);
+                }
+                $model->insert($insert);
                 $saved++;
             }
 
-            if ($saved < 1) {
-                $types_by_id = (array) pb2bWaproHelper::getConfigOption('tender_types', 'id');
-                $type_code = (string) ($types_by_id[(int) ($this->data['type'] ?? 0)]['code'] ?? '');
-                if ($type_code === 'price_request') {
-                    return array('error' => true, 'message' => 'Добавьте хотя бы один критерий оценки');
-                }
-            }
-
+            // Пустой набор допустим в черновике; обязательность для ЗЦ — на publish.
             return array(
                 'error' => false,
                 'message' => 'Критерии сохранены',
@@ -456,6 +463,225 @@ class pb2bTender extends pb2bWaproObject
                 'message' => 'Таблица критериев недоступна. Обратитесь к администратору',
             );
         }
+    }
+
+    public function replaceItems(array $rows, ?int $organizer_company_id = null): array
+    {
+        if (empty($this->id)) {
+            return array('error' => true, 'message' => 'Сначала сохраните тендер');
+        }
+
+        if ($organizer_company_id !== null && (int) ($this->data['organizer_company_id'] ?? 0) !== (int) $organizer_company_id) {
+            return array('error' => true, 'message' => 'Нет доступа к этому тендеру');
+        }
+
+        try {
+            $model = new pb2bTenderItemModel();
+            $model->deleteByField('tender_id', $this->id);
+            $saved = 0;
+            $sort = 0;
+            foreach ($rows as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+                $name = trim((string) ($row['name'] ?? ''));
+                if ($name === '') {
+                    continue;
+                }
+                $qty = (float) ($row['qty'] ?? $row['quantity'] ?? 0);
+                if ($qty <= 0) {
+                    $qty = 1;
+                }
+                $file_link_id = (int) ($row['file_link_id'] ?? 0);
+                $insert = array(
+                    'tender_id' => (int) $this->id,
+                    'name' => $name,
+                    'qty' => $qty,
+                    'unit' => trim((string) ($row['unit'] ?? '')) ?: null,
+                    'max_price_no_vat' => array_key_exists('max_price_no_vat', $row) && $row['max_price_no_vat'] !== '' && $row['max_price_no_vat'] !== null
+                        ? (float) $row['max_price_no_vat']
+                        : (array_key_exists('maxPriceNoVat', $row) && $row['maxPriceNoVat'] !== '' && $row['maxPriceNoVat'] !== null
+                            ? (float) $row['maxPriceNoVat']
+                            : null),
+                    'vat_rate' => trim((string) ($row['vat_rate'] ?? $row['vatRate'] ?? '')) ?: null,
+                    'delivery_place' => trim((string) ($row['delivery_place'] ?? $row['deliveryPlace'] ?? '')) ?: null,
+                    'comment' => trim((string) ($row['comment'] ?? '')) ?: null,
+                    'file_link_id' => $file_link_id > 0 ? $file_link_id : null,
+                    'sort' => array_key_exists('sort', $row) ? (int) $row['sort'] : $sort,
+                );
+                $model->insert($insert);
+                $saved++;
+                $sort++;
+            }
+
+            return array(
+                'error' => false,
+                'message' => 'Позиции сохранены',
+                'count' => $saved,
+            );
+        } catch (Exception $e) {
+            return array(
+                'error' => true,
+                'message' => 'Таблица позиций недоступна. Обратитесь к администратору',
+            );
+        }
+    }
+
+    public function replaceDocuments(array $rows, ?int $organizer_company_id = null): array
+    {
+        if (empty($this->id)) {
+            return array('error' => true, 'message' => 'Сначала сохраните тендер');
+        }
+
+        if ($organizer_company_id !== null && (int) ($this->data['organizer_company_id'] ?? 0) !== (int) $organizer_company_id) {
+            return array('error' => true, 'message' => 'Нет доступа к этому тендеру');
+        }
+
+        try {
+            $model = new pb2bTenderDocumentModel();
+            $model->deleteByField('tender_id', $this->id);
+            $saved = 0;
+            $sort = 0;
+            foreach ($rows as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+                $kind = trim((string) ($row['kind'] ?? ''));
+                if (!pb2bTenderDocument::isAllowedKind($kind)) {
+                    continue;
+                }
+                $name = trim((string) ($row['name'] ?? ''));
+                if ($name === '') {
+                    continue;
+                }
+                $file_link_id = (int) ($row['file_link_id'] ?? 0);
+                $model->insert(array(
+                    'tender_id' => (int) $this->id,
+                    'kind' => $kind,
+                    'name' => $name,
+                    'description' => trim((string) ($row['description'] ?? '')) ?: null,
+                    'is_required' => !empty($row['is_required']) || !empty($row['isRequired']) ? 1 : 0,
+                    'file_link_id' => $file_link_id > 0 ? $file_link_id : null,
+                    'sort' => array_key_exists('sort', $row) ? (int) $row['sort'] : $sort,
+                ));
+                $saved++;
+                $sort++;
+            }
+
+            return array(
+                'error' => false,
+                'message' => 'Документы сохранены',
+                'count' => $saved,
+            );
+        } catch (Exception $e) {
+            return array(
+                'error' => true,
+                'message' => 'Таблица документов тендера недоступна. Обратитесь к администратору',
+            );
+        }
+    }
+
+    public function getItems(): array
+    {
+        if (empty($this->id)) {
+            return array();
+        }
+        try {
+            $model = new pb2bTenderItemModel();
+            $rows = $model->getByField('tender_id', (int) $this->id, true);
+            if (!is_array($rows)) {
+                return array();
+            }
+            usort($rows, static function ($a, $b) {
+                return ((int) ($a['sort'] ?? 0)) <=> ((int) ($b['sort'] ?? 0));
+            });
+            return array_values($rows);
+        } catch (Exception $e) {
+            return array();
+        }
+    }
+
+    /** Позиции для карточки: + имя файла по file_link_id. */
+    public function getItemsForView(): array
+    {
+        return self::attachFileMetaToRows($this->getItems());
+    }
+
+    public function getDocuments(?string $kind = null): array
+    {
+        if (empty($this->id)) {
+            return array();
+        }
+        try {
+            $model = new pb2bTenderDocumentModel();
+            $rows = $model->getByField('tender_id', (int) $this->id, true);
+            if (!is_array($rows)) {
+                return array();
+            }
+            $out = array_values($rows);
+            if ($kind !== null && $kind !== '') {
+                $out = array_values(array_filter($out, static function ($row) use ($kind) {
+                    return (string) ($row['kind'] ?? '') === $kind;
+                }));
+            }
+            usort($out, static function ($a, $b) {
+                return ((int) ($a['sort'] ?? 0)) <=> ((int) ($b['sort'] ?? 0));
+            });
+            return $out;
+        } catch (Exception $e) {
+            return array();
+        }
+    }
+
+    /** Документы для карточки: + имя файла по file_link_id. */
+    public function getDocumentsForView(?string $kind = null): array
+    {
+        return self::attachFileMetaToRows($this->getDocuments($kind));
+    }
+
+    /** Сумма qty × max_price_no_vat по позициям (НМЦ из лотов). */
+    public function getItemsMaxTotal(): float
+    {
+        $total = 0.0;
+        foreach ($this->getItems() as $row) {
+            $qty = (float) ($row['qty'] ?? 0);
+            $price = (float) ($row['max_price_no_vat'] ?? 0);
+            if ($qty > 0 && $price > 0) {
+                $total += $qty * $price;
+            } elseif ($price > 0) {
+                $total += $price;
+            }
+        }
+        return $total;
+    }
+
+    /**
+     * @param list<array<string,mixed>> $rows
+     * @return list<array<string,mixed>>
+     */
+    private static function attachFileMetaToRows(array $rows): array
+    {
+        foreach ($rows as &$row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $row['file_name'] = '';
+            $file_link_id = (int) ($row['file_link_id'] ?? 0);
+            if ($file_link_id <= 0) {
+                continue;
+            }
+            try {
+                $link = new pb2bFileLink($file_link_id);
+                if (!empty($link->id)) {
+                    $row['file_name'] = (string) ($link->data['filename'] ?? '');
+                }
+            } catch (Exception $e) {
+                // файл недоступен — оставляем пустое имя
+            }
+        }
+        unset($row);
+
+        return $rows;
     }
 
     public function getClassifiers(): array
@@ -476,150 +702,7 @@ class pb2bTender extends pb2bWaproObject
         return (new pb2bTenderStatusService())->publish($this, $reason, $actor);
     }
 
-    public function saveWizardStep(string $step, array $data, int $organizer_company_id): array
-    {
-        unset($data['status'], $data['_status_via_service'], $data['organizer_company_id']);
-
-        $invitations_payload = null;
-        if (array_key_exists('invitations', $data)) {
-            $invitations_payload = (array) $data['invitations'];
-            unset($data['invitations']);
-        }
-        $criteria_payload = null;
-        if (array_key_exists('criteria', $data)) {
-            $criteria_payload = (array) $data['criteria'];
-            unset($data['criteria']);
-        }
-
-        $tender_id = (int) ($data['id'] ?? 0);
-        $responsible_contact_id = (int) ($data['responsible_contact_id'] ?? 0);
-        unset($data['id']);
-        $data = $this->filterDataForWizardStep($step, $data);
-
-        $data['organizer_company_id'] = $organizer_company_id;
-        if ($responsible_contact_id > 0) {
-            $data['responsible_contact_id'] = $responsible_contact_id;
-        } elseif (empty($data['responsible_contact_id'])) {
-            $contact_id = (int) wa()->getUser()->getId();
-            if ($contact_id > 0) {
-                $data['responsible_contact_id'] = $contact_id;
-            }
-        }
-
-        if (!$tender_id) {
-            if (empty($data['type'])) {
-                return array('error' => true, 'message' => 'Не указан тип процедуры');
-            }
-            if (empty($data['number'])) {
-                $data['number'] = 'DRAFT-'.date('YmdHis').'-'.$organizer_company_id;
-            }
-            if (empty(trim((string) ($data['title'] ?? '')))) {
-                $data['title'] = 'Черновик';
-            }
-        }
-
-        $tender = new pb2bTender($tender_id ?: null);
-        if ($tender_id && (int) ($tender->data['organizer_company_id'] ?? 0) !== $organizer_company_id) {
-            return array('error' => true, 'message' => 'Нет доступа к этому тендеру');
-        }
-
-        if ($tender_id > 0 && (int) ($tender->id ?? 0) > 0) {
-            foreach (array('title', 'number', 'responsible_contact_id', 'type', 'organizer_company_id') as $preserve_field) {
-                if (!array_key_exists($preserve_field, $data) && array_key_exists($preserve_field, $tender->data)) {
-                    $data[$preserve_field] = $tender->data[$preserve_field];
-                }
-            }
-        }
-
-        $data['_wizard_step'] = $step;
-        $save_result = $tender->save($data);
-        if (!empty($save_result['error'])) {
-            return $save_result;
-        }
-
-        $saved_tender_id = (int) $tender->id;
-        if ($invitations_payload !== null && $saved_tender_id > 0) {
-            $inv_result = $tender->replaceInvitations($invitations_payload, $organizer_company_id);
-            if (!empty($inv_result['error'])) {
-                return $inv_result;
-            }
-        }
-        if ($criteria_payload !== null && $saved_tender_id > 0) {
-            $crit_result = $tender->replaceCriteria($criteria_payload, $organizer_company_id);
-            if (!empty($crit_result['error'])) {
-                return $crit_result;
-            }
-        }
-
-        return array(
-            'error' => false,
-            'message' => $save_result['message'] ?? 'Сохранено',
-            'tender_id' => $saved_tender_id,
-            'status' => (int) ($tender->data['status'] ?? 0),
-        );
-    }
-
-    public function validateStep(string $step, array $data): array
-    {
-        $merged = array_merge($this->data, $data);
-        $types_by_id = (array) pb2bWaproHelper::getConfigOption('tender_types', 'id');
-        $type_code = (string) ($types_by_id[(int) ($merged['type'] ?? 0)]['code'] ?? '');
-
-        switch ($step) {
-            case 'privacy':
-                if (!empty($merged['is_private']) && (int) $this->id > 0) {
-                    $invitation_check = self::requireInvitationsForPrivate((int) $this->id, true);
-                    if ($invitation_check !== null) {
-                        return $invitation_check;
-                    }
-                }
-                break;
-
-            case 'basic':
-                if ((int) ($merged['type'] ?? 0) <= 0) {
-                    return array('error' => true, 'message' => 'Не указан тип процедуры');
-                }
-                if (trim((string) ($merged['title'] ?? '')) === '') {
-                    return array('error' => true, 'message' => 'Укажите наименование');
-                }
-                if (trim((string) ($merged['number'] ?? '')) === '') {
-                    return array('error' => true, 'message' => 'Укажите реестровый номер');
-                }
-                $dup = $this->findDuplicateNumber(
-                    trim((string) $merged['number']),
-                    (int) ($merged['organizer_company_id'] ?? 0)
-                );
-                if ($dup) {
-                    return array('error' => true, 'message' => 'Тендер с таким номером уже существует');
-                }
-                break;
-
-            case 'purchase_params':
-                if ((int) ($merged['type'] ?? 0) <= 0) {
-                    return array('error' => true, 'message' => 'Не указан тип процедуры');
-                }
-                if ($type_code === 'prequalification' && (int) ($merged['prequal_validity_months'] ?? 0) < 1) {
-                    return array('error' => true, 'message' => 'Укажите срок действия предквалификации');
-                }
-                break;
-
-            case 'lots':
-                return array('error' => true, 'message' => 'Сохранение лотов будет доступно после подключения таблиц позиций');
-
-            case 'invitation':
-                if (!empty($merged['is_private']) && (int) $this->id > 0) {
-                    $invitation_check = self::requireInvitationsForPrivate((int) $this->id, true);
-                    if ($invitation_check !== null) {
-                        return $invitation_check;
-                    }
-                }
-                break;
-        }
-
-        return array('error' => false);
-    }
-
-    private function findDuplicateNumber(string $number, int $organizer_company_id): bool
+    public function findDuplicateNumber(string $number, int $organizer_company_id): bool
     {
         if ($number === '' || $organizer_company_id <= 0) {
             return false;
@@ -694,6 +777,29 @@ class pb2bTender extends pb2bWaproObject
         }
     }
 
+    public static function requirePriceRequestItems(int $tender_id): ?array
+    {
+        if ($tender_id <= 0) {
+            return null;
+        }
+        try {
+            $model = new waModel();
+            $row = $model->query(
+                'SELECT COUNT(*) AS cnt FROM pb2b_tender_item WHERE tender_id = ?',
+                $tender_id
+            )->fetchAssoc();
+            if ((int) ($row['cnt'] ?? 0) < 1) {
+                return array('error' => true, 'message' => 'Добавьте хотя бы одну позицию для запроса цен');
+            }
+            return null;
+        } catch (Exception $e) {
+            return array(
+                'error' => true,
+                'message' => 'Таблица позиций недоступна. Обратитесь к администратору',
+            );
+        }
+    }
+
     public static function getInvitationsForTender(int $tender_id): array
     {
         if ($tender_id <= 0) {
@@ -702,7 +808,29 @@ class pb2bTender extends pb2bWaproObject
         try {
             $model = new pb2bInvitationModel();
             $rows = $model->getByField('tender_id', $tender_id, true);
-            return is_array($rows) ? $rows : array();
+            if (!is_array($rows)) {
+                return array();
+            }
+            $out = array();
+            foreach ($rows as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+                $company_id = (int) ($row['supplier_company_id'] ?? 0);
+                $row['company_name'] = '';
+                if ($company_id > 0) {
+                    try {
+                        $company = new pb2bCompany($company_id);
+                        if (!empty($company->id)) {
+                            $row['company_name'] = $company->getFullName();
+                        }
+                    } catch (Exception $e) {
+                        // компания недоступна
+                    }
+                }
+                $out[] = $row;
+            }
+            return $out;
         } catch (Exception $e) {
             return array();
         }
@@ -753,20 +881,5 @@ class pb2bTender extends pb2bWaproObject
         }
 
         return array('error' => false, 'ids' => $ids);
-    }
-
-    private function filterDataForWizardStep(string $step, array $data): array
-    {
-        $allowed = self::WIZARD_STEP_FIELDS[$step] ?? null;
-        if ($allowed === null) {
-            return $data;
-        }
-        $filtered = array();
-        foreach ($allowed as $field) {
-            if (array_key_exists($field, $data)) {
-                $filtered[$field] = $data[$field];
-            }
-        }
-        return $filtered;
     }
 }

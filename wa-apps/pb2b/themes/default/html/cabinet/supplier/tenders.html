@@ -1,0 +1,74 @@
+<div class="cabinet-container js-cabinet-page" data-page="tenders" data-role="supplier">
+    <div class="js-tenders-list-view buyer-tenders supplier-tenders">
+        <div class="buyer-tenders__top">
+            <div class="buyer-tenders__header">
+                <h1 class="buyer-tenders__title">Доступные тендеры</h1>
+            </div>
+
+            <div class="supplier-tenders__panel">
+                <div class="supplier-tenders__search">
+                    <div class="supplier-tenders__search-row">
+                        <label class="supplier-tenders__search-field">
+                            <span class="supplier-tenders__search-icon" aria-hidden="true">
+                                <svg><use href="#icon-search"></use></svg>
+                            </span>
+                            <input type="search" class="supplier-tenders__search-input js-tenders-search" placeholder="Ключевое слово, ИНН, МНН, CAS номер или номер процедуры" aria-label="Поиск тендеров">
+                        </label>
+                        <button type="button" class="supplier-tenders__advanced">
+                            <span>Расширенный поиск</span>
+                            <span class="supplier-tenders__advanced-icon" aria-hidden="true">
+                                <svg><use href="#icon-filter"></use></svg>
+                            </span>
+                        </button>
+                    </div>
+                </div>
+                <div class="supplier-tenders__facets">
+                    <button type="button" class="supplier-tenders__facet supplier-tenders__facet--tags">
+                        <span class="supplier-tenders__facet-label">Добавить теги</span>
+                        <svg aria-hidden="true"><use href="#icon-arrow-down"></use></svg>
+                    </button>
+                    <button type="button" class="supplier-tenders__facet supplier-tenders__facet--status">
+                        <span class="supplier-tenders__facet-label">Статус</span>
+                        <svg aria-hidden="true"><use href="#icon-arrow-down"></use></svg>
+                    </button>
+                    <button type="button" class="supplier-tenders__facet supplier-tenders__facet--deadline">
+                        <span class="supplier-tenders__facet-label">Дата окончания приёма заявок</span>
+                        <svg aria-hidden="true"><use href="#icon-arrow-down"></use></svg>
+                    </button>
+                    <button type="button" class="supplier-tenders__facet supplier-tenders__facet--place">
+                        <span class="supplier-tenders__facet-label">Место поставки</span>
+                        <svg aria-hidden="true"><use href="#icon-arrow-down"></use></svg>
+                    </button>
+                    <button type="button" class="supplier-tenders__facet supplier-tenders__facet--price">
+                        <span class="supplier-tenders__facet-label">Начальная цена</span>
+                        <svg aria-hidden="true"><use href="#icon-ruble"></use></svg>
+                    </button>
+                    <button type="button" class="supplier-tenders__reset js-tenders-filters-reset" disabled>Сбросить фильтры</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="buyer-tenders__body">
+            <div class="buyer-tenders__list js-tenders-list" style="display:none;"></div>
+
+            <div class="empty-container js-tenders-loading">
+                <span class="des">Загрузка…</span>
+            </div>
+
+            <div class="empty-container js-tenders-empty" style="display:none;">
+                <span class="icon"><svg><use href="#icon-info"></use></svg></span>
+                <span class="title js-tenders-empty-title">Нет доступных тендеров</span>
+                <span class="des js-tenders-empty-des">
+                    Здесь появятся открытые запросы цен в приёме заявок и закрытые, куда вас пригласили.
+                </span>
+            </div>
+
+            <div class="empty-container js-tenders-error" style="display:none;">
+                <span class="icon"><svg><use href="#icon-alert"></use></svg></span>
+                <span class="title">Не удалось загрузить список</span>
+                <span class="des js-tenders-error-text">Ошибка загрузки</span>
+                <button type="button" class="button secondary js-tenders-reload">Повторить</button>
+            </div>
+        </div>
+    </div>
+</div>

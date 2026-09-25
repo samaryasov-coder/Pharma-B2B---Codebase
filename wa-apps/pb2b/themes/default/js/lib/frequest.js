@@ -22,8 +22,34 @@
                     $(config.button).addClass('loading').prop('disabled', true) :
                     $(config.button).removeClass('loading').prop('disabled', false);
             }
-        }
+        };
 
+        /** Кабинет: {status,message,payload}; legacy: {data:{...}} или плоский {error,message}. */
+        const unwrapReply = (reply) => {
+            if (!reply || typeof reply !== 'object') {
+                return {};
+            }
+
+            let data = {};
+            const payload = reply.payload;
+            if (payload != null && typeof payload === 'object' && !Array.isArray(payload)) {
+                data = Object.assign({}, payload);
+            } else if (reply.data != null && typeof reply.data === 'object' && !Array.isArray(reply.data)) {
+                data = Object.assign({}, reply.data);
+            } else if (!Object.prototype.hasOwnProperty.call(reply, 'status')
+                || !Object.prototype.hasOwnProperty.call(reply, 'payload')) {
+                data = Object.assign({}, reply);
+            }
+
+            if (reply.message && (data.message == null || data.message === '')) {
+                data.message = reply.message;
+            }
+            if (reply.status === 'error') {
+                data.error = true;
+            }
+
+            return data;
+        };
 
         const config = {
             url: '',
@@ -48,8 +74,6 @@
             config.processData = false;
             config.contentType = false;
         }
-
-
 
         return new Promise((resolve, reject) => {
 
@@ -86,7 +110,7 @@
 
                 success(reply) {
 
-                    const reply_data = reply.data || {};
+                    const reply_data = unwrapReply(reply);
                     const result = reply_data.result ?? Number(!reply_data.error);
 
                     let callbackMessage;
@@ -123,9 +147,34 @@
                 },
 
                 error(xhr) {
-                    $.AlertManager.showError('Внутренняя ошибка');
+                    let reply_data = { error: true, message: 'Внутренняя ошибка' };
+                    try {
+                        const parsed = JSON.parse(xhr.responseText || '');
+                        reply_data = unwrapReply(parsed);
+                        if (!reply_data.error) {
+                            reply_data.error = true;
+                        }
+                        if (!reply_data.message) {
+                            reply_data.message = 'Внутренняя ошибка';
+                        }
+                    } catch (e) {
+                        // keep default
+                    }
+
+                    let callbackMessage;
+                    if (typeof config.onError === 'function') {
+                        callbackMessage = config.onError(reply_data);
+                    }
+
+                    viewMessage(
+                        0,
+                        (callbackMessage === true || callbackMessage === undefined)
+                            ? reply_data.message
+                            : callbackMessage
+                    );
+
                     setStatusRequestButton();
-                    reject(xhr);
+                    resolve(reply_data);
                 }
             });
         });

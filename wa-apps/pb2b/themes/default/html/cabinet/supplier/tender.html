@@ -1,0 +1,302 @@
+{* Карточка извещения для поставщика. Данные SSR (getNotice). Мутации КП — API. *}
+{assign var=published value=$card.published_at|default:''}
+{assign var=app_status_code value=$application.status.code|default:''}
+{assign var=app_status_name value=$application.status.name|default:$app_status_code}
+{assign var=can_edit_kp value=($app_status_code == 'draft' || $app_status_code == 'submitted')}
+{assign var=gates_proposal value=$gates.proposal|default:false}
+
+<div
+    class="cabinet-container js-cabinet-page"
+    data-page="tender"
+    data-role="supplier"
+    data-id="{$card.id|default:$tender_id|escape}"
+    data-app-status="{$app_status_code|escape}"
+    data-gates-proposal="{if $gates_proposal}1{else}0{/if}"
+>
+    <div class="supplier-tender-page buyer-tender-page">
+        <header class="buyer-tender-page__header">
+            <div class="buyer-tender-page__title-row">
+                <h1 class="buyer-tender-page__title">
+                    {$card.type.name|default:'Запрос цен'|escape}
+                    {if $card.number} {$card.number|escape}{/if}
+                </h1>
+                <div class="supplier-tender-page__actions">
+                    {if !$app_status_code}
+                        <button type="button" class="button primary js-supplier-tender-apply">Участвовать</button>
+                    {/if}
+                </div>
+            </div>
+        </header>
+
+        <section class="buyer-tender-summary" aria-label="Сводка извещения">
+            <div class="buyer-tender-summary__main">
+                <div class="buyer-tender-summary__meta">
+                    <span>Дата публикации: {if $published}{$published|date_format:"%d.%m.%Y"}{else}—{/if}</span>
+                    <span class="buyer-tender-summary__dot" aria-hidden="true"></span>
+                    <span>Категория:
+                        {if $classifiers}
+                            {foreach $classifiers as $c name=cls}
+                                {$c.classifier_name|default:$c.name|default:$c.title|escape}{if !$smarty.foreach.cls.last}, {/if}
+                            {/foreach}
+                        {else}
+                            —
+                        {/if}
+                    </span>
+                </div>
+                <div class="buyer-tender-summary__title-row">
+                    <h2 class="buyer-tender-summary__name">{$card.title|default:'Без названия'|escape}</h2>
+                    <span class="buyer-tender-summary__status">{$card.status.name|default:'—'|escape}</span>
+                </div>
+                <div class="buyer-tender-summary__tags">
+                    <span class="buyer-tender-summary__tag">{if $card.is_private}Закрытый{else}Открытый{/if}</span>
+                    {if $app_status_code}
+                        <span class="buyer-tender-summary__tag">Заявка: {$app_status_name|escape}</span>
+                    {else}
+                        <span class="buyer-tender-summary__tag">Заявка не создана</span>
+                    {/if}
+                </div>
+                <div class="buyer-tender-summary__rows">
+                    <div class="buyer-tender-summary__row">
+                        <span class="buyer-tender-summary__label">Организатор</span>
+                        <span class="buyer-tender-summary__value">
+                            {if $organizer}{$organizer->getFullName()|escape}{else}—{/if}
+                        </span>
+                    </div>
+                    <div class="buyer-tender-summary__row">
+                        <span class="buyer-tender-summary__label">Способ</span>
+                        <span class="buyer-tender-summary__value">{$card.type.name|default:'—'|escape}</span>
+                    </div>
+                    <div class="buyer-tender-summary__row">
+                        <span class="buyer-tender-summary__label">Позиций</span>
+                        <span class="buyer-tender-summary__value">{$items|@count}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="buyer-tender-summary__side">
+                <div class="buyer-tender-summary__side-block">
+                    <span class="buyer-tender-summary__side-label">Окончание приема заявок</span>
+                    <div class="buyer-tender-summary__deadline">
+                        <span class="buyer-tender-summary__deadline-date">{if $card.end_at}{$card.end_at|date_format:"%d.%m.%Y в %H:%M"}{else}—{/if}</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="supplier-tender-gates" aria-label="Условия участия">
+            <h2 class="supplier-tender-section-title">Условия участия</h2>
+            <ul class="supplier-tender-gates__list">
+                <li>Неценовые критерии: {if $gates.nonprice_done}готово{else}не готово{/if}</li>
+                <li>Согласование: {if $gates.approval_ok}ок{else}ожидает{/if}</li>
+                <li>Квалификация: {if $gates.qualification_ok}ок{else}ожидает{/if}</li>
+                <li>Допуск к ценовому предложению: {if $gates_proposal}открыт{else}закрыт{/if}</li>
+            </ul>
+        </section>
+
+        <section class="supplier-tender-items" aria-label="Позиции">
+            <h2 class="supplier-tender-section-title">Позиции извещения</h2>
+            {if $items}
+                <table class="supplier-tender-table">
+                    <thead>
+                        <tr>
+                            <th>Наименование</th>
+                            <th>Кол-во</th>
+                            <th>Ед.</th>
+                            {if !$card.hide_initial_price}<th>Макс. цена без НДС</th>{/if}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {foreach $items as $item}
+                            <tr>
+                                <td>{$item.name|default:'—'|escape}</td>
+                                <td>{$item.qty|default:'—'|escape}</td>
+                                <td>{$item.unit|default:'—'|escape}</td>
+                                {if !$card.hide_initial_price}
+                                    <td>{$item.max_price_no_vat|default:'—'|escape}</td>
+                                {/if}
+                            </tr>
+                        {/foreach}
+                    </tbody>
+                </table>
+            {else}
+                <p class="des">Позиции не указаны.</p>
+            {/if}
+        </section>
+
+        <section class="supplier-tender-documents" aria-label="Документы извещения">
+            <h2 class="supplier-tender-section-title">Документы извещения</h2>
+            {if $documents}
+                <ul>
+                    {foreach $documents as $doc}
+                        <li>
+                            {$doc.name|default:'Документ'|escape}
+                            {if $doc.is_required} (обязательный){/if}
+                            {if $doc.kind} — {$doc.kind|escape}{/if}
+                        </li>
+                    {/foreach}
+                </ul>
+            {else}
+                <p class="des">Документов нет.</p>
+            {/if}
+        </section>
+
+        <section class="supplier-tender-criteria" aria-label="Критерии">
+            <h2 class="supplier-tender-section-title">Критерии извещения</h2>
+            {if $criteria}
+                <ul>
+                    {foreach $criteria as $cr}
+                        <li>
+                            {$cr.name|default:'—'|escape}
+                            {if $cr.is_mandatory} (обязательный){/if}
+                        </li>
+                    {/foreach}
+                </ul>
+            {else}
+                <p class="des">Критериев нет.</p>
+            {/if}
+        </section>
+
+        <section class="supplier-tender-application" aria-label="Заявка" data-application-id="{$application.id|default:0|escape}">
+            <h2 class="supplier-tender-section-title">Заявка</h2>
+
+            {if $app_status_code == 'withdrawn'}
+                <p class="des">Заявка отозвана. Повторно участвовать в этом тендере нельзя.</p>
+            {elseif !$app_status_code}
+                <p class="des">Заявка ещё не создана. Нажмите «Участвовать», чтобы открыть черновик.</p>
+                <button type="button" class="button primary js-supplier-tender-apply">Участвовать</button>
+            {elseif $can_edit_kp}
+                <p class="des">
+                    Статус: <strong>{$app_status_name|escape}</strong>.
+                    {if $app_status_code == 'submitted'}
+                        Сохранение вернёт заявку в черновик до повторной подачи.
+                    {/if}
+                </p>
+
+                <form class="js-supplier-kp-form supplier-kp-form" onsubmit="return false;">
+                    <h3 class="supplier-tender-section-title">Цены по позициям</h3>
+                    {if $items}
+                        <table class="supplier-tender-table">
+                            <thead>
+                                <tr>
+                                    <th>Позиция</th>
+                                    <th>Кол-во</th>
+                                    <th>Ед.</th>
+                                    <th>Цена за ед., ₽</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {foreach $items as $item}
+                                    {assign var=iid value=$item.id}
+                                    <tr>
+                                        <td>{$item.name|default:'—'|escape}</td>
+                                        <td>{$item.qty|default:'—'|escape}</td>
+                                        <td>{$item.unit|default:'—'|escape}</td>
+                                        <td>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                step="0.01"
+                                                class="js-kp-price"
+                                                data-tender-item-id="{$iid|escape}"
+                                                value="{$app_prices[$iid]|default:''|escape}"
+                                                placeholder="0.00"
+                                                aria-label="Цена за единицу"
+                                            >
+                                        </td>
+                                    </tr>
+                                {/foreach}
+                            </tbody>
+                        </table>
+                    {else}
+                        <p class="des">Нет позиций для ценообразования.</p>
+                    {/if}
+
+                    {if $criteria}
+                        <h3 class="supplier-tender-section-title">Ответы на критерии</h3>
+                        <div class="supplier-kp-criteria">
+                            {foreach $criteria as $cr}
+                                {assign var=cid value=$cr.id}
+                                {assign var=ans value=$app_criteria[$cid]|default:null}
+                                <div class="supplier-kp-criteria__row" data-criterion-id="{$cid|escape}">
+                                    <label>
+                                        {$cr.name|default:'Критерий'|escape}
+                                        {if $cr.is_mandatory} *{/if}
+                                    </label>
+                                    <input
+                                        type="text"
+                                        class="js-kp-criterion-value"
+                                        value="{$ans.value|default:''|escape}"
+                                        placeholder="Ответ"
+                                    >
+                                    <label class="supplier-kp-criteria__check">
+                                        <input
+                                            type="checkbox"
+                                            class="js-kp-criterion-confirmed"
+                                            {if $ans.confirmed|default:0}checked{/if}
+                                        >
+                                        Подтверждаю
+                                    </label>
+                                </div>
+                            {/foreach}
+                        </div>
+                    {/if}
+
+                    {assign var=has_req_docs value=false}
+                    {foreach $documents as $doc}
+                        {if $doc.kind == 'requirement'}
+                            {assign var=has_req_docs value=true}
+                        {/if}
+                    {/foreach}
+
+                    {if $has_req_docs}
+                        <h3 class="supplier-tender-section-title">Документы КП</h3>
+                        <div class="supplier-kp-docs">
+                            {foreach $documents as $doc}
+                                {if $doc.kind == 'requirement'}
+                                    {assign var=did value=$doc.id}
+                                    {assign var=adoc value=$app_documents[$did]|default:null}
+                                    <div
+                                        class="supplier-kp-docs__row js-kp-doc-row"
+                                        data-tender-document-id="{$did|escape}"
+                                        data-doc-name="{$doc.name|default:'Документ'|escape}"
+                                        data-file-link-id="{$adoc.file_link_id|default:0|escape}"
+                                        data-app-doc-id="{$adoc.id|default:0|escape}"
+                                    >
+                                        <div>
+                                            {$doc.name|default:'Документ'|escape}
+                                            {if $doc.is_required} *{/if}
+                                            <span class="des js-kp-doc-status">
+                                                {if $adoc.file_link_id|default:0}
+                                                    файл загружен (#{$adoc.file_link_id|escape})
+                                                {else}
+                                                    файл не загружен
+                                                {/if}
+                                            </span>
+                                        </div>
+                                        <input type="file" class="js-kp-doc-file" accept=".pdf,.doc,.docx,application/pdf">
+                                    </div>
+                                {/if}
+                            {/foreach}
+                        </div>
+                    {/if}
+
+                    <div class="supplier-kp-actions" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:16px;">
+                        <button type="button" class="button secondary js-supplier-kp-save">Сохранить</button>
+                        {if $gates_proposal}
+                            <button type="button" class="button primary js-supplier-kp-submit">Подать заявку</button>
+                        {else}
+                            <button type="button" class="button primary" disabled title="Не выполнены условия допуска">Подать заявку</button>
+                        {/if}
+                        {if $app_status_code == 'submitted'}
+                            <button type="button" class="button secondary js-supplier-kp-withdraw">Отозвать</button>
+                        {/if}
+                    </div>
+                    <p class="des js-supplier-kp-msg" style="display:none;margin-top:8px;"></p>
+                </form>
+            {else}
+                <p class="des">Статус заявки: <strong>{$app_status_name|escape}</strong>.</p>
+            {/if}
+
+            <p class="des js-supplier-tender-apply-error" style="display:none;color:#b42318;"></p>
+        </section>
+    </div>
+</div>

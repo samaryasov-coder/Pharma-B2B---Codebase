@@ -2,29 +2,56 @@
 
 trait pb2bFrontendApiBuyerTenderTrait
 {
-    protected function assertBuyerAccess(): ?array
+    protected function assertBuyerCompanySelected(): void
     {
         $company = $this->context->company();
         if (!$company || !$company->id) {
-            return array('error' => true, 'message' => 'Компания не выбрана');
+            throw new waException('Компания не выбрана', pb2bHttpStatus::BAD_REQUEST);
         }
-        return $company->tenderAssertBuyer();
+        if (!$company->isBuyer()) {
+            throw new waException(
+                'Создавать тендер может только компания-покупатель',
+                pb2bHttpStatus::FORBIDDEN
+            );
+        }
     }
 
-    protected function loadOrganizerTender(int $tender_id): array
+    protected function tenderService(): pb2bTenderService
     {
-        $company = $this->context->company();
-        if (!$company || !$company->id) {
-            return array('error' => true, 'message' => 'Компания не выбрана');
+        return new pb2bTenderService();
+    }
+
+    protected function tenderCompanyId(): int
+    {
+        return (int) $this->context->company()->id;
+    }
+
+    /**
+     * Поля тендера из POST: либо вложенный data[], либо плоские ключи (без id/step).
+     */
+    protected function tenderDtoPayloadFromRequest(): array
+    {
+        $nested = waRequest::post('data', null, waRequest::TYPE_ARRAY);
+        if (is_array($nested) && $nested !== []) {
+            return $nested;
         }
-        $loaded = $company->tenderLoadOrganizer($tender_id);
-        if (!empty($loaded['error'])) {
-            return $loaded;
+
+        $post = waRequest::post();
+        if (!is_array($post)) {
+            return [];
         }
-        return array(
+        unset($post['id'], $post['step'], $post['_csrf']);
+
+        return $post;
+    }
+
+    protected function tenderSuccessPayload(pb2bTender $tender, string $message): array
+    {
+        return [
             'error' => false,
-            'tender' => $loaded['tender'],
-            'company' => $company,
-        );
+            'message' => $message,
+            'tender_id' => (int) $tender->id,
+            'tender' => pb2bTenderResource::make($tender)->resolve(),
+        ];
     }
 }

@@ -2,17 +2,6 @@
 
 class pb2bDocflowRequest extends pb2bWaproObject
 {
-    protected function preSave(array &$data): array
-    {
-        $result = parent::preSave($data);
-        if (!empty($result['error'])) return $result;
-
-        if (!empty($result['new']))
-            $this->generateProcedureCode($data);
-
-        return $result;
-    }
-
     protected function preDelete(array &$data = array()): array
     {
         $result = parent::preDelete($data);
@@ -1143,45 +1132,4 @@ class pb2bDocflowRequest extends pb2bWaproObject
         );
     }
 
-    protected function generateProcedureCode(array &$data): void
-    {
-        if (!isset($this->model->fields['procedure_code'])) return;
-
-        $process_type = (int) ($data['process_type'] ?? ($this->data['process_type'] ?? 0));
-        if ($process_type <= 0) return;
-
-        $process_types = pb2bWaproHelper::getConfigOption('docflow_process_types');
-        $tender_type_id = (int) ($process_types[$process_type]['tender_type_id'] ?? $process_type);
-
-        $process_code = str_pad((string) $tender_type_id, 2, '0', STR_PAD_LEFT);
-        $codes = pb2bWaproHelper::getConfigOption('tender_codes');
-        if (!empty($codes[$tender_type_id]['code'])) {
-            $process_code = (string) $codes[$tender_type_id]['code'];
-        }
-
-        $year = (int) date('Y');
-        $where = array(
-            'process_type' => array('simile' => '=', 'value' => $process_type),
-        );
-        if (isset($this->model->fields['create_datetime'])) {
-            $where['create_datetime'] = array(
-                'simile' => 'BETWEEN',
-                'value' => array(
-                    'from' => sprintf('%04d-01-01 00:00:00', $year),
-                    'to' => sprintf('%04d-12-31 23:59:59', $year),
-                ),
-            );
-        }
-
-        $this->model->setFetch('field');
-        $this->model->setSelect(array(
-            array('func' => 'count', 'params' => array(array('field' => 'id'))),
-        ));
-        $this->model->setWhere($where);
-        $sequence = (int) $this->model->queryRun() + 1;
-
-        $data['procedure_code'] = $process_code
-            .'-'.substr((string) $year, -2)
-            .'-'.str_pad((string) $sequence, 6, '0', STR_PAD_LEFT);
-    }
 }
