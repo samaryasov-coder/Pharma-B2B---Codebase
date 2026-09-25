@@ -10,4 +10,40 @@ class pb2bCategoryCollection extends pb2bWaproCollection
         ));
         $this->model->addWhere($where);
     }
+
+    /**
+     * Плоское дерево для кабинета (ЗЦ): id / parent_id / name / depth.
+     *
+     * @return array<int, array{id:int,parent_id:int,name:string,depth:int}>
+     */
+    public function getCabinetTreeRows(): array
+    {
+        $model = new pb2bCategoryModel();
+        $rows = $model->query(
+            'SELECT id, parent_id, name, depth, left_key, right_key
+             FROM pb2b_category
+             ORDER BY left_key ASC, id ASC'
+        )->fetchAll();
+
+        if (!is_array($rows) || empty($rows)) {
+            return array();
+        }
+
+        $result = array();
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $result[] = array(
+                'id' => (int) ($row['id'] ?? 0),
+                'parent_id' => (int) ($row['parent_id'] ?? 0),
+                'name' => (string) ($row['name'] ?? ''),
+                'depth' => (int) ($row['depth'] ?? 0),
+                'left_key' => (int) ($row['left_key'] ?? 0),
+                'right_key' => (int) ($row['right_key'] ?? 0),
+            );
+        }
+
+        return $result;
+    }
 }

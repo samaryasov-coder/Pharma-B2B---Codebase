@@ -6,22 +6,16 @@ class pb2bFrontendApiBuyerTenderListController extends pb2bFrontendCabinetContro
 
     public function executeBuyer(): void
     {
-        $access = $this->assertBuyerAccess();
-        if ($access !== null) {
-            $this->response = $access;
-            return;
-        }
+        $this->assertBuyerCompanySelected();
 
-        $company = $this->context->company();
-        $filters = array(
+        $filters = [
             'status' => waRequest::get('status', 0, waRequest::TYPE_INT),
             'type' => waRequest::get('type', 0, waRequest::TYPE_INT),
-        );
+        ];
 
-        $collection = new pb2bTenderCollection();
-        $this->response = array(
+        $this->response = [
             'error' => false,
-            'items' => $collection->getBuyerList((int) $company->id, $filters),
-        );
+            'items' => $this->tenderService()->listFromBuyer($this->tenderCompanyId(), $filters),
+        ];
     }
 }

@@ -6,22 +6,20 @@ class pb2bFrontendApiBuyerTenderSaveController extends pb2bFrontendCabinetContro
 
     public function executeBuyer(): void
     {
-        $access = $this->assertBuyerAccess();
-        if ($access !== null) {
-            $this->response = $access;
-            return;
-        }
+        $this->assertBuyerCompanySelected();
 
-        $company = $this->context->company();
         $tender_id = waRequest::post('id', 0, waRequest::TYPE_INT);
-        $step = waRequest::post('step', '', waRequest::TYPE_STRING_TRIM);
-        $data = waRequest::post('data', array(), waRequest::TYPE_ARRAY);
-
-        if (waRequest::post('validate_step', 0, waRequest::TYPE_INT)) {
-            $this->response = $company->tenderValidateStepFromBuyer($step, $data, $tender_id);
-            return;
+        if ($tender_id <= 0) {
+            throw new waException('Не указан тендер', pb2bHttpStatus::BAD_REQUEST);
         }
 
-        $this->response = $company->tenderSaveWizardFromBuyer($step, $data, $tender_id);
+        $dto = new pb2bTenderDto($this->tenderDtoPayloadFromRequest());
+        $tender = $this->tenderService()->updateFromBuyer(
+            $tender_id,
+            $this->tenderCompanyId(),
+            $dto
+        );
+
+        $this->response = $this->tenderSuccessPayload($tender, 'Сохранено');
     }
 }

@@ -6,13 +6,14 @@ class pb2bFrontendApiBuyerTenderGetController extends pb2bFrontendCabinetControl
 
     public function executeBuyer(): void
     {
-        $access = $this->assertBuyerAccess();
-        if ($access !== null) {
-            $this->response = $access;
-            return;
+        $this->assertBuyerCompanySelected();
+
+        $tender_id = waRequest::param('id', 0, waRequest::TYPE_INT);
+        if ($tender_id <= 0) {
+            throw new waException('Не указан тендер', pb2bHttpStatus::BAD_REQUEST);
         }
 
-        $tender_id = (int) waRequest::param('id', 0, waRequest::TYPE_INT);
-        $this->response = $this->context->company()->tenderGetWithClassifiers($tender_id);
+        $detail = $this->tenderService()->getDetailFromBuyer($tender_id, $this->tenderCompanyId());
+        $this->response = array_merge(['error' => false], $detail);
     }
 }

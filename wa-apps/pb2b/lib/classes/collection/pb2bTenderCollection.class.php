@@ -122,7 +122,7 @@ class pb2bTenderCollection extends pb2bWaproCollection
         }
 
         $model = new pb2bTenderModel();
-        $sql = 'SELECT id, number, title, type, status, is_private, create_datetime, update_datetime
+        $sql = 'SELECT id, number, title, type, status, is_private, end_at, create_datetime, update_datetime
             FROM pb2b_tender
             WHERE organizer_company_id = ? AND is_deleted = 0';
         $params = array($company_id);
@@ -138,7 +138,41 @@ class pb2bTenderCollection extends pb2bWaproCollection
         $sql .= ' ORDER BY update_datetime DESC, id DESC';
 
         $rows = $model->query($sql, $params)->fetchAll();
-        return is_array($rows) ? $rows : array();
+        if (!is_array($rows) || !$rows) {
+            return array();
+        }
+
+        $types_by_id = (array) pb2bWaproHelper::getConfigOption('tender_types', 'id');
+        $statuses_by_id = (array) pb2bWaproHelper::getConfigOption('tender_statuses', 'id');
+
+        $ids = array_map('intval', array_column($rows, 'id'));
+        $invite_counts = array();
+        if ($ids) {
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $invite_rows = (new pb2bInvitationModel())->query(
+                "SELECT tender_id, COUNT(*) AS cnt FROM pb2b_invitation WHERE tender_id IN ({$placeholders}) GROUP BY tender_id",
+                $ids
+            )->fetchAll();
+            foreach ((array) $invite_rows as $invite_row) {
+                $invite_counts[(int) $invite_row['tender_id']] = (int) $invite_row['cnt'];
+            }
+        }
+
+        foreach ($rows as &$row) {
+            $type_row = $types_by_id[(int) ($row['type'] ?? 0)] ?? array();
+            $status_row = $statuses_by_id[(int) ($row['status'] ?? 0)] ?? array();
+            $row['type_code'] = (string) ($type_row['code'] ?? '');
+            $row['type_name'] = (string) ($type_row['modal_name'] ?? $type_row['name'] ?? '');
+            $row['status_code'] = (string) ($status_row['code'] ?? '');
+            $row['status_name'] = (string) ($status_row['name'] ?? '');
+            $row['invited_count'] = (int) ($invite_counts[(int) $row['id']] ?? 0);
+            // Участники / предложения — после Wave 2
+            $row['participants_count'] = 0;
+            $row['proposals_count'] = 0;
+        }
+        unset($row);
+
+        return $rows;
     }
 
     public function getWithClassifiers(int $tender_id): array

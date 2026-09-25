@@ -18,6 +18,9 @@ return [
 
 
     "cabinet/$ROLE_BOTH/tenders/" => 'frontend/cabinetTenders',
+    "cabinet/$ROLE_BUYER/tenders/form/<section>/" => 'frontend/cabinetTendersBuyerForm',
+    "cabinet/$ROLE_BUYER/tender/<id>/" => 'frontend/cabinetTender',
+    "cabinet/$ROLE_SUPPLIER/tender/<id>/" => 'frontend/cabinetTender',
 
     "cabinet/$ROLE_BOTH/company-data/" => 'frontend/cabinetData',
     'cabinet/company-data/save/' => 'frontend/cabinetDataSave',
@@ -57,15 +60,32 @@ return [
     "api/$ROLE_BUYER/docflow/request/<id>/document/list/" => 'frontend/apiBuyerDocflowRequestDocumentList',
     "api/$ROLE_BUYER/docflow/request/<id>/files/download/" => 'frontend/apiBuyerDocflowRequestFilesDownload',
 
-
-
-
+    "api/$ROLE_BUYER/tender/list/" => 'frontend/apiBuyerTenderList',
+    "api/$ROLE_BUYER/tender/create/" => 'frontend/apiBuyerTenderCreate',
+    "api/$ROLE_BUYER/tender/save/" => 'frontend/apiBuyerTenderSave',
+    "api/$ROLE_BUYER/tender/publish/" => 'frontend/apiBuyerTenderPublish',
+    // Специфичные пути до generic tender/<id>/ — иначе upload/save ловятся Get.
+    "api/$ROLE_BUYER/tender/<id>/criterion/save/" => 'frontend/apiBuyerTenderCriterionSave',
+    "api/$ROLE_BUYER/tender/<id>/invitation/save/" => 'frontend/apiBuyerTenderInvitationSave',
+    "api/$ROLE_BUYER/tender/<id>/classifier/save/" => 'frontend/apiBuyerTenderClassifierSave',
+    "api/$ROLE_BUYER/tender/<id>/file/upload/" => 'frontend/apiBuyerTenderFileUpload',
+    "api/$ROLE_BUYER/tender/<id>/" => 'frontend/apiBuyerTenderGet',
+    "api/$ROLE_BUYER/category/tree/" => 'frontend/apiBuyerCategoryTree',
 
 
     "api/$ROLE_SUPPLIER/docflow/request/list/" => 'frontend/apiSupplierDocflowRequestList',
     "api/$ROLE_SUPPLIER/docflow/request/submit/" => 'frontend/apiSupplierDocflowRequestSubmit',
     "api/$ROLE_SUPPLIER/docflow/request/cancel/" => 'frontend/apiSupplierDocflowRequestCancel',
     "api/$ROLE_SUPPLIER/docflow/request/file/upload/" => 'frontend/apiSupplierDocflowRequestItemUpload',
+
+    "api/$ROLE_SUPPLIER/tender/list/" => 'frontend/apiSupplierTenderList',
+    // Специфичные пути до generic tender/<id>/ — иначе apply/save ловятся Get.
+    "api/$ROLE_SUPPLIER/tender/<id>/apply/" => 'frontend/apiSupplierTenderApply',
+    "api/$ROLE_SUPPLIER/tender/<id>/save/" => 'frontend/apiSupplierTenderSave',
+    "api/$ROLE_SUPPLIER/tender/<id>/submit/" => 'frontend/apiSupplierTenderSubmit',
+    "api/$ROLE_SUPPLIER/tender/<id>/withdraw/" => 'frontend/apiSupplierTenderWithdraw',
+    "api/$ROLE_SUPPLIER/tender/<id>/file/upload/" => 'frontend/apiSupplierTenderFileUpload',
+    "api/$ROLE_SUPPLIER/tender/<id>/" => 'frontend/apiSupplierTenderGet',
 
     'api/common/company/select/' => 'frontend/apiCompanySelect',
     "api/common/docflow/request/template/download/" => 'frontend/apiCommonDocflowRequestTemplateDownload',
