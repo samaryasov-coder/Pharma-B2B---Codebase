@@ -8,16 +8,6 @@
 <div class="cabinet-container js-cabinet-page" data-page="tender" data-role="buyer" data-id="{$tender.id|escape}">
     <div class="buyer-tender-page">
         <header class="buyer-tender-page__header">
-            <nav class="breadcrumbs" aria-label="Навигация">
-                <a class="breadcrumbs-link" href="/cabinet/buyer/tenders/">
-                    <svg class="breadcrumbs-icon" aria-hidden="true"><use href="#icon-breadcrumbs"></use></svg>
-                </a>
-                <svg class="breadcrumbs-icon-arrow" aria-hidden="true"><use href="#icon-breadcrumbs-arrow"></use></svg>
-                <a class="breadcrumbs-link" href="/cabinet/buyer/tenders/">Мои тендеры</a>
-                <svg class="breadcrumbs-icon-arrow" aria-hidden="true"><use href="#icon-breadcrumbs-arrow"></use></svg>
-                <span class="breadcrumbs-current">{$card.number|default:'—'|escape}</span>
-            </nav>
-
             <div class="buyer-tender-page__title-row">
                 <h1 class="buyer-tender-page__title">
                     {$card.type.name|default:'Запрос цен'|escape}
