@@ -572,6 +572,18 @@
             this.loadList();
         },
 
+        openEditFromQuery: function () {
+            let editId = 0;
+            try {
+                editId = parseInt(new URLSearchParams(window.location.search || '').get('edit') || '0', 10) || 0;
+            } catch (e) {
+                editId = 0;
+            }
+            if (editId > 0) {
+                this.openDraft(editId);
+            }
+        },
+
         bindEvents: function () {
             const self = this;
             const $root = $(this.root);
@@ -3338,7 +3350,7 @@
             const $root = $(this.root);
             $root.find('.js-tenders-error').hide();
 
-            $.fRequest({
+            return $.fRequest({
                 url: '/api/buyer/tender/list/',
                 method: 'GET',
                 showMessages: false,
@@ -3346,6 +3358,7 @@
                     self.items = reply.items || [];
                     self.fillStatusFilter();
                     self.applyFilters();
+                    self.openEditFromQuery();
                 },
                 onError: function (reply) {
                     $root.find('.js-tenders-list').hide().empty();
@@ -4092,6 +4105,728 @@
 
         publish: function () {
             this.saveDraft({ publish: true });
+        }
+    });
+
+    // Карточка тендера buyer: вкладки Обзор / Участники (6.3).
+    $.Cabinet.registerPage('tender', {
+        root: null,
+        tenderId: 0,
+        activeTab: 'overview',
+        listLoaded: false,
+        applications: [],
+        pricesVisible: 0,
+        busy: false,
+        currentApplicationId: 0,
+        detailSubtab: 'lots',
+
+        init: function (root) {
+            this.root = root;
+            this.tenderId = parseInt(root.getAttribute('data-id') || '0', 10) || 0;
+            this.activeTab = 'overview';
+            this.listLoaded = false;
+            this.applications = [];
+            this.pricesVisible = 0;
+            this.busy = false;
+            this.currentApplicationId = 0;
+            this.detailSubtab = 'lots';
+            this.bindEvents();
+            this.openFromQuery();
+        },
+
+        bindEvents: function () {
+            const self = this;
+            const $root = $(this.root);
+
+            $root.on('ds-tabs:change', '.js-ds-tabs', function (event, tabId) {
+                self.onTabChange(String(tabId || ''));
+            });
+
+            $root.on('click', '.js-buyer-copy-address', function () {
+                const button = this;
+                const text = $(button).closest('.buyer-tender-overview__value-row')
+                    .find('.js-buyer-copy-source').text().trim();
+                self.copyToClipboard(text, button);
+            });
+
+            $root.on('click', '.js-notice-copy-address', function (event) {
+                event.preventDefault();
+                const button = this;
+                const text = String(button.getAttribute('data-copy') || '').trim();
+                self.copyToClipboard(text, button);
+            });
+
+            $root.on('click', '.js-buyer-participant-card', function () {
+                const id = parseInt(this.getAttribute('data-id') || '0', 10) || 0;
+                if (id > 0) {
+                    self.openApplication(id);
+                }
+            });
+
+            $root.on('click', '.js-buyer-participants-back', function () {
+                self.showListView();
+            });
+
+            $root.on('click', '.js-buyer-application-subtab', function () {
+                const id = String(this.getAttribute('data-subtab') || '');
+                if (!id) {
+                    return;
+                }
+                self.detailSubtab = id;
+                $root.find('.js-buyer-application-subtab').each(function () {
+                    const isActive = this.getAttribute('data-subtab') === id;
+                    $(this).toggleClass('is-active', isActive).attr('aria-selected', isActive ? 'true' : 'false');
+                });
+                $root.find('.js-buyer-application-panel').each(function () {
+                    $(this).prop('hidden', this.getAttribute('data-subtab-panel') !== id);
+                });
+            });
+
+            $root.on('click', '.js-buyer-gate-approve', function () {
+                const gate = String(this.getAttribute('data-gate') || '');
+                const code = String(this.getAttribute('data-code') || '');
+                if (gate && code) {
+                    self.submitDecision(gate, code, '');
+                }
+            });
+
+            $root.on('click', '.js-buyer-gate-reject-open', function () {
+                const $card = $(this).closest('.js-buyer-gate-card');
+                $card.find('.js-buyer-gate-reject-form').prop('hidden', false);
+                $card.find('.js-buyer-gate-reject-comment').trigger('focus');
+            });
+
+            $root.on('click', '.js-buyer-gate-reject-cancel', function () {
+                const $form = $(this).closest('.js-buyer-gate-reject-form');
+                $form.prop('hidden', true);
+                $form.find('.js-buyer-gate-reject-comment').val('');
+            });
+
+            $root.on('click', '.js-buyer-gate-reject-confirm', function () {
+                const $card = $(this).closest('.js-buyer-gate-card');
+                const gate = String($card.attr('data-gate') || '');
+                const code = String(this.getAttribute('data-code') || '');
+                const comment = String($card.find('.js-buyer-gate-reject-comment').val() || '').trim();
+                if (!gate || !code) {
+                    return;
+                }
+                if (!comment) {
+                    $card.find('.js-buyer-gate-decision-error')
+                        .text('Укажите причину отклонения')
+                        .prop('hidden', false);
+                    return;
+                }
+                self.submitDecision(gate, code, comment);
+            });
+        },
+
+        copyToClipboard: function (text, button) {
+            if (!text) {
+                return;
+            }
+            const done = function () {
+                const $button = $(button).addClass('is-done');
+                window.setTimeout(function () {
+                    $button.removeClass('is-done');
+                }, 1500);
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(done).catch(function () {});
+                return;
+            }
+            const $tmp = $('<textarea>').val(text).css({ position: 'fixed', opacity: 0 }).appendTo('body');
+            $tmp[0].select();
+            try {
+                document.execCommand('copy');
+                done();
+            } catch (e) {
+                // ignore
+            }
+            $tmp.remove();
+        },
+
+        openFromQuery: function () {
+            let tab = 'overview';
+            let applicationId = 0;
+            try {
+                const params = new URLSearchParams(window.location.search || '');
+                tab = String(params.get('tab') || 'overview');
+                applicationId = parseInt(params.get('application') || '0', 10) || 0;
+            } catch (e) {
+                tab = 'overview';
+            }
+            if (tab === 'participants') {
+                this.showTab('participants');
+                if (applicationId > 0) {
+                    this.openApplication(applicationId);
+                }
+            }
+        },
+
+        showTab: function (tab) {
+            const allowed = tab === 'participants' ? 'participants' : 'overview';
+            const $tabs = $(this.root).find('.js-ds-tabs').first();
+            if (window.Pb2bCabinetTabs && typeof window.Pb2bCabinetTabs.activate === 'function') {
+                window.Pb2bCabinetTabs.activate($tabs, allowed);
+            } else {
+                this.onTabChange(allowed);
+            }
+        },
+
+        onTabChange: function (tab) {
+            const allowed = tab === 'participants' ? 'participants' : (tab === 'overview' ? 'overview' : tab);
+            if (allowed !== 'overview' && allowed !== 'participants') {
+                return;
+            }
+            this.activeTab = allowed;
+            this.replaceQuery({ tab: allowed === 'overview' ? null : allowed });
+            if (allowed === 'participants' && !this.listLoaded) {
+                this.loadApplications();
+            }
+        },
+
+        replaceQuery: function (patch) {
+            try {
+                const url = new URL(window.location.href);
+                Object.keys(patch || {}).forEach(function (key) {
+                    const value = patch[key];
+                    if (value === null || value === '' || value === undefined) {
+                        url.searchParams.delete(key);
+                    } else {
+                        url.searchParams.set(key, String(value));
+                    }
+                });
+                if (window.history && typeof window.history.replaceState === 'function') {
+                    window.history.replaceState(null, '', url.pathname + url.search + url.hash);
+                }
+            } catch (e) {
+                // ignore
+            }
+        },
+
+        showListView: function () {
+            const $root = $(this.root);
+            this.currentApplicationId = 0;
+            $root.find('.js-buyer-participants-list-view').prop('hidden', false);
+            $root.find('.js-buyer-participants-detail-view').prop('hidden', true);
+            this.replaceQuery({ tab: 'participants', application: null });
+        },
+
+        showDetailView: function () {
+            const $root = $(this.root);
+            $root.find('.js-buyer-participants-list-view').prop('hidden', true);
+            $root.find('.js-buyer-participants-detail-view').prop('hidden', false);
+        },
+
+        gateField: function (gate) {
+            if (gate === 'approval') {
+                return 'approval_status';
+            }
+            if (gate === 'qualification') {
+                return 'qualification_status';
+            }
+            if (gate === 'admission') {
+                return 'admission_status';
+            }
+            return '';
+        },
+
+        submitDecision: function (gate, code, comment) {
+            const self = this;
+            const $root = $(this.root);
+            const field = this.gateField(gate);
+            const applicationId = this.currentApplicationId;
+            if (!field || this.tenderId <= 0 || applicationId <= 0 || this.busy) {
+                return;
+            }
+
+            this.busy = true;
+            $root.find('.js-buyer-gate-decision-error').prop('hidden', true).text('');
+            $root.find('.js-buyer-gate-approve, .js-buyer-gate-reject-open, .js-buyer-gate-reject-confirm')
+                .prop('disabled', true);
+
+            const data = {};
+            data[field] = code;
+            if (comment) {
+                data.comment = comment;
+            }
+
+            $.fRequest({
+                url: '/api/buyer/tender/' + this.tenderId + '/applications/' + applicationId + '/decision/',
+                method: 'POST',
+                showMessages: true,
+                data: data,
+                onSuccess: function (reply) {
+                    self.busy = false;
+                    self.pricesVisible = parseInt(reply.prices_visible, 10) || 0;
+                    self.renderApplicationDetail(reply.application || null);
+                    self.listLoaded = false;
+                },
+                onError: function (reply) {
+                    self.busy = false;
+                    $root.find('.js-buyer-gate-approve, .js-buyer-gate-reject-open, .js-buyer-gate-reject-confirm')
+                        .prop('disabled', false);
+                    const msg = (reply && reply.message) || 'Не удалось сохранить решение';
+                    $root.find('.js-buyer-gate-card[data-gate="' + gate + '"] .js-buyer-gate-decision-error')
+                        .text(msg)
+                        .prop('hidden', false);
+                }
+            }).catch(function () {
+                self.busy = false;
+                $root.find('.js-buyer-gate-approve, .js-buyer-gate-reject-open, .js-buyer-gate-reject-confirm')
+                    .prop('disabled', false);
+                $root.find('.js-buyer-gate-card[data-gate="' + gate + '"] .js-buyer-gate-decision-error')
+                    .text('Не удалось сохранить решение')
+                    .prop('hidden', false);
+            });
+        },
+
+        loadApplications: function () {
+            const self = this;
+            const $root = $(this.root);
+            if (this.tenderId <= 0) {
+                return;
+            }
+
+            $root.find('.js-buyer-participants-error').prop('hidden', true).text('');
+            $root.find('.js-buyer-participants-empty').prop('hidden', true);
+            $root.find('.js-buyer-participants-list').prop('hidden', true).empty();
+            $root.find('.js-buyer-participants-loading').prop('hidden', false);
+
+            $.fRequest({
+                url: '/api/buyer/tender/' + this.tenderId + '/applications/',
+                method: 'GET',
+                showMessages: false,
+                onSuccess: function (reply) {
+                    self.listLoaded = true;
+                    self.applications = Array.isArray(reply.applications) ? reply.applications : [];
+                    self.pricesVisible = parseInt(reply.prices_visible, 10) || 0;
+                    $root.find('.js-buyer-participants-loading').prop('hidden', true);
+                    $root.find('.js-ds-tabs-tab[data-tab="participants"] .ds-tabs__count')
+                        .text(String(self.applications.filter(function (row) {
+                            return row && row.status && row.status.code === 'submitted';
+                        }).length));
+                    self.renderApplicationsList();
+                },
+                onError: function (reply) {
+                    $root.find('.js-buyer-participants-loading').prop('hidden', true);
+                    $root.find('.js-buyer-participants-error')
+                        .text((reply && reply.message) || 'Не удалось загрузить участников')
+                        .prop('hidden', false);
+                }
+            }).catch(function () {
+                $root.find('.js-buyer-participants-loading').prop('hidden', true);
+                $root.find('.js-buyer-participants-error')
+                    .text('Не удалось загрузить участников')
+                    .prop('hidden', false);
+            });
+        },
+
+        statusName: function (status) {
+            if (!status) {
+                return '—';
+            }
+            return String(status.name || status.code || '—');
+        },
+
+        formatDateTime: function (value) {
+            const raw = String(value || '').trim();
+            if (!raw || raw.indexOf('0000-00-00') === 0) {
+                return '—';
+            }
+            const d = new Date(raw.replace(' ', 'T'));
+            if (isNaN(d.getTime())) {
+                return raw;
+            }
+            const dd = String(d.getDate()).padStart(2, '0');
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const yyyy = d.getFullYear();
+            const hh = String(d.getHours()).padStart(2, '0');
+            const mi = String(d.getMinutes()).padStart(2, '0');
+            return dd + '.' + mm + '.' + yyyy + ', ' + hh + ':' + mi;
+        },
+
+        gateBadge: function (label, status) {
+            const code = String((status && status.code) || 'not_required');
+            const name = this.statusName(status);
+            let tone = 'neutral';
+            if (code === 'approved' || code === 'passed' || code === 'admitted') {
+                tone = 'ok';
+            } else if (code === 'pending') {
+                tone = 'wait';
+            } else if (code === 'rejected' || code === 'failed') {
+                tone = 'error';
+            } else if (code === 'not_required') {
+                tone = 'muted';
+            }
+            return (
+                '<div class="buyer-tender-gate__head">'
+                + '<span class="buyer-tender-gate__label">' + this.escapeHtml(label) + '</span>'
+                + '<span class="buyer-tender-gate__badge is-' + tone + '">' + this.escapeHtml(name) + '</span>'
+                + '</div>'
+            );
+        },
+
+        gateDecisionCard: function (opts) {
+            const gate = String(opts.gate || '');
+            const label = String(opts.label || '');
+            const status = opts.status || null;
+            const comment = String(opts.comment || '').trim();
+            const canDecide = !!opts.canDecide;
+            const approveCode = String(opts.approveCode || '');
+            const rejectCode = String(opts.rejectCode || '');
+            const approveLabel = String(opts.approveLabel || 'Одобрить');
+            const rejectLabel = String(opts.rejectLabel || 'Отклонить');
+
+            let html = '<div class="buyer-tender-gate buyer-tender-gate--card js-buyer-gate-card" data-gate="'
+                + this.escapeHtml(gate) + '">';
+            html += this.gateBadge(label, status);
+            if (comment) {
+                html += '<p class="buyer-tender-gate__comment">' + this.escapeHtml(comment) + '</p>';
+            }
+            if (canDecide) {
+                html += '<div class="buyer-tender-gate__actions">'
+                    + '<button type="button" class="button primary js-buyer-gate-approve" data-gate="'
+                    + this.escapeHtml(gate) + '" data-code="' + this.escapeHtml(approveCode) + '">'
+                    + this.escapeHtml(approveLabel) + '</button>'
+                    + '<button type="button" class="button secondary js-buyer-gate-reject-open">'
+                    + this.escapeHtml(rejectLabel) + '</button>'
+                    + '</div>'
+                    + '<div class="buyer-tender-gate__reject js-buyer-gate-reject-form" hidden>'
+                    + '<label class="buyer-tender-gate__reject-label">Причина отклонения'
+                    + '<textarea class="buyer-tender-gate__reject-comment js-buyer-gate-reject-comment" rows="3"'
+                    + ' placeholder="Обязательно при отклонении"></textarea></label>'
+                    + '<div class="buyer-tender-gate__reject-actions">'
+                    + '<button type="button" class="button primary js-buyer-gate-reject-confirm" data-code="'
+                    + this.escapeHtml(rejectCode) + '">Подтвердить</button>'
+                    + '<button type="button" class="button secondary js-buyer-gate-reject-cancel">Отмена</button>'
+                    + '</div></div>';
+            }
+            html += '<p class="buyer-tender-gate__error js-buyer-gate-decision-error" hidden></p>';
+            html += '</div>';
+            return html;
+        },
+
+        escapeHtml: function (value) {
+            return String(value == null ? '' : value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        },
+
+        inlineGateBadge: function (kind, status) {
+            const code = String((status && status.code) || '');
+            if (!code || code === 'not_required') {
+                return '';
+            }
+
+            const labels = {
+                approval: { approved: 'Одобрен', pending: 'Ожидает одобрения', rejected: 'Отклонён' },
+                qualification: { passed: 'Квалифицирован', pending: 'Ожидает квалификации', failed: 'Не квалифицирован' }
+            };
+            const label = (labels[kind] || {})[code] || this.statusName(status);
+
+            let tone = 'neutral';
+            if (code === 'approved' || code === 'passed') {
+                tone = 'ok';
+            } else if (code === 'pending') {
+                tone = 'wait';
+            } else if (code === 'rejected' || code === 'failed') {
+                tone = 'error';
+            }
+
+            return '<span class="buyer-participant-card__badge is-' + tone + '">'
+                + this.escapeHtml(label) + '</span>';
+        },
+
+        renderApplicationsList: function () {
+            const $root = $(this.root);
+            const $list = $root.find('.js-buyer-participants-list');
+            const items = this.applications || [];
+            const submitted = items.filter(function (row) {
+                return row && row.status && row.status.code === 'submitted';
+            }).length;
+            $list.empty();
+
+            $root.find('.js-buyer-participants-summary').prop('hidden', !items.length);
+            $root.find('.js-buyer-participants-total').text(String(items.length));
+            $root.find('.js-buyer-participants-submitted').text(String(submitted));
+
+            if (!items.length) {
+                $list.prop('hidden', true);
+                $root.find('.js-buyer-participants-empty').prop('hidden', false);
+                return;
+            }
+
+            $root.find('.js-buyer-participants-empty').prop('hidden', true);
+            $list.prop('hidden', false);
+
+            const self = this;
+            items.forEach(function (app) {
+                const supplier = app.supplier || {};
+                const title = supplier.fullname || supplier.name || ('Поставщик #' + (supplier.id || app.supplier_company_id || '—'));
+                const inn = supplier.inn ? ('ИНН ' + supplier.inn) : '';
+                const statusCode = app.status && app.status.code ? app.status.code : '';
+                const badges = self.inlineGateBadge('qualification', app.qualification_status)
+                    + self.inlineGateBadge('approval', app.approval_status);
+                const $card = $(
+                    '<li>'
+                    + '<button type="button" class="buyer-participant-card js-buyer-participant-card" data-id="'
+                    + (parseInt(app.id, 10) || 0) + '">'
+                    + '<div class="buyer-participant-card__main">'
+                    + '<div class="buyer-participant-card__head">'
+                    + '<span class="buyer-participant-card__title"></span>'
+                    + '<span class="buyer-participant-card__badges">' + badges + '</span>'
+                    + '</div>'
+                    + '<div class="buyer-participant-card__meta"></div>'
+                    + '</div>'
+                    + '<div class="buyer-participant-card__side">'
+                    + '<span class="buyer-participant-card__status"></span>'
+                    + '<span class="buyer-participant-card__chevron" aria-hidden="true">→</span>'
+                    + '</div>'
+                    + '</button>'
+                    + '</li>'
+                );
+                $card.find('.buyer-participant-card__title').text(title);
+                $card.find('.buyer-participant-card__meta').text(
+                    [
+                        inn,
+                        app.submitted_at ? ('Подано ' + self.formatDateTime(app.submitted_at)) : '',
+                        app.has_documents ? ('Документы: ' + (app.documents_count || 0)) : 'Без документов',
+                        app.nonprice_done ? 'Неценовые: готово' : 'Неценовые: не закрыты'
+                    ].filter(Boolean).join(' · ')
+                );
+                $card.find('.buyer-participant-card__status')
+                    .addClass(statusCode ? ('is-' + statusCode) : '')
+                    .text(self.statusName(app.status));
+                $list.append($card);
+            });
+        },
+
+        openApplication: function (applicationId) {
+            const self = this;
+            const $root = $(this.root);
+            if (this.tenderId <= 0 || applicationId <= 0) {
+                return;
+            }
+
+            this.currentApplicationId = applicationId;
+            this.showDetailView();
+            this.replaceQuery({ tab: 'participants', application: applicationId });
+
+            const $body = $root.find('.js-buyer-application-body');
+            $body.prop('hidden', true).empty();
+            $root.find('.js-buyer-application-error').prop('hidden', true).text('');
+            $root.find('.js-buyer-application-loading').prop('hidden', false);
+
+            $.fRequest({
+                url: '/api/buyer/tender/' + this.tenderId + '/applications/' + applicationId + '/',
+                method: 'GET',
+                showMessages: false,
+                onSuccess: function (reply) {
+                    $root.find('.js-buyer-application-loading').prop('hidden', true);
+                    self.pricesVisible = parseInt(reply.prices_visible, 10) || 0;
+                    self.renderApplicationDetail(reply.application || null);
+                },
+                onError: function (reply) {
+                    $root.find('.js-buyer-application-loading').prop('hidden', true);
+                    $root.find('.js-buyer-application-error')
+                        .text((reply && reply.message) || 'Не удалось открыть заявку')
+                        .prop('hidden', false);
+                }
+            }).catch(function () {
+                $root.find('.js-buyer-application-loading').prop('hidden', true);
+                $root.find('.js-buyer-application-error')
+                    .text('Не удалось открыть заявку')
+                    .prop('hidden', false);
+            });
+        },
+
+        renderApplicationDetail: function (app) {
+            const $root = $(this.root);
+            const $body = $root.find('.js-buyer-application-body');
+            if (!app) {
+                $body.prop('hidden', true).empty();
+                $root.find('.js-buyer-application-error')
+                    .text('Заявка не найдена')
+                    .prop('hidden', false);
+                return;
+            }
+
+            this.currentApplicationId = parseInt(app.id, 10) || this.currentApplicationId;
+
+            const supplier = app.supplier || {};
+            const title = supplier.fullname || supplier.name || ('Поставщик #' + (app.supplier_company_id || '—'));
+            const pricesVisible = !!this.pricesVisible;
+            const self = this;
+            const actions = app.gate_actions || {};
+
+            let gatesHtml = '<div class="buyer-tender-application__gates">';
+            gatesHtml += '<div class="buyer-tender-gate buyer-tender-gate--card">'
+                + this.gateBadge(
+                    'Неценовые критерии',
+                    { code: app.nonprice_done ? 'approved' : 'pending', name: app.nonprice_done ? 'Готово' : 'Не закрыты' }
+                )
+                + '</div>';
+            gatesHtml += this.gateDecisionCard({
+                gate: 'approval',
+                label: 'Одобрение',
+                status: app.approval_status,
+                comment: app.approval_comment,
+                canDecide: !!(actions.approval && parseInt(actions.approval.can_decide, 10)),
+                approveCode: 'approved',
+                rejectCode: 'rejected',
+                approveLabel: 'Одобрить',
+                rejectLabel: 'Отклонить'
+            });
+            gatesHtml += this.gateDecisionCard({
+                gate: 'qualification',
+                label: 'Квалификация',
+                status: app.qualification_status,
+                comment: app.qualification_comment,
+                canDecide: !!(actions.qualification && parseInt(actions.qualification.can_decide, 10)),
+                approveCode: 'passed',
+                rejectCode: 'failed',
+                approveLabel: 'Пройдена',
+                rejectLabel: 'Не пройдена'
+            });
+            gatesHtml += this.gateDecisionCard({
+                gate: 'admission',
+                label: 'Допуск к сравнению',
+                status: app.admission_status,
+                comment: app.admission_comment,
+                canDecide: !!(actions.admission && parseInt(actions.admission.can_decide, 10)),
+                approveCode: 'admitted',
+                rejectCode: 'rejected',
+                approveLabel: 'Допустить',
+                rejectLabel: 'Отклонить'
+            });
+            gatesHtml += '</div>';
+
+            let docsHtml = '';
+            const docs = Array.isArray(app.documents) ? app.documents : [];
+            if (!docs.length) {
+                docsHtml = '<p class="des">Документы КП не приложены.</p>';
+            } else {
+                docsHtml = '<ul class="buyer-tender-application__docs">';
+                docs.forEach(function (doc) {
+                    const hasFile = (parseInt(doc.file_link_id, 10) || 0) > 0;
+                    docsHtml += '<li class="buyer-tender-application__doc">'
+                        + '<span class="buyer-tender-application__doc-name">'
+                        + self.escapeHtml(doc.name || 'Документ')
+                        + '</span>'
+                        + '<span class="des">'
+                        + (hasFile ? ('Файл загружен' + (doc.file_link_id ? ' (#' + doc.file_link_id + ')' : '')) : 'Файл не загружен')
+                        + '</span></li>';
+                });
+                docsHtml += '</ul>';
+            }
+
+            let itemsHtml = '';
+            const items = Array.isArray(app.items) ? app.items : [];
+            if (!items.length) {
+                itemsHtml = '<p class="des">Нет позиций в заявке.</p>';
+            } else {
+                itemsHtml = '<div class="buyer-tender-overview__table-wrap"><table class="buyer-tender-overview__table">'
+                    + '<thead><tr><th class="is-center">№</th><th>Наименование</th>'
+                    + '<th class="is-center">Кол-во</th><th class="is-center">Ед.</th>'
+                    + '<th class="is-center">Цена</th></tr></thead><tbody>';
+                items.forEach(function (item, idx) {
+                    let priceCell = 'Цена скрыта до вскрытия';
+                    if (pricesVisible && item.price_per_unit != null && item.price_per_unit !== '') {
+                        priceCell = String(item.price_per_unit);
+                    }
+                    itemsHtml += '<tr>'
+                        + '<td class="is-center">' + (idx + 1) + '</td>'
+                        + '<td>' + self.escapeHtml(item.name || '—') + '</td>'
+                        + '<td class="is-center">' + self.escapeHtml(item.qty != null ? item.qty : '—') + '</td>'
+                        + '<td class="is-center">' + self.escapeHtml(item.unit || '—') + '</td>'
+                        + '<td class="is-center">' + self.escapeHtml(priceCell) + '</td>'
+                        + '</tr>';
+                });
+                itemsHtml += '</tbody></table></div>';
+            }
+
+            let criteriaHtml = '';
+            const criteria = Array.isArray(app.criteria) ? app.criteria : [];
+            if (!criteria.length) {
+                criteriaHtml = '<p class="des">Ответов на критерии нет.</p>';
+            } else {
+                criteriaHtml = '<ul class="buyer-tender-application__criteria">';
+                criteria.forEach(function (row) {
+                    criteriaHtml += '<li>'
+                        + '<div class="buyer-tender-application__criterion-name">'
+                        + self.escapeHtml(row.name || ('Критерий #' + (row.criterion_id || '')))
+                        + (row.is_mandatory ? ' *' : '')
+                        + '</div>'
+                        + '<div class="des">'
+                        + self.escapeHtml(row.value || (row.confirmed ? 'Подтверждено' : '—'))
+                        + '</div></li>';
+                });
+                criteriaHtml += '</ul>';
+            }
+
+            const subtabs = [
+                { id: 'lots', label: 'Лоты', body: itemsHtml },
+                { id: 'documents', label: 'Документы', body: docsHtml },
+                { id: 'nonPrice', label: 'Неценовые критерии', body: criteriaHtml }
+            ];
+            const active = subtabs.some(function (tab) {
+                return tab.id === self.detailSubtab;
+            }) ? this.detailSubtab : 'lots';
+            this.detailSubtab = active;
+
+            let mainHtml = '<div class="buyer-application-subtabs" role="tablist">';
+            subtabs.forEach(function (tab) {
+                mainHtml += '<button type="button" role="tab"'
+                    + ' class="buyer-application-subtab js-buyer-application-subtab'
+                    + (tab.id === active ? ' is-active' : '') + '"'
+                    + ' data-subtab="' + tab.id + '"'
+                    + ' aria-selected="' + (tab.id === active ? 'true' : 'false') + '">'
+                    + self.escapeHtml(tab.label) + '</button>';
+            });
+            mainHtml += '</div>';
+            subtabs.forEach(function (tab) {
+                mainHtml += '<div class="buyer-application-panel js-buyer-application-panel"'
+                    + ' data-subtab-panel="' + tab.id + '" role="tabpanel"'
+                    + (tab.id === active ? '' : ' hidden') + '>'
+                    + tab.body + '</div>';
+            });
+
+            const statusCode = (app.status && app.status.code) ? app.status.code : '';
+            const metaLines = [];
+            if (supplier.inn) {
+                metaLines.push('ИНН ' + supplier.inn);
+            }
+            if (app.submitted_at) {
+                metaLines.push('Подано: ' + this.formatDateTime(app.submitted_at));
+            }
+
+            let sidebarHtml = '<aside class="buyer-application-sidebar" aria-label="Карточка участника и решения">';
+            sidebarHtml += '<div class="buyer-application-sidebar__head">'
+                + '<p class="buyer-application-sidebar__supplier js-buyer-application-supplier"></p>'
+                + '<span class="buyer-participant-card__status'
+                + (statusCode ? ' is-' + this.escapeHtml(statusCode) : '') + '">'
+                + this.escapeHtml(this.statusName(app.status)) + '</span>';
+            metaLines.forEach(function (line) {
+                sidebarHtml += '<p class="buyer-application-sidebar__meta">' + self.escapeHtml(line) + '</p>';
+            });
+            sidebarHtml += '</div>';
+            sidebarHtml += '<div class="buyer-application-sidebar__block">'
+                + '<p class="buyer-application-sidebar__title">Решения организатора</p>'
+                + gatesHtml
+                + '</div>';
+            sidebarHtml += '</aside>';
+
+            $body.html(
+                '<div class="buyer-application-layout">'
+                + '<div class="buyer-application-main">' + mainHtml + '</div>'
+                + sidebarHtml
+                + '</div>'
+            );
+            $body.find('.js-buyer-application-supplier').text(title);
+            $body.prop('hidden', false);
         }
     });
 })(jQuery);

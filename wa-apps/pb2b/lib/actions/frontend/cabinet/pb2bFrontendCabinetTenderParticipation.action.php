@@ -131,6 +131,17 @@ class pb2bFrontendCabinetTenderParticipationAction extends pb2bFrontendCabinetAc
             $proposal_sub = 'lots';
         }
 
+        $approval_status_code = (string) ($gates['approval_status'] ?? 'not_required');
+        $qualification_status_code = (string) ($gates['qualification_status'] ?? 'not_required');
+        $approval_status_name = $this->resolveConfigStatusName(
+            'tender_application_approval_statuses',
+            $approval_status_code
+        );
+        $qualification_status_name = $this->resolveConfigStatusName(
+            'tender_application_qualification_statuses',
+            $qualification_status_code
+        );
+
         $this->view->assign(array(
             'tender_id' => $resolved_id,
             'card' => $card,
@@ -146,6 +157,8 @@ class pb2bFrontendCabinetTenderParticipationAction extends pb2bFrontendCabinetAc
             'can_edit_nonprice' => $can_edit_nonprice,
             'can_edit_proposal' => $can_edit_proposal,
             'proposal_sub' => $proposal_sub,
+            'approval_status_name' => $approval_status_name,
+            'qualification_status_name' => $qualification_status_name,
             'participation_step' => $current,
             'participation_next_step' => $next,
             'participation_can_go_next' => $can_go_next,
@@ -159,11 +172,28 @@ class pb2bFrontendCabinetTenderParticipationAction extends pb2bFrontendCabinetAc
                 'next_required_step' => $next,
                 'gates' => $gates,
                 'stages' => $participation_stages,
-                'approval_status' => (string) ($flow['approval_status'] ?? ''),
-                'qualification_status' => (string) ($flow['qualification_status'] ?? ''),
+                'approval_status' => $approval_status_code,
+                'qualification_status' => $qualification_status_code,
                 'proposal_sub' => $proposal_sub,
             ), JSON_UNESCAPED_UNICODE),
         ));
         $this->setThemeTemplate('html/cabinet/supplier/tender-participation.html');
+    }
+
+    private function resolveConfigStatusName(string $option_key, string $code): string
+    {
+        $code = trim($code);
+        if ($code === '') {
+            return '';
+        }
+        $map = (array) pb2bWaproHelper::getConfigOption($option_key, 'code');
+        if (isset($map[$code]) && is_array($map[$code])) {
+            $name = trim((string) ($map[$code]['name'] ?? ''));
+            if ($name !== '') {
+                return $name;
+            }
+        }
+
+        return $code;
     }
 }

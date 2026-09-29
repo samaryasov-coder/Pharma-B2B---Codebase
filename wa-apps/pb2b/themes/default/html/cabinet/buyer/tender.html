@@ -1,375 +1,142 @@
-{assign var=d value=$tender.data}
-{assign var=published value=$card.published_at|default:''}
-{assign var=display_budget value=$card.budget|default:0}
-{if $display_budget <= 0 && $items_max_total|default:0 > 0}
-    {assign var=display_budget value=$items_max_total}
+{* Карточка тендера buyer: шапка как в списке, обзор = извещение поставщика. *}
+{assign var=created value=$card.create_datetime|default:$card.published_at|default:''}
+{if $card.is_private}
+    {assign var=access_label value='Закрытый'}
+{else}
+    {assign var=access_label value='Открытый'}
+{/if}
+{assign var=method_line value=$card.type.name|default:'Тендер'}
+{if $card.number}
+    {assign var=method_line value=$method_line|cat:' №'|cat:$card.number}
 {/if}
 
 <div class="cabinet-container js-cabinet-page" data-page="tender" data-role="buyer" data-id="{$tender.id|escape}">
     <div class="buyer-tender-page">
         <header class="buyer-tender-page__header">
             <div class="buyer-tender-page__title-row">
-                <h1 class="buyer-tender-page__title">
-                    {$card.type.name|default:'Запрос цен'|escape}
-                    {if $card.number} {$card.number|escape}{/if}
-                </h1>
+                <h1 class="buyer-tender-page__title">{$method_line|escape}</h1>
+                <a
+                    href="/cabinet/buyer/tenders/?edit={$tender.id|escape}"
+                    class="button secondary buyer-tender-page__edit js-buyer-tender-edit"
+                >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M12 20h9" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+                        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/>
+                    </svg>
+                    <span>Редактировать</span>
+                </a>
             </div>
         </header>
 
-        <section class="buyer-tender-summary" aria-label="Сводка тендера">
-            <div class="buyer-tender-summary__main">
-                <div class="buyer-tender-summary__meta">
-                    <span>Дата публикации: {if $published}{$published|date_format:"%d.%m.%Y"}{else}—{/if}</span>
-                    <span class="buyer-tender-summary__dot" aria-hidden="true"></span>
-                    <span>Категория:
-                        {if $classifiers}
-                            {foreach $classifiers as $c name=cls}
-                                {$c.classifier_name|default:$c.name|default:$c.title|escape}{if !$smarty.foreach.cls.last}, {/if}
-                            {/foreach}
-                        {else}
-                            —
-                        {/if}
+        <article class="buyer-tender-card buyer-tender-card--detail" aria-label="Сводка тендера">
+            <div class="buyer-tender-card__main">
+                <div class="buyer-tender-card__title-row">
+                    <h2 class="buyer-tender-card__title">{$card.title|default:'Без названия'|escape}</h2>
+                    <span class="buyer-tender-card__status buyer-tender-card__status--{$status_tone|default:'info'|escape}">
+                        {$card.status.name|default:'—'|escape}
                     </span>
                 </div>
-                <div class="buyer-tender-summary__title-row">
-                    <h2 class="buyer-tender-summary__name">{$card.title|default:'Без названия'|escape}</h2>
-                    <span class="buyer-tender-summary__status">{$card.status.name|default:'—'|escape}</span>
-                </div>
-                <div class="buyer-tender-summary__tags">
-                    <span class="buyer-tender-summary__tag">{if $card.is_private}Закрытый{else}Открытый{/if}</span>
-                    {if $card.approval_required}
-                        <span class="buyer-tender-summary__tag">Требуется одобрение поставщика</span>
-                    {/if}
-                    {if $card.itemized_enabled}
-                        <span class="buyer-tender-summary__tag">Попозиционная</span>
-                    {/if}
-                </div>
-                <div class="buyer-tender-summary__rows">
-                    <div class="buyer-tender-summary__row">
-                        <span class="buyer-tender-summary__label">Город</span>
-                        <span class="buyer-tender-summary__value">{$organizer.data.city|default:$organizer.data.jur_city|default:'—'|escape}</span>
-                    </div>
-                    <div class="buyer-tender-summary__row">
-                        <span class="buyer-tender-summary__label">Организатор</span>
-                        <span class="buyer-tender-summary__value">{$organizer->getFullName()|escape}</span>
-                    </div>
-                    <div class="buyer-tender-summary__row">
-                        <span class="buyer-tender-summary__label">Способ</span>
-                        <span class="buyer-tender-summary__value">{$card.type.name|default:'—'|escape}</span>
-                    </div>
-                    <div class="buyer-tender-summary__row">
-                        <span class="buyer-tender-summary__label">Позиций</span>
-                        <span class="buyer-tender-summary__value">{$items|@count}</span>
-                    </div>
+                <div class="buyer-tender-card__meta">
+                    <span>Дата создания: {if $created}{$created|date_format:"%d.%m.%Y"}{else}—{/if}</span>
+                    <span class="buyer-tender-card__dot" aria-hidden="true"></span>
+                    <span>{$method_line|escape}</span>
+                    <span class="buyer-tender-card__dot" aria-hidden="true"></span>
+                    <span>{$access_label|escape}</span>
                 </div>
             </div>
-            <div class="buyer-tender-summary__side">
-                <div class="buyer-tender-summary__side-block">
-                    <span class="buyer-tender-summary__side-label">Начальная цена контракта</span>
-                    <span class="buyer-tender-summary__price">
-                        {if $display_budget > 0}
-                            {$display_budget|number_format:0:',':' '|escape} ₽
-                        {else}
-                            Цена не указана
-                        {/if}
+            <div class="buyer-tender-card__metric">
+                <span class="buyer-tender-card__metric-label">Приглашено</span>
+                <span class="buyer-tender-card__metric-value">{$invited_count|default:$card.invited_count|default:0|escape}</span>
+            </div>
+            <div class="buyer-tender-card__metric">
+                <span class="buyer-tender-card__metric-label">Участники</span>
+                <span class="buyer-tender-card__metric-value">{$participants_count|default:0|escape}</span>
+            </div>
+            <div class="buyer-tender-card__metric">
+                <span class="buyer-tender-card__metric-label">Предложения</span>
+                <span class="buyer-tender-card__metric-value">{$proposals_count|default:0|escape}</span>
+            </div>
+            <div class="buyer-tender-card__deadline">
+                <span class="buyer-tender-card__metric-label">Окончание приёма заявок</span>
+                <div class="buyer-tender-card__deadline-row">
+                    <span class="buyer-tender-card__metric-value{if $deadline_expired} is-expired{/if}">
+                        {if $card.end_at}{$card.end_at|date_format:"%d.%m.%Y в %H:%M"}{else}—{/if}
                     </span>
-                </div>
-                <div class="buyer-tender-summary__side-block">
-                    <span class="buyer-tender-summary__side-label">Окончание приема заявок</span>
-                    <div class="buyer-tender-summary__deadline">
-                        <span class="buyer-tender-summary__deadline-date">{if $card.end_at}{$card.end_at|date_format:"%d.%m.%Y в %H:%M"}{else}—{/if}</span>
-                    </div>
+                    {if $days_left_label}
+                        <span class="buyer-tender-card__days{if $deadline_expired} is-expired{/if}">
+                            {$days_left_label|escape}
+                        </span>
+                    {/if}
                 </div>
             </div>
-        </section>
+        </article>
 
-        <div class="buyer-tender-page__tabs" role="tablist" aria-label="Разделы тендера">
-            <span class="buyer-tender-page__tab is-active" role="tab" aria-selected="true">Обзор</span>
-            <span class="buyer-tender-page__tab is-disabled" role="tab" aria-disabled="true" title="Скоро">Вопросы</span>
-            <span class="buyer-tender-page__tab is-disabled" role="tab" aria-disabled="true" title="Скоро">Участники</span>
-            <span class="buyer-tender-page__tab is-disabled" role="tab" aria-disabled="true" title="Скоро">Оценка</span>
-            <span class="buyer-tender-page__tab is-disabled" role="tab" aria-disabled="true" title="Скоро">Результаты</span>
-        </div>
-
-        <div class="buyer-tender-overview">
-            <section class="buyer-tender-overview__section">
-                <h3 class="buyer-tender-overview__section-title">Позиции</h3>
-                {if $items|@count}
-                    <div class="buyer-tender-overview__table-wrap">
-                        <table class="buyer-tender-overview__table">
-                            <thead>
-                                <tr>
-                                    <th class="is-center">№</th>
-                                    <th>Наименование</th>
-                                    <th class="is-center">Кол-во</th>
-                                    <th class="is-center">Ед.</th>
-                                    <th class="is-center">Макс. цена без НДС</th>
-                                    <th class="is-center">НДС</th>
-                                    <th>Место поставки</th>
-                                    <th>Файл</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {foreach $items as $item}
-                                    <tr>
-                                        <td class="is-center">{$item@iteration}</td>
-                                        <td>
-                                            <div class="is-medium">{$item.name|default:'—'|escape}</div>
-                                            {if $item.comment}
-                                                <div class="buyer-tender-overview__muted">{$item.comment|escape}</div>
-                                            {/if}
-                                        </td>
-                                        <td class="is-center">{$item.qty|default:'—'|escape}</td>
-                                        <td class="is-center">{$item.unit|default:'—'|escape}</td>
-                                        <td class="is-center">
-                                            {if $item.max_price_no_vat !== '' && $item.max_price_no_vat !== null}
-                                                {$item.max_price_no_vat|number_format:2:',':' '|escape} ₽
-                                            {else}
-                                                —
-                                            {/if}
-                                        </td>
-                                        <td class="is-center">{$item.vat_rate|default:'—'|escape}</td>
-                                        <td>{$item.delivery_place|default:'—'|escape}</td>
-                                        <td>{if $item.file_name}{$item.file_name|escape}{else}—{/if}</td>
-                                    </tr>
-                                {/foreach}
-                            </tbody>
-                        </table>
-                    </div>
-                {else}
-                    <div class="buyer-tender-overview__empty">Позиции не добавлены</div>
-                {/if}
-            </section>
-
-            <section class="buyer-tender-overview__section">
-                <h3 class="buyer-tender-overview__section-title">Техническое задание</h3>
-                {if $tech_specs|@count}
-                    <ul class="buyer-tender-overview__file-list">
-                        {foreach $tech_specs as $doc}
-                            <li>
-                                <span class="buyer-tender-overview__file-name">{$doc.file_name|default:$doc.name|escape}</span>
-                                {if $doc.name && $doc.file_name && $doc.name != $doc.file_name}
-                                    <span class="buyer-tender-overview__muted">{$doc.name|escape}</span>
-                                {/if}
-                            </li>
-                        {/foreach}
-                    </ul>
-                {else}
-                    <div class="buyer-tender-overview__empty">Файлы ТЗ не загружены</div>
-                {/if}
-            </section>
-
-            <section class="buyer-tender-overview__section">
-                <h3 class="buyer-tender-overview__section-title">Запрашиваемые документы</h3>
-                {if $requirement_docs|@count}
-                    <ul class="buyer-tender-overview__file-list">
-                        {foreach $requirement_docs as $doc}
-                            <li>
-                                <span class="buyer-tender-overview__file-name">{$doc.name|default:'Документ'|escape}</span>
-                                {if $doc.is_required}<span class="buyer-tender-overview__badge">Обязательный</span>{/if}
-                                {if $doc.file_name}<span class="buyer-tender-overview__muted">{$doc.file_name|escape}</span>{/if}
-                                {if $doc.description}<div class="buyer-tender-overview__muted">{$doc.description|escape}</div>{/if}
-                            </li>
-                        {/foreach}
-                    </ul>
-                {else}
-                    <div class="buyer-tender-overview__empty">Документы не запрошены</div>
-                {/if}
-            </section>
-
-            <section class="buyer-tender-overview__section">
-                <h3 class="buyer-tender-overview__section-title">Параметры закупки</h3>
-                <div class="buyer-tender-overview__params">
-                    <p><span class="is-label">Попозиционная закупка:</span> <strong>{if $card.itemized_enabled}Разрешена{else}Не разрешена{/if}</strong></p>
-                    <p><span class="is-label">Подача аналогов:</span> <strong>{if $d.allow_analogues|default:0}Разрешена{else}Не разрешена{/if}</strong></p>
-                    <p><span class="is-label">При выборе победителя учитывается:</span> <strong>{if $d.vat_mode|default:'' == 'without_vat'}Без НДС{else}С НДС{/if}</strong></p>
-                    <p><span class="is-label">Только снижение цены:</span> <strong>{if $d.only_price_reduction|default:0}Да{else}Нет{/if}</strong></p>
-                    <p><span class="is-label">Автопродление без предложений:</span> <strong>{if $d.auto_extend_no_offers|default:0}Да{else}Нет{/if}</strong></p>
-                    <p><span class="is-label">Автопродление при изменении:</span>
-                        <strong>
-                            {if $d.auto_extend_on_change|default:0}
-                                Да{if $d.auto_extend_period_min|default:0}, {$d.auto_extend_period_min|escape} мин.{/if}
-                            {else}
-                                Нет
-                            {/if}
-                        </strong>
-                    </p>
-                    <p><span class="is-label">Минимальный шаг:</span>
-                        <strong>
-                            {if $d.min_step_enabled|default:0}
-                                {if $d.min_step_type|default:'' == 'percent'}
-                                    {$d.min_step_value|default:'—'|escape}%
-                                {else}
-                                    {$d.min_step_value|default:'—'|escape} ₽
-                                {/if}
-                                {if $d.min_step_base|default:''} (база: {$d.min_step_base|escape}){/if}
-                            {else}
-                                Нет
-                            {/if}
-                        </strong>
-                    </p>
-                    <p><span class="is-label">Требовать доп. документы:</span> <strong>{if $d.require_additional_docs|default:0}Да{else}Нет{/if}</strong></p>
-                    <p><span class="is-label">Приглашено компаний:</span> <strong>{$invitations|@count}</strong></p>
-                    <p><span class="is-label">Критериев оценки:</span> <strong>{$criteria|@count}</strong></p>
+        <div class="buyer-tender-tabs js-ds-tabs-scope">
+            {include
+                file="html/cabinet/partials/ds-tabs-underline.html"
+                ds_tabs=$ds_tabs
+                ds_tabs_aria="Разделы тендера"
+                ds_tabs_with_panels=false
+            }
+            <div class="ds-tabs-panels">
+                <div
+                    class="ds-tabs-panel buyer-tender-overview js-ds-tabs-panel is-active"
+                    role="tabpanel"
+                    data-tab-panel="overview"
+                >
+                    {include file="html/cabinet/supplier/partials/tender-tab-notice.html"}
                 </div>
-            </section>
 
-            <section class="buyer-tender-overview__section">
-                <h3 class="buyer-tender-overview__section-title">Конфиденциальность</h3>
-                <div class="buyer-tender-overview__params">
-                    <p><span class="is-label">Скрывать начальную цену:</span> <strong>{if $d.hide_initial_price|default:0}Да{else}Нет{/if}</strong></p>
-                    <p><span class="is-label">Скрывать число участников:</span> <strong>{if $d.hide_participants_count|default:0}Да{else}Нет{/if}</strong></p>
-                    <p><span class="is-label">Скрывать цены участников:</span> <strong>{if $d.hide_participant_prices|default:0}Да{else}Нет{/if}</strong></p>
-                    {if $d.hide_participant_prices|default:0}
-                        <p><span class="is-label">Ранги по ценам:</span> <strong>{if $d.rank_prices_mode|default:'' == 'use'}Использовать{else}Не использовать{/if}</strong></p>
-                    {/if}
-                    <p><span class="is-label">Организатор видит имена:</span> <strong>{if $d.organizer_sees_names|default:0}Да{else}Нет{/if}</strong></p>
-                    <p><span class="is-label">Требуется одобрение поставщика:</span> <strong>{if $card.approval_required}Да{else}Нет{/if}</strong></p>
-                </div>
-            </section>
+                <div
+                    class="ds-tabs-panel buyer-tender-participants js-ds-tabs-panel"
+                    data-tab-panel="participants"
+                    role="tabpanel"
+                    hidden
+                >
+                    <div class="js-buyer-participants-list-view">
+                        <div class="buyer-tender-participants__head">
+                            <h3 class="buyer-tender-participants__title">Участники</h3>
+                            <p class="des buyer-tender-participants__hint">
+                                Заявки со статусом «Подана» и «Отозвана». Черновики поставщиков не отображаются.
+                            </p>
+                        </div>
+                        <div class="buyer-participants-summary js-buyer-participants-summary" hidden>
+                            <div class="buyer-participants-summary__cell">
+                                <span class="buyer-participants-summary__label">Всего участников</span>
+                                <span class="buyer-participants-summary__value js-buyer-participants-total">0</span>
+                            </div>
+                            <div class="buyer-participants-summary__cell">
+                                <span class="buyer-participants-summary__label">Подали предложение</span>
+                                <span class="buyer-participants-summary__value is-success js-buyer-participants-submitted">0</span>
+                            </div>
+                        </div>
+                        <div class="buyer-tender-participants__loading js-buyer-participants-loading" hidden>Загрузка…</div>
+                        <div class="buyer-tender-participants__error js-buyer-participants-error" hidden></div>
+                        <div class="buyer-tender-participants__empty js-buyer-participants-empty" hidden>
+                            <p class="buyer-tender-participants__empty-title">Пока никто не подал заявку</p>
+                            <p class="des">Здесь появятся поставщики, которые отправили предложение по этому тендеру.</p>
+                        </div>
+                        <ul class="buyer-tender-participants__list js-buyer-participants-list" hidden></ul>
+                    </div>
 
-            <section class="buyer-tender-overview__section">
-                <h3 class="buyer-tender-overview__section-title">Сроки</h3>
-                <div class="buyer-tender-overview__fields">
-                    <div>
-                        <div class="buyer-tender-overview__field-label">Окончание приёма заявок</div>
-                        <div class="buyer-tender-overview__tags">
-                            {if $card.end_at}
-                                <span class="buyer-tender-overview__date-tag">{$card.end_at|date_format:"%d.%m.%Y"}</span>
-                                <span class="buyer-tender-overview__date-tag">{$card.end_at|date_format:"%H:%M"}</span>
-                            {else}
-                                <span class="buyer-tender-overview__date-tag">—</span>
-                            {/if}
+                    <div class="js-buyer-participants-detail-view" hidden>
+                        <div class="buyer-application-head">
+                            <button type="button" class="buyer-application-back js-buyer-participants-back">← К участникам</button>
+                            <h3 class="buyer-application-head__title">Предложение участника</h3>
                         </div>
-                    </div>
-                    <div>
-                        <div class="buyer-tender-overview__field-label">Окончание загрузки документов</div>
-                        <div class="buyer-tender-overview__tags">
-                            {if $card.docs_end_at}
-                                <span class="buyer-tender-overview__date-tag">{$card.docs_end_at|date_format:"%d.%m.%Y"}</span>
-                                <span class="buyer-tender-overview__date-tag">{$card.docs_end_at|date_format:"%H:%M"}</span>
-                            {else}
-                                <span class="buyer-tender-overview__date-tag">—</span>
-                            {/if}
-                        </div>
-                    </div>
-                    <div>
-                        <div class="buyer-tender-overview__field-label">Дата подведения итогов</div>
-                        <div class="buyer-tender-overview__tags">
-                            {if $card.opening_at}
-                                <span class="buyer-tender-overview__date-tag">{$card.opening_at|date_format:"%d.%m.%Y"}</span>
-                            {else}
-                                <span class="buyer-tender-overview__date-tag">—</span>
-                            {/if}
-                        </div>
-                    </div>
-                    <div>
-                        <div class="buyer-tender-overview__field-label">Дата публикации</div>
-                        <div class="buyer-tender-overview__tags">
-                            {if $published}
-                                <span class="buyer-tender-overview__date-tag">{$published|date_format:"%d.%m.%Y"}</span>
-                                <span class="buyer-tender-overview__date-tag">{$published|date_format:"%H:%M"}</span>
-                            {else}
-                                <span class="buyer-tender-overview__date-tag">—</span>
-                            {/if}
+                        <div class="buyer-tender-application js-buyer-participants-detail">
+                            <div class="buyer-tender-participants__loading js-buyer-application-loading">Загрузка…</div>
+                            <div class="buyer-tender-participants__error js-buyer-application-error" hidden></div>
+                            <div class="js-buyer-application-body" hidden></div>
                         </div>
                     </div>
                 </div>
-            </section>
 
-            <section class="buyer-tender-overview__section">
-                <h3 class="buyer-tender-overview__section-title">Оплата и доставка</h3>
-                <div class="buyer-tender-overview__fields">
-                    <div>
-                        <div class="buyer-tender-overview__field-label">Адрес / условия поставки</div>
-                        <div class="buyer-tender-overview__field-value">{$card.delivery_terms|default:'—'|escape|nl2br}</div>
-                    </div>
-                    <div>
-                        <div class="buyer-tender-overview__field-label">Условия оплаты</div>
-                        <div class="buyer-tender-overview__field-value">{$card.payment_terms|default:'—'|escape|nl2br}</div>
-                    </div>
-                    <div>
-                        <div class="buyer-tender-overview__field-label">Дополнительные условия поставки</div>
-                        <div class="buyer-tender-overview__field-value">{$d.additional_delivery_info|default:'—'|escape|nl2br}</div>
-                    </div>
-                </div>
-            </section>
-
-            {if $criteria|@count || $d.additional_info|default:''}
-            <section class="buyer-tender-overview__section">
-                <h3 class="buyer-tender-overview__section-title">Дополнительная информация</h3>
-                <div class="buyer-tender-overview__fields">
-                    {if $d.additional_info|default:''}
-                        <div>
-                            <div class="buyer-tender-overview__field-label">Комментарий</div>
-                            <div class="buyer-tender-overview__field-value">{$d.additional_info|escape|nl2br}</div>
-                        </div>
-                    {/if}
-                    {if $criteria|@count}
-                        <div>
-                            <div class="buyer-tender-overview__field-label">Критерии оценки</div>
-                            <ul class="buyer-tender-overview__criteria">
-                                {foreach $criteria as $c}
-                                    <li>
-                                        {$c.name|default:$c.title|default:'Критерий'|escape}
-                                        {if !empty($c.is_mandatory)} <span class="buyer-tender-overview__badge">Обязательный</span>{/if}
-                                        {if $c.description|default:''}
-                                            <div class="buyer-tender-overview__muted">{$c.description|escape}</div>
-                                        {/if}
-                                    </li>
-                                {/foreach}
-                            </ul>
-                        </div>
-                    {/if}
-                </div>
-            </section>
-            {/if}
-
-            {if $card.is_private || $invitations|@count}
-            <section class="buyer-tender-overview__section">
-                <h3 class="buyer-tender-overview__section-title">Приглашённые компании</h3>
-                {if $invitations|@count}
-                    <ul class="buyer-tender-overview__invite-list">
-                        {foreach $invitations as $inv}
-                            <li>
-                                {if $inv.company_name}
-                                    {$inv.company_name|escape}
-                                {else}
-                                    Компания #{$inv.supplier_company_id|escape}
-                                {/if}
-                                {if $inv.status|default:''}
-                                    <span class="buyer-tender-overview__muted">{$inv.status|escape}</span>
-                                {/if}
-                            </li>
-                        {/foreach}
-                    </ul>
-                {else}
-                    <div class="buyer-tender-overview__empty">Приглашения не добавлены</div>
-                {/if}
-            </section>
-            {/if}
-
-            <section class="buyer-tender-overview__section">
-                <h3 class="buyer-tender-overview__section-title">Контактная информация</h3>
-                <div class="buyer-tender-overview__fields">
-                    <div>
-                        <div class="buyer-tender-overview__field-label">Организатор</div>
-                        <div class="buyer-tender-overview__field-value">{$organizer->getFullName()|escape}</div>
-                    </div>
-                    <div>
-                        <div class="buyer-tender-overview__field-label">Контактное лицо</div>
-                        <div class="buyer-tender-overview__field-value">{$organizer.data.contact_person|default:'—'|escape}</div>
-                    </div>
-                    <div>
-                        <div class="buyer-tender-overview__field-label">E-mail</div>
-                        <div class="buyer-tender-overview__field-value">{$organizer.data.registry_email|default:$organizer.data.email|default:'—'|escape}</div>
-                    </div>
-                    <div>
-                        <div class="buyer-tender-overview__field-label">Номер телефона</div>
-                        <div class="buyer-tender-overview__field-value">{$organizer.data.phone|default:'—'|escape}</div>
-                    </div>
-                </div>
-            </section>
+                {* Заглушки disabled-табов — панели есть, чтобы ds-tabs не ломался *}
+                <div class="ds-tabs-panel js-ds-tabs-panel" role="tabpanel" data-tab-panel="questions" hidden></div>
+                <div class="ds-tabs-panel js-ds-tabs-panel" role="tabpanel" data-tab-panel="evaluation" hidden></div>
+                <div class="ds-tabs-panel js-ds-tabs-panel" role="tabpanel" data-tab-panel="results" hidden></div>
+            </div>
         </div>
     </div>
 </div>

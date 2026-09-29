@@ -449,9 +449,14 @@
                 });
             });
 
-
-
-
+            $(document).on('htmx:responseError htmx:sendError htmx:timeout htmx:swapError', function () {
+                self.$htmxLoader.removeClass('is-active');
+                if (hideTimer) {
+                    clearTimeout(hideTimer);
+                    hideTimer = null;
+                }
+                self.$htmxContent.removeClass('hidden fade-out');
+            });
         },
 
         bindRoleSwitcher: function() {

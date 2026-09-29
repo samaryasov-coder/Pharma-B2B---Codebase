@@ -1,7 +1,14 @@
-{* Шаг proposal: цены по позициям + документы КП. *}
+{* Шаг proposal: позиции/цены + запрашиваемые документы (как в layout). *}
 {assign var=gates_proposal value=$gates.proposal|default:false}
 {assign var=can_edit value=$can_edit_proposal|default:true}
 {assign var=proposal_sub value=$proposal_sub|default:'lots'}
+{assign var=items_count value=$items|@count}
+{assign var=req_docs_count value=0}
+{foreach $documents as $_doc_count}
+    {if $_doc_count.kind == 'requirement'}
+        {assign var=req_docs_count value=$req_docs_count+1}
+    {/if}
+{/foreach}
 
 {if $app_status_code == 'withdrawn'}
     <div class="empty-container">
@@ -13,122 +20,183 @@
     <div class="empty-container">
         <span class="icon"><svg><use href="#icon-info"></use></svg></span>
         <span class="title">Подача пока недоступна</span>
-        <span class="des">Сначала закройте предыдущие этапы допуска (неценовые / одобрение / квалификация).</span>
+        <span class="des">Сначала закройте предыдущие этапы допуска.</span>
     </div>
 {else}
     <div class="supplier-participation-proposal js-participation-proposal">
-        <div class="supplier-participation-proposal__subs" role="tablist" aria-label="Подшаги предложения">
-            <a
-                class="supplier-participation-proposal__sub{if $proposal_sub == 'lots'} is-active{/if}"
-                href="{$participation_url|escape}?step=proposal&amp;sub=lots"
-                role="tab"
-                aria-selected="{if $proposal_sub == 'lots'}true{else}false{/if}"
-            >Позиции и цены</a>
-            <a
-                class="supplier-participation-proposal__sub{if $proposal_sub == 'documents'} is-active{/if}"
-                href="{$participation_url|escape}?step=proposal&amp;sub=documents"
-                role="tab"
-                aria-selected="{if $proposal_sub == 'documents'}true{else}false{/if}"
-            >Документы</a>
-        </div>
+        <div class="supplier-participation-proposal__shell">
+            <nav class="supplier-participation-proposal__nav" aria-label="Разделы подачи предложения">
+                <a
+                    class="supplier-participation-proposal__nav-item js-participation-proposal-sub{if $proposal_sub == 'lots'} is-active{/if}"
+                    href="{$participation_url|escape}?step=proposal&amp;sub=lots"
+                    data-sub="lots"
+                    role="tab"
+                    aria-selected="{if $proposal_sub == 'lots'}true{else}false{/if}"
+                    hx-boost="false"
+                >Позиции и лоты</a>
+                <a
+                    class="supplier-participation-proposal__nav-item js-participation-proposal-sub{if $proposal_sub == 'documents'} is-active{/if}"
+                    href="{$participation_url|escape}?step=proposal&amp;sub=documents"
+                    data-sub="documents"
+                    role="tab"
+                    aria-selected="{if $proposal_sub == 'documents'}true{else}false{/if}"
+                    hx-boost="false"
+                >Запрашиваемые документы</a>
+            </nav>
 
-        <p class="des supplier-participation-proposal__status">
-            Статус заявки: <strong>{$app_status_name|default:'черновик'|escape}</strong>
-            {if $app_status_code == 'submitted'}
-                · сохранение вернёт заявку в черновик до повторной подачи
-            {/if}
-        </p>
+            <div class="supplier-participation-proposal__main">
+                <form class="js-participation-proposal-form supplier-participation-proposal__form" onsubmit="return false;">
+                    <div class="supplier-participation-proposal__panel" data-sub="lots"{if $proposal_sub != 'lots'} hidden{/if}>
+                        <div class="supplier-participation-proposal__panel-head">
+                            <h3 class="supplier-participation-proposal__eyebrow">Позиции тендера</h3>
+                        </div>
 
-        <form class="js-participation-proposal-form supplier-participation-proposal__form" onsubmit="return false;">
-            <div class="supplier-participation-proposal__panel" data-sub="lots"{if $proposal_sub != 'lots'} hidden{/if}>
-                <h3 class="supplier-participation__step-title">Цены по позициям</h3>
-                {if $items}
-                    <table class="supplier-tender-table">
-                        <thead>
-                            <tr>
-                                <th>Позиция</th>
-                                <th>Кол-во</th>
-                                <th>Ед.</th>
-                                <th>Цена за ед., ₽</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {foreach $items as $item}
-                                {assign var=iid value=$item.id}
-                                <tr>
-                                    <td>{$item.name|default:'—'|escape}</td>
-                                    <td>{$item.qty|default:'—'|escape}</td>
-                                    <td>{$item.unit|default:'—'|escape}</td>
-                                    <td>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            step="0.01"
-                                            class="input js-participation-price"
-                                            data-tender-item-id="{$iid|escape}"
-                                            value="{$app_prices[$iid]|default:''|escape}"
-                                            placeholder="0.00"
-                                            aria-label="Цена за единицу"
-                                            {if !$can_edit}disabled{/if}
-                                        >
-                                    </td>
-                                </tr>
-                            {/foreach}
-                        </tbody>
-                    </table>
-                {else}
-                    <p class="des">Нет позиций для ценообразования.</p>
-                {/if}
-            </div>
+                        {if $items}
+                            <div class="supplier-participation-proposal__table-wrap">
+                                <table class="supplier-participation-proposal__table">
+                                    <thead>
+                                        <tr>
+                                            <th class="is-num">№</th>
+                                            <th>Наименование</th>
+                                            <th class="is-qty">Кол-во</th>
+                                            <th class="is-price">Цена, ₽</th>
+                                            <th class="is-vat">НДС</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {foreach $items as $item}
+                                            {assign var=iid value=$item.id}
+                                            {assign var=price_val value=$app_prices[$iid]|default:''}
+                                            <tr
+                                                class="js-participation-lot-row"
+                                                data-tender-item-id="{$iid|escape}"
+                                                data-qty="{$item.qty|default:1|escape}"
+                                            >
+                                                <td class="is-num">{$item@iteration}</td>
+                                                <td class="is-name">
+                                                    <span class="supplier-participation-proposal__item-name">{$item.name|default:'—'|escape}</span>
+                                                    {if $item.delivery_place|default:''}
+                                                        <span class="supplier-participation-proposal__item-meta">{$item.delivery_place|escape}</span>
+                                                    {/if}
+                                                </td>
+                                                <td class="is-qty">
+                                                    {$item.qty|default:'—'|escape}
+                                                    {if $item.unit|default:''}
+                                                        <span class="supplier-participation-proposal__unit">{$item.unit|escape}</span>
+                                                    {/if}
+                                                </td>
+                                                <td class="is-price">
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        step="0.01"
+                                                        class="input supplier-participation-proposal__price-input js-participation-price"
+                                                        data-tender-item-id="{$iid|escape}"
+                                                        value="{$price_val|escape}"
+                                                        placeholder="0,00"
+                                                        aria-label="Цена за единицу"
+                                                        {if !$can_edit}disabled{/if}
+                                                    >
+                                                </td>
+                                                <td class="is-vat">
+                                                    {assign var=vat value=$item.vat_rate|default:''}
+                                                    <span class="supplier-participation-proposal__vat">
+                                                        {if $vat == '10' || $vat == '10%'}10%
+                                                        {elseif $vat == '0' || $vat == '0%'}0%
+                                                        {elseif $vat == 'none' || $vat == 'without'}Без НДС
+                                                        {elseif $vat == '' || $vat == '20' || $vat == '20%'}20%
+                                                        {else}{$vat|escape}{/if}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        {/foreach}
+                                    </tbody>
+                                </table>
+                            </div>
 
-            <div class="supplier-participation-proposal__panel" data-sub="documents"{if $proposal_sub != 'documents'} hidden{/if}>
-                <h3 class="supplier-participation__step-title">Запрашиваемые документы</h3>
-                {assign var=has_req_docs value=false}
-                {foreach $documents as $doc}
-                    {if $doc.kind == 'requirement'}
-                        {assign var=has_req_docs value=true}
-                    {/if}
-                {/foreach}
-
-                {if $has_req_docs}
-                    <div class="supplier-participation-proposal__docs">
-                        {foreach $documents as $doc}
-                            {if $doc.kind == 'requirement'}
-                                {assign var=did value=$doc.id}
-                                {assign var=adoc value=$app_documents[$did]|default:null}
-                                <div
-                                    class="supplier-participation-proposal__doc-row js-participation-doc-row"
-                                    data-tender-document-id="{$did|escape}"
-                                    data-doc-name="{$doc.name|default:'Документ'|escape}"
-                                    data-file-link-id="{$adoc.file_link_id|default:0|escape}"
-                                    data-app-doc-id="{$adoc.id|default:0|escape}"
-                                >
-                                    <div class="supplier-participation-proposal__doc-meta">
-                                        <span class="supplier-participation-proposal__doc-name">
-                                            {$doc.name|default:'Документ'|escape}
-                                            {if $doc.is_required}<span class="supplier-participation-nonprice__badge is-required">Обязательный</span>{/if}
-                                        </span>
-                                        <span class="des js-participation-doc-status">
-                                            {if $adoc.file_link_id|default:0}
-                                                файл загружен (#{$adoc.file_link_id|escape})
-                                            {else}
-                                                файл не загружен
-                                            {/if}
-                                        </span>
-                                    </div>
-                                    {if $can_edit}
-                                        <input type="file" class="js-participation-doc-file" accept=".pdf,.doc,.docx,application/pdf">
-                                    {/if}
-                                </div>
-                            {/if}
-                        {/foreach}
+                            <div class="supplier-participation-proposal__summary js-participation-lots-summary" data-total="{$items_count|escape}">
+                                <span class="js-participation-lots-filled">Заполнено 0 из {$items_count} позиций</span>
+                                <span class="js-participation-lots-total">Сумма по предложению: 0 ₽</span>
+                            </div>
+                        {else}
+                            <p class="des">Нет позиций для ценообразования.</p>
+                        {/if}
                     </div>
-                {else}
-                    <p class="des">Организатор не запросил дополнительные документы.</p>
-                {/if}
-            </div>
 
-            <p class="des js-participation-proposal-msg" hidden></p>
-        </form>
+                    <div class="supplier-participation-proposal__panel" data-sub="documents"{if $proposal_sub != 'documents'} hidden{/if}>
+                        <div class="supplier-participation-proposal__panel-head">
+                            <h3 class="supplier-participation-proposal__eyebrow">Запрашиваемые документы</h3>
+                        </div>
+
+                        {if $req_docs_count > 0}
+                            {assign var=doc_index value=0}
+                            {assign var=docs_ready value=0}
+                            <div class="supplier-participation-proposal__docs">
+                                {foreach $documents as $doc}
+                                    {if $doc.kind == 'requirement'}
+                                        {assign var=doc_index value=$doc_index+1}
+                                        {assign var=did value=$doc.id}
+                                        {assign var=adoc value=$app_documents[$did]|default:null}
+                                        {assign var=file_link_id value=$adoc.file_link_id|default:0}
+                                        {assign var=has_file value=0}
+                                        {if $file_link_id > 0}
+                                            {assign var=has_file value=1}
+                                            {assign var=docs_ready value=$docs_ready+1}
+                                        {/if}
+                                        <div
+                                            class="supplier-participation-proposal__doc-card js-participation-doc-row{if $has_file} is-ready{/if}"
+                                            data-tender-document-id="{$did|escape}"
+                                            data-doc-name="{$doc.name|default:'Документ'|escape}"
+                                            data-file-link-id="{$file_link_id|escape}"
+                                            data-app-doc-id="{$adoc.id|default:0|escape}"
+                                            data-required="{if $doc.is_required}1{else}0{/if}"
+                                        >
+                                            <span class="supplier-participation-proposal__doc-index" aria-hidden="true">{$doc_index}</span>
+                                            <div class="supplier-participation-proposal__doc-body">
+                                                <div class="supplier-participation-proposal__doc-title-row">
+                                                    <span class="supplier-participation-proposal__doc-name">
+                                                        {$doc.name|default:'Документ'|escape}
+                                                    </span>
+                                                    {if $doc.is_required}
+                                                        <span class="supplier-participation-nonprice__badge is-required">Обязательный</span>
+                                                    {else}
+                                                        <span class="supplier-participation-nonprice__badge">Необязательный</span>
+                                                    {/if}
+                                                </div>
+                                                {if $doc.description|default:''}
+                                                    <p class="des supplier-participation-proposal__doc-desc">{$doc.description|escape}</p>
+                                                {/if}
+                                                <span class="des js-participation-doc-status">
+                                                    {if $has_file}
+                                                        Файл загружен
+                                                    {else}
+                                                        Файл не загружен
+                                                    {/if}
+                                                </span>
+                                            </div>
+                                            {if $can_edit}
+                                                <label class="button outline supplier-participation-proposal__upload">
+                                                    <span class="js-participation-doc-upload-label">{if $has_file}Заменить{else}Загрузить{/if}</span>
+                                                    <input type="file" class="js-participation-doc-file" accept=".pdf,.doc,.docx,application/pdf" hidden>
+                                                </label>
+                                            {/if}
+                                        </div>
+                                    {/if}
+                                {/foreach}
+                            </div>
+                            <p class="des supplier-participation-proposal__docs-summary js-participation-docs-summary" data-total="{$req_docs_count|escape}">
+                                {$docs_ready} из {$req_docs_count} документов готовы к отправке
+                            </p>
+                        {else}
+                            <div class="supplier-participation-proposal__empty-docs">
+                                <p class="des">Организатор не запросил дополнительные документы для этого предложения.</p>
+                            </div>
+                        {/if}
+                    </div>
+
+                    <p class="des js-participation-proposal-msg" hidden></p>
+                </form>
+            </div>
+        </div>
     </div>
 {/if}

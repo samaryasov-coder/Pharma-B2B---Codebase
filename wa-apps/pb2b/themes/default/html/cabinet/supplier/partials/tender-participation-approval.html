@@ -1,0 +1,43 @@
+{* 5.4: ожидание решения организатора по одобрению. Мутации — шаг 6 (buyer). *}
+{assign var=status_code value=$gates.approval_status|default:'pending'}
+{assign var=status_name value=$approval_status_name|default:$status_code}
+{assign var=is_ok value=$gates.approval_ok|default:false}
+{assign var=is_rejected value=($status_code == 'rejected')}
+
+<div class="supplier-participation-gate js-participation-gate" data-gate="approval" data-status="{$status_code|escape}">
+    {if $is_ok}
+        <div class="supplier-participation-gate__icon is-ok" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M5 12.5L10 17.5L19 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
+        <h3 class="supplier-participation-gate__title">Одобрение получено</h3>
+        <p class="supplier-participation-gate__text">
+            Организатор одобрил вашу заявку. Можно переходить к следующим этапам.
+        </p>
+        <span class="supplier-participation-gate__badge is-ok">{$status_name|escape}</span>
+    {elseif $is_rejected}
+        <div class="supplier-participation-gate__icon is-error" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M7 7L17 17M17 7L7 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+        </div>
+        <h3 class="supplier-participation-gate__title">Одобрение отклонено</h3>
+        <p class="supplier-participation-gate__text">
+            Организатор отклонил запрос на одобрение. Подача ценового предложения недоступна.
+        </p>
+        <span class="supplier-participation-gate__badge is-error">{$status_name|escape}</span>
+    {else}
+        <div class="supplier-participation-gate__icon is-wait" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="8.25" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M12 8V12.5L15 14.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
+        <h3 class="supplier-participation-gate__title">Ожидание одобрения организатора</h3>
+        <p class="supplier-participation-gate__text">
+            Для этого тендера требуется одобрение поставщика. После решения организатора шаг закроется автоматически.
+        </p>
+        <span class="supplier-participation-gate__badge is-wait">{$status_name|escape}</span>
+    {/if}
+</div>

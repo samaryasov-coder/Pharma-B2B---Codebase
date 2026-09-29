@@ -67,6 +67,9 @@ return [
     "api/$ROLE_BUYER/tender/save/" => 'frontend/apiBuyerTenderSave',
     "api/$ROLE_BUYER/tender/publish/" => 'frontend/apiBuyerTenderPublish',
     // Специфичные пути до generic tender/<id>/ — иначе upload/save ловятся Get.
+    "api/$ROLE_BUYER/tender/<id>/applications/<application_id>/decision/" => 'frontend/apiBuyerTenderApplicationDecision',
+    "api/$ROLE_BUYER/tender/<id>/applications/<application_id>/" => 'frontend/apiBuyerTenderApplicationGet',
+    "api/$ROLE_BUYER/tender/<id>/applications/" => 'frontend/apiBuyerTenderApplicationList',
     "api/$ROLE_BUYER/tender/<id>/criterion/save/" => 'frontend/apiBuyerTenderCriterionSave',
     "api/$ROLE_BUYER/tender/<id>/invitation/save/" => 'frontend/apiBuyerTenderInvitationSave',
     "api/$ROLE_BUYER/tender/<id>/classifier/save/" => 'frontend/apiBuyerTenderClassifierSave',

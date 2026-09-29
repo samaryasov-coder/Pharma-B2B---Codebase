@@ -32,6 +32,11 @@ class pb2bTenderApplicationPolicy
         return pb2bTenderPolicy::view($tender, $company);
     }
 
+    public static function decideAsBuyer(pb2bTenderApplication $application, pb2bCompany $company): bool
+    {
+        return self::viewAsBuyer($application, $company);
+    }
+
     private static function ownsAsSupplier(pb2bTenderApplication $application, pb2bCompany $company): bool
     {
         if ((int) $company->id <= 0 || (int) $application->id <= 0) {

@@ -1,0 +1,83 @@
+{* Hero «Ваше участие» после подачи — как ParticipationHeroBand в layout. *}
+{assign var=proposal_number value=$application.id|default:''}
+{assign var=submitted_at value=$application.submitted_at|default:''}
+{assign var=results_at value=$card.opening_at|default:$card.end_at|default:''}
+{assign var=participation_url value=$participation_url|default:('/cabinet/supplier/tender/'|cat:$tender_id|cat:'/participation/')}
+
+<section class="supplier-participation-hero" aria-labelledby="supplier-participation-hero-heading">
+    <div class="supplier-participation-hero__top">
+        <div class="supplier-participation-hero__info">
+            <p class="supplier-participation-hero__eyebrow">Ваше участие</p>
+            <h2 id="supplier-participation-hero-heading" class="supplier-participation-hero__title">
+                Ваше предложение
+                {if $proposal_number}
+                    <span class="supplier-participation-hero__number">№{$proposal_number|escape}</span>
+                {/if}
+            </h2>
+            <span class="supplier-participation-hero__badge">На рассмотрении</span>
+            <p class="supplier-participation-hero__lead">
+                Организатор рассматривает ваше предложение.
+            </p>
+            <p class="supplier-participation-hero__meta">
+                {if $submitted_at}
+                    Отправлено {$submitted_at|date_format:"%d.%m.%Y, %H:%M"}
+                {else}
+                    Отправлено —
+                {/if}
+                {if $results_at}
+                    · Итоги до {$results_at|date_format:"%d.%m.%Y, %H:%M"}
+                {/if}
+            </p>
+        </div>
+
+        <div class="supplier-participation-hero__actions">
+            <a
+                class="supplier-participation-hero__cta js-supplier-aside-edit"
+                href="{$participation_url|escape}?step=proposal"
+                hx-boost="false"
+            >
+                Редактировать предложение
+            </a>
+            <button type="button" class="supplier-participation-hero__outline js-supplier-aside-withdraw">
+                Отозвать предложение
+            </button>
+            <button
+                type="button"
+                class="supplier-participation-hero__link js-supplier-ask-question"
+                data-tab="questions"
+            >
+                Задать вопрос
+            </button>
+            <p class="supplier-participate__error js-supplier-aside-msg" hidden></p>
+        </div>
+    </div>
+
+    <div class="supplier-participation-hero__divider" aria-hidden="true"></div>
+
+    <ol class="supplier-participation-hero__timeline" aria-label="Этапы рассмотрения предложения">
+        <li class="supplier-participation-hero__step is-completed">
+            <span class="supplier-participation-hero__dot" aria-hidden="true">
+                <svg width="8" height="6" viewBox="0 0 8 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M1 3L3 5L7 1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </span>
+            <span class="supplier-participation-hero__step-label">Отправлено</span>
+            {if $submitted_at}
+                <span class="supplier-participation-hero__step-sub">{$submitted_at|date_format:"%d.%m.%Y, %H:%M"}</span>
+            {/if}
+        </li>
+        <li class="supplier-participation-hero__rail is-done" aria-hidden="true"></li>
+        <li class="supplier-participation-hero__step is-current">
+            <span class="supplier-participation-hero__dot" aria-hidden="true"></span>
+            <span class="supplier-participation-hero__step-label">На рассмотрении</span>
+        </li>
+        <li class="supplier-participation-hero__rail" aria-hidden="true"></li>
+        <li class="supplier-participation-hero__step is-upcoming">
+            <span class="supplier-participation-hero__dot" aria-hidden="true"></span>
+            <span class="supplier-participation-hero__step-label">Решение</span>
+            {if $results_at}
+                <span class="supplier-participation-hero__step-sub">До {$results_at|date_format:"%d.%m.%Y, %H:%M"}</span>
+            {/if}
+        </li>
+    </ol>
+</section>

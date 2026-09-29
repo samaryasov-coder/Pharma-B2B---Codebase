@@ -21,9 +21,28 @@ trait pb2bFrontendApiBuyerTenderTrait
         return new pb2bTenderService();
     }
 
+    protected function applicationService(): pb2bTenderApplicationService
+    {
+        return new pb2bTenderApplicationService();
+    }
+
     protected function tenderCompanyId(): int
     {
         return (int) $this->context->company()->id;
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
+    protected function ok(array $payload, string $message = ''): array
+    {
+        $out = array_merge(array('error' => false), $payload);
+        if ($message !== '') {
+            $out['message'] = $message;
+        }
+
+        return $out;
     }
 
     /**

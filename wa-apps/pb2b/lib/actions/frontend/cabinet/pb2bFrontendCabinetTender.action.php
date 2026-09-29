@@ -12,23 +12,85 @@ class pb2bFrontendCabinetTenderAction extends pb2bFrontendCabinetAction
 
         $tender = (new pb2bTenderService())->getFromBuyer($tender_id, (int) $company->id);
         $extra = (new pb2bTenderCollection())->getWithClassifiers((int) $tender->id);
+        $app_counts = (new pb2bTenderCollection())->applicationCountsForTender((int) $tender->id);
 
         $items = $tender->getItemsForView();
-        $tech_specs = $tender->getDocumentsForView(pb2bTenderDocument::KIND_TECH_SPEC);
-        $requirement_docs = $tender->getDocumentsForView(pb2bTenderDocument::KIND_REQUIREMENT);
         $items_max_total = $tender->getItemsMaxTotal();
+        $invitations = (array) ($extra['invitations'] ?? []);
+        $card = array_merge(
+            pb2bTenderResource::make($tender)->resolve(),
+            $app_counts,
+            array('invited_count' => count($invitations))
+        );
+
+        $status_name = (string) ($card['status']['name'] ?? '');
+        $status_tone = 'info';
+        if (mb_strpos($status_name, 'Отмен') !== false || mb_strpos($status_name, 'Отозв') !== false) {
+            $status_tone = 'error';
+        } elseif (
+            mb_strpos($status_name, 'Приём') !== false
+            || mb_strpos($status_name, 'Сравнен') !== false
+            || mb_strpos($status_name, 'Подан') !== false
+        ) {
+            $status_tone = 'success';
+        } elseif (mb_strpos($status_name, 'Черновик') !== false || mb_strpos($status_name, 'Ожид') !== false) {
+            $status_tone = 'warning';
+        }
+
+        $days_left_label = '';
+        $end_at = trim((string) ($card['end_at'] ?? ''));
+        $deadline_expired = false;
+        if ($end_at !== '' && strpos($end_at, '0000-00-00') !== 0) {
+            $end_ts = strtotime($end_at);
+            if ($end_ts) {
+                $today = strtotime('today');
+                $end_day = strtotime(date('Y-m-d', $end_ts));
+                $diff = (int) round(($end_day - $today) / 86400);
+                if ($diff < 0) {
+                    $days_left_label = 'Срок истёк';
+                    $deadline_expired = true;
+                } elseif ($diff === 0) {
+                    $days_left_label = 'Сегодня';
+                } elseif ($diff === 1) {
+                    $days_left_label = 'Остался 1 день';
+                } else {
+                    $days_left_label = 'Осталось ' . $diff . ' дн.';
+                }
+            }
+        }
+
+        $display_budget = (float) ($card['budget'] ?? 0);
+        if ($display_budget <= 0 && $items_max_total > 0) {
+            $display_budget = $items_max_total;
+        }
 
         $this->view->assign([
             'tender' => $tender,
-            'card' => pb2bTenderResource::make($tender)->resolve(),
+            'card' => $card,
+            'participants_count' => (int) ($app_counts['participants_count'] ?? 0),
+            'proposals_count' => (int) ($app_counts['proposals_count'] ?? 0),
+            'invited_count' => count($invitations),
             'criteria' => (array) ($extra['criteria'] ?? []),
-            'invitations' => (array) ($extra['invitations'] ?? []),
+            'invitations' => $invitations,
             'classifiers' => (array) ($extra['classifiers'] ?? []),
             'items' => $items,
-            'tech_specs' => $tech_specs,
-            'requirement_docs' => $requirement_docs,
             'items_max_total' => $items_max_total,
+            'display_budget' => $display_budget,
             'organizer' => $company,
+            'status_tone' => $status_tone,
+            'days_left_label' => $days_left_label,
+            'deadline_expired' => $deadline_expired,
+            'ds_tabs' => array(
+                array('id' => 'overview', 'label' => 'Обзор', 'active' => true),
+                array('id' => 'questions', 'label' => 'Вопросы', 'disabled' => true),
+                array(
+                    'id' => 'participants',
+                    'label' => 'Участники',
+                    'count' => (int) ($app_counts['participants_count'] ?? 0),
+                ),
+                array('id' => 'evaluation', 'label' => 'Оценка', 'disabled' => true),
+                array('id' => 'results', 'label' => 'Результаты', 'disabled' => true),
+            ),
         ]);
         $this->setThemeTemplate('html/cabinet/buyer/tender.html');
     }
@@ -120,38 +182,7 @@ class pb2bFrontendCabinetTenderAction extends pb2bFrontendCabinetAction
         }
 
         $application = $notice['application'] ?? null;
-        $app_prices = array();
-        $app_criteria = array();
-        $app_documents = array();
-        if (is_array($application)) {
-            foreach ((array) ($application['items'] ?? array()) as $row) {
-                if (!is_array($row)) {
-                    continue;
-                }
-                $tid = (int) ($row['tender_item_id'] ?? 0);
-                if ($tid > 0) {
-                    $app_prices[$tid] = $row['price_per_unit'] ?? null;
-                }
-            }
-            foreach ((array) ($application['criteria'] ?? array()) as $row) {
-                if (!is_array($row)) {
-                    continue;
-                }
-                $cid = (int) ($row['criterion_id'] ?? 0);
-                if ($cid > 0) {
-                    $app_criteria[$cid] = $row;
-                }
-            }
-            foreach ((array) ($application['documents'] ?? array()) as $row) {
-                if (!is_array($row)) {
-                    continue;
-                }
-                $did = (int) ($row['tender_document_id'] ?? 0);
-                if ($did > 0) {
-                    $app_documents[$did] = $row;
-                }
-            }
-        }
+        $participation_url = '/cabinet/supplier/tender/' . $resolved_id . '/participation/';
 
         $this->view->assign([
             'tender_id' => $resolved_id,
@@ -160,10 +191,8 @@ class pb2bFrontendCabinetTenderAction extends pb2bFrontendCabinetAction
             'documents' => (array) ($notice['documents'] ?? []),
             'criteria' => (array) ($notice['criteria'] ?? []),
             'application' => $application,
-            'app_prices' => $app_prices,
-            'app_criteria' => $app_criteria,
-            'app_documents' => $app_documents,
             'gates' => (array) ($notice['gates'] ?? []),
+            'participation_url' => $participation_url,
             'classifiers' => (array) ($extra['classifiers'] ?? []),
             'organizer' => $organizer,
             'supplier' => $company,

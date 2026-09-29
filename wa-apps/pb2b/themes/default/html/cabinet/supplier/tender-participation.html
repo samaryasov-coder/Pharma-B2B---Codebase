@@ -1,4 +1,4 @@
-{* Wizard участия — stepper как в layout. Формы шагов — 5.3+. *}
+{* Wizard участия — stepper + шаги nonPrice / approval / qualification / proposal. *}
 {assign var=app_status_name value=$application.status.name|default:$app_status_code}
 {assign var=stages_total value=$participation_stages_total|default:4}
 {assign var=step_number value=$participation_step_number|default:1}
@@ -30,7 +30,7 @@
 
         <nav class="supplier-participation__panel" aria-label="Этапы участия">
             <div class="supplier-participation__panel-head">
-                <span class="supplier-participation__panel-title">Этапы участия</span>
+                <h2 class="supplier-participation__panel-title">Этапы участия</h2>
                 <span class="supplier-participation__panel-badge">Шаг {$step_number} из {$stages_total}</span>
             </div>
 
@@ -95,23 +95,9 @@
             {if $participation_step == 'nonPrice'}
                 {include file="html/cabinet/supplier/partials/tender-participation-nonprice.html"}
             {elseif $participation_step == 'approval'}
-                <div class="empty-container">
-                    <span class="icon"><svg><use href="#icon-info"></use></svg></span>
-                    <span class="title">Одобрение покупателя</span>
-                    <span class="des">
-                        Статус: <strong>{$gates.approval_status|default:'not_required'|escape}</strong>
-                        {if $gates.approval_ok|default:false} — шаг закрыт, можно идти дальше.{/if}
-                    </span>
-                </div>
+                {include file="html/cabinet/supplier/partials/tender-participation-approval.html"}
             {elseif $participation_step == 'qualification'}
-                <div class="empty-container">
-                    <span class="icon"><svg><use href="#icon-info"></use></svg></span>
-                    <span class="title">Предквалификация</span>
-                    <span class="des">
-                        Статус: <strong>{$gates.qualification_status|default:'not_required'|escape}</strong>
-                        {if $gates.qualification_ok|default:false} — шаг закрыт, можно идти дальше.{/if}
-                    </span>
-                </div>
+                {include file="html/cabinet/supplier/partials/tender-participation-qualification.html"}
             {elseif $participation_step == 'proposal'}
                 {include file="html/cabinet/supplier/partials/tender-participation-proposal.html"}
             {/if}
@@ -122,8 +108,12 @@
             {if $participation_step == 'proposal' && $gates.proposal|default:false && $app_status_code != 'withdrawn'}
                 <div class="supplier-participation__footer-actions">
                     {if $can_edit_proposal|default:true}
-                        <button type="button" class="button outline js-participation-proposal-save">Сохранить</button>
-                        <button type="button" class="button primary js-participation-proposal-submit">Подать заявку</button>
+                        <button type="button" class="button outline js-participation-proposal-save">
+                            {if $app_status_code == 'submitted'}Сохранить изменения{else}Сохранить{/if}
+                        </button>
+                        {if $app_status_code != 'submitted'}
+                            <button type="button" class="button primary js-participation-proposal-submit">Подать заявку</button>
+                        {/if}
                     {/if}
                     {if $app_status_code == 'submitted'}
                         <button type="button" class="button secondary js-participation-proposal-withdraw">Отозвать</button>

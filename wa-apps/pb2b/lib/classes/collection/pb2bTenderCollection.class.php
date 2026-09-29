@@ -147,6 +147,7 @@ class pb2bTenderCollection extends pb2bWaproCollection
 
         $ids = array_map('intval', array_column($rows, 'id'));
         $invite_counts = array();
+        $application_counts = array();
         if ($ids) {
             $placeholders = implode(',', array_fill(0, count($ids), '?'));
             $invite_rows = (new pb2bInvitationModel())->query(
@@ -156,6 +157,8 @@ class pb2bTenderCollection extends pb2bWaproCollection
             foreach ((array) $invite_rows as $invite_row) {
                 $invite_counts[(int) $invite_row['tender_id']] = (int) $invite_row['cnt'];
             }
+
+            $application_counts = $this->applicationCountsByTenderIds($ids);
         }
 
         foreach ($rows as &$row) {
@@ -166,13 +169,82 @@ class pb2bTenderCollection extends pb2bWaproCollection
             $row['status_code'] = (string) ($status_row['code'] ?? '');
             $row['status_name'] = (string) ($status_row['name'] ?? '');
             $row['invited_count'] = (int) ($invite_counts[(int) $row['id']] ?? 0);
-            // Участники / предложения — после Wave 2
-            $row['participants_count'] = 0;
-            $row['proposals_count'] = 0;
+            $counts = $application_counts[(int) $row['id']] ?? array();
+            // Участники / предложения = поданные заявки (draft не считаем).
+            $submitted = (int) ($counts['submitted'] ?? 0);
+            $row['participants_count'] = $submitted;
+            $row['proposals_count'] = $submitted;
+            $row['withdrawn_count'] = (int) ($counts['withdrawn'] ?? 0);
         }
         unset($row);
 
         return $rows;
+    }
+
+    /**
+     * @param list<int> $tender_ids
+     * @return array<int, array{submitted: int, withdrawn: int}>
+     */
+    public function applicationCountsByTenderIds(array $tender_ids): array
+    {
+        $ids = array();
+        foreach ($tender_ids as $id) {
+            $id = (int) $id;
+            if ($id > 0) {
+                $ids[$id] = $id;
+            }
+        }
+        if (!$ids) {
+            return array();
+        }
+
+        $ids = array_values($ids);
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $rows = (new pb2bTenderApplicationModel())->query(
+            "SELECT tender_id, status, COUNT(*) AS cnt
+             FROM pb2b_application
+             WHERE tender_id IN ({$placeholders})
+               AND status IN ('submitted', 'withdrawn')
+             GROUP BY tender_id, status",
+            $ids
+        )->fetchAll();
+
+        $out = array();
+        foreach ($ids as $id) {
+            $out[$id] = array('submitted' => 0, 'withdrawn' => 0);
+        }
+        foreach ((array) $rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $tender_id = (int) ($row['tender_id'] ?? 0);
+            $status = (string) ($row['status'] ?? '');
+            if ($tender_id <= 0 || !isset($out[$tender_id])) {
+                continue;
+            }
+            if ($status === 'submitted' || $status === 'withdrawn') {
+                $out[$tender_id][$status] = (int) ($row['cnt'] ?? 0);
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return array{submitted: int, withdrawn: int, participants_count: int, proposals_count: int}
+     */
+    public function applicationCountsForTender(int $tender_id): array
+    {
+        $counts = $this->applicationCountsByTenderIds(array($tender_id));
+        $row = $counts[$tender_id] ?? array('submitted' => 0, 'withdrawn' => 0);
+        $submitted = (int) ($row['submitted'] ?? 0);
+
+        return array(
+            'submitted' => $submitted,
+            'withdrawn' => (int) ($row['withdrawn'] ?? 0),
+            'participants_count' => $submitted,
+            'proposals_count' => $submitted,
+        );
     }
 
     public function getWithClassifiers(int $tender_id): array

@@ -289,7 +289,10 @@ class pb2bTenderService extends pb2bBaseService
         }
 
         return [
-            'tender' => pb2bTenderResource::make($tender)->resolve(),
+            'tender' => array_merge(
+                pb2bTenderResource::make($tender)->resolve(),
+                (new pb2bTenderCollection())->applicationCountsForTender((int) $tender->id)
+            ),
             'classifiers' => (array) ($payload['classifiers'] ?? []),
             'invitations' => (array) ($payload['invitations'] ?? []),
             'criteria' => (array) ($payload['criteria'] ?? []),

@@ -242,6 +242,7 @@ class pb2bTenderApplicationService extends pb2bBaseService
         $this->statusService->ensureReceptionOpen($tender);
 
         $include_prices = pb2bTenderApplicationResource::isBuyerPriceVisible($this->tenderStatusCode($tender));
+        $detail = $application_id > 0;
         $applications = array();
         foreach ($this->applicationsForTender((int) $tender->id) as $application) {
             if ($application->getStatusCode() === pb2bTenderApplication::STATUS_DRAFT) {
@@ -253,16 +254,121 @@ class pb2bTenderApplicationService extends pb2bBaseService
             if (!pb2bTenderApplicationPolicy::viewAsBuyer($application, $company)) {
                 continue;
             }
-            $applications[] = $this->serializeApplication($application, $include_prices);
+            $applications[] = $this->serializeApplication($application, $include_prices, $detail);
+            if ($detail) {
+                $applications[count($applications) - 1] = $this->enrichBuyerApplicationDetail(
+                    $applications[count($applications) - 1],
+                    $tender,
+                    $application
+                );
+            }
         }
         if ($application_id > 0 && $applications === array()) {
             throw new waException('Заявка не найдена', pb2bHttpStatus::NOT_FOUND);
         }
 
-        return array(
-            'tender' => pb2bTenderResource::make($tender)->resolve(),
+        $payload = array(
+            'tender' => array_merge(
+                pb2bTenderResource::make($tender)->resolve(),
+                (new pb2bTenderCollection())->applicationCountsForTender((int) $tender->id)
+            ),
             'applications' => $applications,
+            'prices_visible' => $include_prices ? 1 : 0,
         );
+        if ($application_id > 0) {
+            $payload['application'] = $applications[0];
+        }
+
+        return $payload;
+    }
+
+    /**
+     * Решения организатора по гейтам заявки (approval / qualification / admission).
+     * Статус тендера не меняет. Идемпотентность: повтор того же кода при уже выставленном — 200.
+     *
+     * @param array{
+     *   approval_status?: string|null,
+     *   qualification_status?: string|null,
+     *   admission_status?: string|null,
+     *   comment?: string|null,
+     *   approval_comment?: string|null,
+     *   qualification_comment?: string|null,
+     *   admission_comment?: string|null
+     * } $payload
+     * @return array{tender: array, application: array, prices_visible: int}
+     * @throws waException
+     */
+    public function decideForBuyer(int $tender_id, int $company_id, int $application_id, array $payload): array
+    {
+        $company = $this->getBuyerCompanyWithAssert($company_id);
+        $tender = $this->getTenderWithAssert($tender_id);
+        if (!pb2bTenderPolicy::view($tender, $company)) {
+            throw new waException('Тендер не доступен', pb2bHttpStatus::FORBIDDEN);
+        }
+
+        $application = $this->getApplicationWithAssert($application_id);
+        $row = $this->applicationRow($application);
+        if ((int) ($row['tender_id'] ?? 0) !== (int) $tender->id) {
+            throw new waException('Заявка не найдена', pb2bHttpStatus::NOT_FOUND);
+        }
+        if (!pb2bTenderApplicationPolicy::decideAsBuyer($application, $company)) {
+            throw new waException('Заявка не найдена', pb2bHttpStatus::NOT_FOUND);
+        }
+        if ($application->getStatusCode() !== pb2bTenderApplication::STATUS_SUBMITTED) {
+            throw new waException(
+                'Решение можно вынести только по поданной заявке',
+                pb2bHttpStatus::CONFLICT
+            );
+        }
+
+        $approval_status = $this->optionalDecisionCode($payload, 'approval_status');
+        $qualification_status = $this->optionalDecisionCode($payload, 'qualification_status');
+        $admission_status = $this->optionalDecisionCode($payload, 'admission_status');
+        if ($approval_status === null && $qualification_status === null && $admission_status === null) {
+            throw new waException(
+                'Укажите хотя бы одно решение: approval_status, qualification_status или admission_status',
+                pb2bHttpStatus::BAD_REQUEST
+            );
+        }
+
+        $shared_comment = trim((string) ($payload['comment'] ?? ''));
+        $data = $row;
+        $touched = false;
+
+        if ($approval_status !== null) {
+            $touched = $this->applyApprovalDecision(
+                $data,
+                $tender,
+                $approval_status,
+                $shared_comment,
+                isset($payload['approval_comment']) ? trim((string) $payload['approval_comment']) : null
+            ) || $touched;
+        }
+        if ($qualification_status !== null) {
+            $touched = $this->applyQualificationDecision(
+                $data,
+                $qualification_status,
+                $shared_comment,
+                isset($payload['qualification_comment']) ? trim((string) $payload['qualification_comment']) : null
+            ) || $touched;
+        }
+        if ($admission_status !== null) {
+            $touched = $this->applyAdmissionDecision(
+                $data,
+                $admission_status,
+                $shared_comment,
+                isset($payload['admission_comment']) ? trim((string) $payload['admission_comment']) : null
+            ) || $touched;
+        }
+
+        if ($touched) {
+            $result = $application->save($data);
+            if (!empty($result['error'])) {
+                $this->throwSaveError($result, 'Не удалось сохранить решение');
+            }
+        }
+
+        return $this->getForBuyer($tender_id, $company_id, $application_id);
     }
 
     public function canAccessProposal(?pb2bTenderApplication $application, pb2bTender $tender): bool
@@ -541,6 +647,167 @@ class pb2bTenderApplicationService extends pb2bBaseService
     }
 
     /**
+     * @param array<string, mixed> $payload
+     */
+    private function optionalDecisionCode(array $payload, string $key): ?string
+    {
+        if (!array_key_exists($key, $payload) || $payload[$key] === null || $payload[$key] === '') {
+            return null;
+        }
+
+        return trim((string) $payload[$key]);
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @return bool true если нужно сохранить (статус реально меняется)
+     * @throws waException
+     */
+    private function applyApprovalDecision(
+        array &$data,
+        pb2bTender $tender,
+        string $new_code,
+        string $shared_comment,
+        ?string $specific_comment
+    ): bool {
+        $approval_required = !empty($this->tenderRow($tender)['approval_required']);
+        $current = trim((string) ($data['approval_status'] ?? ''));
+        if (!$approval_required || $current === 'not_required') {
+            throw new waException(
+                'Одобрение не требуется для этого тендера',
+                pb2bHttpStatus::CONFLICT
+            );
+        }
+        if ($current === $new_code) {
+            return false;
+        }
+        if ($current !== 'pending') {
+            throw new waException('По одобрению решение уже принято', pb2bHttpStatus::CONFLICT);
+        }
+        if (!in_array($new_code, array('approved', 'rejected'), true)) {
+            throw new waException('Недопустимый статус одобрения', pb2bHttpStatus::BAD_REQUEST);
+        }
+        $comment = $this->resolveDecisionComment($shared_comment, $specific_comment);
+        if ($new_code === 'rejected' && $comment === '') {
+            throw new waException('Укажите причину отклонения одобрения', pb2bHttpStatus::CONFLICT);
+        }
+        $data['approval_status'] = $new_code;
+        if ($comment !== '') {
+            $data['approval_comment'] = $comment;
+        }
+
+        return true;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @throws waException
+     */
+    private function applyQualificationDecision(
+        array &$data,
+        string $new_code,
+        string $shared_comment,
+        ?string $specific_comment
+    ): bool {
+        $current = trim((string) ($data['qualification_status'] ?? ''));
+        if ($current === 'not_required' || $current === '') {
+            throw new waException(
+                'Квалификация не требуется для этой заявки',
+                pb2bHttpStatus::CONFLICT
+            );
+        }
+        if ($current === $new_code) {
+            return false;
+        }
+        if ($current !== 'pending') {
+            throw new waException('По квалификации решение уже принято', pb2bHttpStatus::CONFLICT);
+        }
+        if (!in_array($new_code, array('passed', 'failed'), true)) {
+            throw new waException('Недопустимый статус квалификации', pb2bHttpStatus::BAD_REQUEST);
+        }
+        $comment = $this->resolveDecisionComment($shared_comment, $specific_comment);
+        if ($new_code === 'failed' && $comment === '') {
+            throw new waException('Укажите причину отказа в квалификации', pb2bHttpStatus::CONFLICT);
+        }
+        $data['qualification_status'] = $new_code;
+        if ($comment !== '') {
+            $data['qualification_comment'] = $comment;
+        }
+
+        return true;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @throws waException
+     */
+    private function applyAdmissionDecision(
+        array &$data,
+        string $new_code,
+        string $shared_comment,
+        ?string $specific_comment
+    ): bool {
+        $current = trim((string) ($data['admission_status'] ?? ''));
+        if ($current === $new_code) {
+            return false;
+        }
+        if ($current !== 'pending') {
+            throw new waException('По допуску решение уже принято', pb2bHttpStatus::CONFLICT);
+        }
+        if (!in_array($new_code, array('admitted', 'rejected'), true)) {
+            throw new waException('Недопустимый статус допуска', pb2bHttpStatus::BAD_REQUEST);
+        }
+        $comment = $this->resolveDecisionComment($shared_comment, $specific_comment);
+        if ($new_code === 'rejected' && $comment === '') {
+            throw new waException('Укажите причину отказа в допуске', pb2bHttpStatus::CONFLICT);
+        }
+        $data['admission_status'] = $new_code;
+        if ($comment !== '') {
+            $data['admission_comment'] = $comment;
+        }
+
+        return true;
+    }
+
+    private function resolveDecisionComment(string $shared_comment, ?string $specific_comment): string
+    {
+        if ($specific_comment !== null && $specific_comment !== '') {
+            return $specific_comment;
+        }
+
+        return $shared_comment;
+    }
+
+    /**
+     * @return array{
+     *   approval: array{can_decide: int},
+     *   qualification: array{can_decide: int},
+     *   admission: array{can_decide: int}
+     * }
+     */
+    private function buyerGateActions(pb2bTenderApplication $application, pb2bTender $tender): array
+    {
+        $row = $this->applicationRow($application);
+        $submitted = $application->getStatusCode() === pb2bTenderApplication::STATUS_SUBMITTED;
+        $approval_required = !empty($this->tenderRow($tender)['approval_required']);
+        $approval = trim((string) ($row['approval_status'] ?? ''));
+        $qualification = trim((string) ($row['qualification_status'] ?? ''));
+        $admission = trim((string) ($row['admission_status'] ?? ''));
+
+        return array(
+            'approval' => array(
+                'can_decide' => ($submitted && $approval_required && $approval === 'pending') ? 1 : 0,
+            ),
+            'qualification' => array(
+                'can_decide' => ($submitted && $qualification === 'pending') ? 1 : 0,
+            ),
+            'admission' => array(
+                'can_decide' => ($submitted && $admission === 'pending') ? 1 : 0,
+            ),
+        );
+    }
+
+    /**
      * Поля карточки списка, которых нет в общем resource тендера.
      *
      * @return array{
@@ -725,19 +992,131 @@ class pb2bTenderApplicationService extends pb2bBaseService
     /**
      * @return array<string, mixed>
      */
-    private function serializeApplication(pb2bTenderApplication $application, bool $include_prices): array
-    {
+    private function serializeApplication(
+        pb2bTenderApplication $application,
+        bool $include_prices,
+        bool $detail = true
+    ): array {
         $id = (int) $application->id;
         $items = (new pb2bTenderApplicationItemModel())->getByField('application_id', $id, true);
         $documents = (new pb2bTenderApplicationDocumentModel())->getByField('application_id', $id, true);
         $criteria = (new pb2bTenderApplicationCriterionModel())->getByField('application_id', $id, true);
+        $items = is_array($items) ? array_values($items) : array();
+        $documents = is_array($documents) ? array_values($documents) : array();
+        $criteria = is_array($criteria) ? array_values($criteria) : array();
 
-        return pb2bTenderApplicationResource::make($application)
+        $payload = pb2bTenderApplicationResource::make($application)
             ->withPrices($include_prices)
-            ->withItems(is_array($items) ? array_values($items) : array())
-            ->withDocuments(is_array($documents) ? array_values($documents) : array())
-            ->withCriteria(is_array($criteria) ? array_values($criteria) : array())
+            ->withItems($detail ? $items : array())
+            ->withDocuments($detail ? $documents : array())
+            ->withCriteria($detail ? $criteria : array())
             ->resolve();
+
+        $docs_with_file = 0;
+        foreach ($documents as $doc) {
+            if (!is_array($doc)) {
+                continue;
+            }
+            if ((int) ($doc['file_link_id'] ?? 0) > 0) {
+                $docs_with_file += 1;
+            }
+        }
+        $payload['has_documents'] = $docs_with_file > 0 ? 1 : 0;
+        $payload['documents_count'] = $docs_with_file;
+        $payload['items_count'] = count($items);
+        $payload['supplier'] = $this->serializeSupplierCompany(
+            (int) ($payload['supplier_company_id'] ?? 0)
+        );
+        if (!$detail) {
+            unset($payload['items'], $payload['documents'], $payload['criteria']);
+        }
+
+        return $payload;
+    }
+
+    /**
+     * @return array{id: int, name: string, fullname: string, inn: string}|null
+     */
+    private function serializeSupplierCompany(int $company_id): ?array
+    {
+        if ($company_id <= 0) {
+            return null;
+        }
+        $company = new pb2bCompany($company_id);
+        if (!(int) $company->id) {
+            return null;
+        }
+        $row = is_array($company->data) ? $company->data : array();
+
+        return array(
+            'id' => (int) $company->id,
+            'name' => (string) ($row['name'] ?? ''),
+            'fullname' => trim($company->getFullName()),
+            'inn' => (string) ($row['inn'] ?? ''),
+        );
+    }
+
+    /**
+     * Карточка для buyer: имена позиций/критериев с извещения (цены по-прежнему маскирует Resource).
+     *
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
+    private function enrichBuyerApplicationDetail(
+        array $payload,
+        pb2bTender $tender,
+        pb2bTenderApplication $application
+    ): array {
+        $item_map = array();
+        foreach ($tender->getItemsForView() as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            $id = (int) ($item['id'] ?? 0);
+            if ($id > 0) {
+                $item_map[$id] = $item;
+            }
+        }
+        $items = array();
+        foreach ((array) ($payload['items'] ?? array()) as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $tid = (int) ($row['tender_item_id'] ?? 0);
+            $src = $item_map[$tid] ?? array();
+            $row['name'] = (string) ($src['name'] ?? '');
+            $row['delivery_place'] = $src['delivery_place'] ?? null;
+            $row['unit'] = $row['unit'] ?? ($src['unit'] ?? null);
+            $row['qty'] = $row['qty'] ?? ($src['qty'] ?? null);
+            $items[] = $row;
+        }
+        $payload['items'] = $items;
+
+        $criterion_map = array();
+        foreach (pb2bTender::getCriteriaForTender((int) $tender->id) as $criterion) {
+            if (!is_array($criterion)) {
+                continue;
+            }
+            $id = (int) ($criterion['id'] ?? 0);
+            if ($id > 0) {
+                $criterion_map[$id] = $criterion;
+            }
+        }
+        $criteria = array();
+        foreach ((array) ($payload['criteria'] ?? array()) as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $cid = (int) ($row['criterion_id'] ?? 0);
+            $src = $criterion_map[$cid] ?? array();
+            $row['name'] = (string) ($src['name'] ?? $src['title'] ?? '');
+            $row['is_mandatory'] = !empty($src['is_mandatory']) ? 1 : 0;
+            $criteria[] = $row;
+        }
+        $payload['criteria'] = $criteria;
+        $payload['gate_actions'] = $this->buyerGateActions($application, $tender);
+
+        return $payload;
     }
 
     /**
