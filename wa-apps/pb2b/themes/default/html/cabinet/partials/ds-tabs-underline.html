@@ -1,0 +1,50 @@
+{*
+  Общие underline-табы кабинета.
+
+  Параметры:
+  - $ds_tabs: list of [
+      id: string,
+      label: string,
+      count?: int,
+      active?: bool,
+      disabled?: bool
+    ]
+  - $ds_tabs_aria: string (aria-label)
+  - $ds_tabs_with_panels: bool — сразу пустые панели под табами
+*}
+{if $ds_tabs|@count}
+<div class="ds-tabs ds-tabs--underline js-ds-tabs" role="tablist" aria-label="{$ds_tabs_aria|default:'Разделы'|escape}">
+    {foreach $ds_tabs as $tab}
+        {assign var=_id value=$tab.id|default:''}
+        {assign var=_active value=$tab.active|default:false}
+        {assign var=_disabled value=$tab.disabled|default:false}
+        <button
+            type="button"
+            class="ds-tabs__tab js-ds-tabs-tab{if $_active} is-active{/if}{if $_disabled} is-disabled{/if}"
+            role="tab"
+            data-tab="{$_id|escape}"
+            aria-selected="{if $_active}true{else}false{/if}"
+            {if $_disabled}disabled aria-disabled="true"{/if}
+        >
+            <span class="ds-tabs__label">{$tab.label|default:''|escape}</span>
+            {if isset($tab.count) && $tab.count !== '' && $tab.count !== null}
+                <span class="ds-tabs__count">{$tab.count|escape}</span>
+            {/if}
+        </button>
+    {/foreach}
+</div>
+{if $ds_tabs_with_panels|default:false}
+<div class="ds-tabs-panels">
+    {foreach $ds_tabs as $tab}
+        {assign var=_id value=$tab.id|default:''}
+        {assign var=_active value=$tab.active|default:false}
+        <div
+            class="ds-tabs-panel js-ds-tabs-panel{if $_active} is-active{/if}"
+            role="tabpanel"
+            data-tab-panel="{$_id|escape}"
+            {if !$_active}hidden{/if}
+        ></div>
+    {/foreach}
+</div>
+{/if}
+{/if}

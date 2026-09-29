@@ -1,0 +1,57 @@
+{* Шаг nonPrice: ответы на критерии извещения. *}
+{assign var=can_edit value=$can_edit_nonprice|default:true}
+
+{if !$criteria}
+    <div class="empty-container">
+        <span class="icon"><svg><use href="#icon-info"></use></svg></span>
+        <span class="title">Нет критериев</span>
+        <span class="des">В этом тендере организатор не добавил неценовые критерии.</span>
+    </div>
+{else}
+    <form class="supplier-participation-nonprice js-participation-nonprice" novalidate>
+        <div class="supplier-participation-nonprice__list">
+            {foreach $criteria as $cr}
+                {assign var=cid value=$cr.id}
+                {assign var=ans value=$app_criteria[$cid]|default:null}
+                <div
+                    class="supplier-participation-nonprice__row"
+                    data-criterion-id="{$cid|escape}"
+                    data-mandatory="{if $cr.is_mandatory|default:0}1{else}0{/if}"
+                >
+                    <div class="supplier-participation-nonprice__label-row">
+                        <label class="supplier-participation-nonprice__label" for="participation-criterion-{$cid|escape}">
+                            {$cr.name|default:'Критерий'|escape}
+                            {if $cr.is_mandatory|default:0}
+                                <span class="supplier-participation-nonprice__badge is-required">Обязательный</span>
+                            {else}
+                                <span class="supplier-participation-nonprice__badge">Необязательный</span>
+                            {/if}
+                        </label>
+                        {if $cr.description|default:''}
+                            <p class="des supplier-participation-nonprice__desc">{$cr.description|escape}</p>
+                        {/if}
+                    </div>
+                    <input
+                        id="participation-criterion-{$cid|escape}"
+                        type="text"
+                        class="input js-participation-criterion-value"
+                        value="{$ans.value|default:''|escape}"
+                        placeholder="Ответ"
+                        {if !$can_edit}disabled{/if}
+                    >
+                    <label class="supplier-participation-nonprice__check">
+                        <input
+                            type="checkbox"
+                            class="js-participation-criterion-confirmed"
+                            {if $ans.confirmed|default:0}checked{/if}
+                            {if !$can_edit}disabled{/if}
+                        >
+                        Подтверждаю
+                    </label>
+                </div>
+            {/foreach}
+        </div>
+
+        <p class="supplier-participation-nonprice__msg js-participation-nonprice-msg" hidden></p>
+    </form>
+{/if}

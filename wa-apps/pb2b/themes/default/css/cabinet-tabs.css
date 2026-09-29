@@ -1,0 +1,74 @@
+/* Общие underline-табы кабинета (.ds-tabs--underline). */
+
+.ds-tabs.ds-tabs--underline {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 0;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.ds-tabs--underline .ds-tabs__tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 -1px;
+    padding: 12px 16px 10px;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    color: var(--gray-400);
+    -webkit-text-fill-color: var(--gray-400);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: var(--font-weight-regular);
+    line-height: 20px;
+    white-space: nowrap;
+    cursor: pointer;
+    opacity: 1 !important;
+}
+
+.ds-tabs--underline .ds-tabs__tab:hover,
+.ds-tabs--underline .ds-tabs__tab:active {
+    top: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: var(--gray-900) !important;
+    -webkit-text-fill-color: var(--gray-900);
+}
+
+.ds-tabs--underline .ds-tabs__tab.is-active {
+    color: var(--gray-900);
+    -webkit-text-fill-color: var(--gray-900);
+    font-weight: var(--font-weight-semibold);
+    border-bottom-color: var(--gray-900);
+}
+
+.ds-tabs--underline .ds-tabs__tab.is-disabled,
+.ds-tabs--underline .ds-tabs__tab:disabled {
+    opacity: 0.45 !important;
+    cursor: default;
+    pointer-events: none;
+}
+
+.ds-tabs--underline .ds-tabs__count {
+    font-size: 12px;
+    font-weight: var(--font-weight-medium);
+    line-height: 16px;
+    color: inherit;
+}
+
+.ds-tabs-panels {
+    min-height: 0;
+}
+
+.ds-tabs-panel {
+    display: none;
+}
+
+.ds-tabs-panel.is-active {
+    display: block;
+}

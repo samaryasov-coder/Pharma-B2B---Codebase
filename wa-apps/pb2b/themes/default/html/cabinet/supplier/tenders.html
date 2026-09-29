@@ -49,6 +49,23 @@
         </div>
 
         <div class="buyer-tenders__body">
+            <div class="supplier-tenders__tabs" role="tablist" aria-label="Списки тендеров">
+                <span class="supplier-tenders__tab is-active js-tenders-tab" role="tab" tabindex="0" aria-selected="true" data-tab="all">
+                    <span class="supplier-tenders__tab-label">Все</span>
+                    <span class="supplier-tenders__tab-count js-tenders-tab-count" data-tab="all">0</span>
+                </span>
+                <span class="supplier-tenders__tab js-tenders-tab" role="tab" tabindex="0" aria-selected="false" data-tab="participations">
+                    <span class="supplier-tenders__tab-label">Мои участия</span>
+                    <span class="supplier-tenders__tab-count js-tenders-tab-count" data-tab="participations">0</span>
+                </span>
+                <span class="supplier-tenders__tab js-tenders-tab" role="tab" tabindex="0" aria-selected="false" data-tab="favorites">
+                    <span class="supplier-tenders__tab-label">Избранные</span>
+                    <span class="supplier-tenders__tab-count js-tenders-tab-count" data-tab="favorites">0</span>
+                </span>
+            </div>
+
+            <div class="supplier-tenders__section-title js-tenders-section-title">Все тендеры</div>
+
             <div class="buyer-tenders__list js-tenders-list" style="display:none;"></div>
 
             <div class="empty-container js-tenders-loading">

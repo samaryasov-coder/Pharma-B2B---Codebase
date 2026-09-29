@@ -585,11 +585,13 @@
         root: null,
         items: [],
         search: '',
+        listTab: 'all',
 
         init: function (root) {
             this.root = root;
             this.items = [];
             this.search = '';
+            this.listTab = 'all';
             this.bindEvents();
             this.loadList();
         },
@@ -624,6 +626,23 @@
                 $root.find('.js-tenders-search').val('');
                 self.search = '';
                 syncReset('');
+                self.applyFilters();
+            });
+
+            $root.find('.js-tenders-tab').on('click keydown', function (event) {
+                if (event.type === 'keydown' && event.which !== 13 && event.which !== 32) {
+                    return;
+                }
+                event.preventDefault();
+                const tab = String($(this).data('tab') || 'all');
+                if (tab === self.listTab) {
+                    return;
+                }
+                self.listTab = tab;
+                $root.find('.js-tenders-tab').each(function () {
+                    const active = String($(this).data('tab') || '') === tab;
+                    $(this).toggleClass('is-active', active).attr('aria-selected', active ? 'true' : 'false');
+                });
                 self.applyFilters();
             });
 
@@ -671,9 +690,25 @@
             });
         },
 
+        syncTabCounts: function (allCount, participationCount) {
+            const $root = $(this.root);
+            $root.find('.js-tenders-tab-count[data-tab="all"]').text(String(allCount));
+            $root.find('.js-tenders-tab-count[data-tab="participations"]').text(String(participationCount));
+            $root.find('.js-tenders-tab-count[data-tab="favorites"]').text('0');
+        },
+
+        syncSectionTitle: function () {
+            const titles = {
+                all: 'Все тендеры',
+                participations: 'Активные участия',
+                favorites: 'Избранные тендеры'
+            };
+            $(this.root).find('.js-tenders-section-title').text(titles[this.listTab] || titles.all);
+        },
+
         applyFilters: function () {
             const query = String(this.search || '').trim().toLowerCase();
-            const filtered = this.items.filter(function (row) {
+            const searched = this.items.filter(function (row) {
                 if (!query) {
                     return true;
                 }
@@ -689,6 +724,20 @@
                 ].join(' ').toLowerCase();
                 return hay.indexOf(query) !== -1;
             });
+
+            const participations = searched.filter(function (row) {
+                return !!row.application;
+            });
+
+            this.syncTabCounts(searched.length, participations.length);
+            this.syncSectionTitle();
+
+            let filtered = searched;
+            if (this.listTab === 'participations') {
+                filtered = participations;
+            } else if (this.listTab === 'favorites') {
+                filtered = [];
+            }
             this.renderList(filtered);
         },
 
@@ -706,11 +755,16 @@
             return dd + '.' + mm + '.' + d.getFullYear();
         },
 
-        formatPrice: function (tender) {
+        formatPrice: function (tender, card) {
             if (tender.hide_initial_price == 1 || tender.hide_initial_price === true) {
                 return 'Цена не указана';
             }
-            const amount = parseFloat(tender.budget);
+            card = card || {};
+            const amount = parseFloat(
+                card.display_budget != null && card.display_budget !== ''
+                    ? card.display_budget
+                    : tender.budget
+            );
             if (!isFinite(amount) || amount <= 0) {
                 return 'Цена не указана';
             }
@@ -813,14 +867,25 @@
             if (!items.length) {
                 $list.hide();
                 $empty.show();
-                $root.find('.js-tenders-empty-title').text(
-                    hasSearch ? 'Ничего не найдено' : 'Нет доступных тендеров'
-                );
-                $root.find('.js-tenders-empty-des').text(
-                    hasSearch
-                        ? 'Измените поисковый запрос.'
-                        : 'Здесь появятся открытые запросы цен в приёме заявок и закрытые, куда вас пригласили.'
-                );
+                if (hasSearch) {
+                    $root.find('.js-tenders-empty-title').text('Ничего не найдено');
+                    $root.find('.js-tenders-empty-des').text('Измените поисковый запрос.');
+                } else if (this.listTab === 'favorites') {
+                    $root.find('.js-tenders-empty-title').text('Нет избранных тендеров');
+                    $root.find('.js-tenders-empty-des').text(
+                        'В избранном пока нет тендеров. Отметьте карточку звёздочкой в списке «Все».'
+                    );
+                } else if (this.listTab === 'participations') {
+                    $root.find('.js-tenders-empty-title').text('Нет активных участий');
+                    $root.find('.js-tenders-empty-des').text(
+                        'Здесь появятся тендеры, в которых вы уже создали заявку.'
+                    );
+                } else {
+                    $root.find('.js-tenders-empty-title').text('Нет доступных тендеров');
+                    $root.find('.js-tenders-empty-des').text(
+                        'Здесь появятся открытые запросы цен в приёме заявок и закрытые, куда вас пригласили.'
+                    );
+                }
                 return;
             }
 
@@ -903,7 +968,7 @@
                     .text(statusName);
                 $card.find('.supplier-tender-card__title').text(tender.title || 'Без названия');
                 $card.find('.supplier-tender-card__number').text(methodLine);
-                $card.find('.supplier-tender-card__price-value').text(self.formatPrice(tender));
+                $card.find('.supplier-tender-card__price-value').text(self.formatPrice(tender, meta));
                 $card.find('.supplier-tender-card__deadline-value').text(self.formatDeadline(tender.end_at));
 
                 const $days = $card.find('.supplier-tender-card__days');
@@ -973,8 +1038,60 @@
             const self = this;
             const $root = $(this.root);
 
+            $root.on('click', '.js-supplier-tender-fav', function (event) {
+                event.preventDefault();
+            });
+
+            $root.on('click', '.js-notice-copy-address', function (event) {
+                event.preventDefault();
+                const text = String(this.getAttribute('data-copy') || '').trim();
+                if (!text) {
+                    return;
+                }
+                const done = function () {
+                    const $btn = $(event.currentTarget);
+                    $btn.attr('aria-label', 'Адрес скопирован');
+                    window.setTimeout(function () {
+                        $btn.attr('aria-label', 'Скопировать адрес поставки');
+                    }, 1500);
+                };
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(done).catch(function () {
+                        window.prompt('Скопируйте адрес поставки', text);
+                    });
+                    return;
+                }
+                window.prompt('Скопируйте адрес поставки', text);
+            });
+
+            $root.on('click', '.js-supplier-tender-participate', function () {
+                if (!self.tenderId) {
+                    return;
+                }
+                window.location.href = '/cabinet/supplier/tender/' + self.tenderId + '/participation/';
+            });
+
             $root.on('click', '.js-supplier-tender-apply', function () {
                 self.apply();
+            });
+            $root.on('click', '.js-supplier-ask-question', function (event) {
+                event.preventDefault();
+                const tab = String(this.getAttribute('data-tab') || 'questions');
+                const $tab = $root.find('.js-ds-tabs-tab[data-tab="' + tab + '"]').first();
+                if ($tab.length) {
+                    $tab.trigger('click');
+                }
+            });
+            $root.on('click', '.js-supplier-aside-edit', function (event) {
+                event.preventDefault();
+                const $form = $root.find('.supplier-tender-application');
+                if ($form.length) {
+                    $form.prop('hidden', false);
+                    const el = $form.get(0);
+                    if (el && typeof el.scrollIntoView === 'function') {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }
             });
             $root.on('click', '.js-supplier-kp-save', function () {
                 self.save();
@@ -999,7 +1116,7 @@
 
         setBusy: function (on) {
             this.busy = !!on;
-            $(this.root).find('.js-supplier-kp-save, .js-supplier-kp-submit, .js-supplier-kp-withdraw, .js-supplier-tender-apply')
+            $(this.root).find('.js-supplier-kp-save, .js-supplier-kp-submit, .js-supplier-kp-withdraw, .js-supplier-tender-apply, .js-supplier-tender-participate, .js-supplier-aside-edit')
                 .toggleClass('loading', this.busy)
                 .prop('disabled', this.busy);
         },
@@ -1023,7 +1140,7 @@
             }
 
             this.setBusy(true);
-            $error.hide().text('');
+            $error.prop('hidden', true).text('');
 
             $.fRequest({
                 url: '/api/supplier/tender/' + this.tenderId + '/apply/',
@@ -1035,7 +1152,7 @@
                 },
                 onError: function (reply) {
                     self.setBusy(false);
-                    $error.text((reply && reply.message) || 'Не удалось создать заявку').show();
+                    $error.text((reply && reply.message) || 'Не удалось создать заявку').prop('hidden', false);
                 }
             }).catch(function () {
                 self.setBusy(false);
@@ -1240,6 +1357,383 @@
                 }
             }).catch(function () {
                 self.setBusy(false);
+            });
+        }
+    });
+    // Wizard участия: stepper + nonPrice save (5.2–5.3).
+    $.Cabinet.registerPage('participation', {
+        root: null,
+        tenderId: 0,
+        flow: null,
+        baseUrl: '',
+        busy: false,
+
+        init: function (root) {
+            this.root = root;
+            this.tenderId = parseInt(root.getAttribute('data-id') || '0', 10) || 0;
+            this.baseUrl = String(root.getAttribute('data-participation-url') || '').trim()
+                || ('/cabinet/supplier/tender/' + this.tenderId + '/participation/');
+            this.flow = this.parseFlow(root.getAttribute('data-flow') || '');
+            this.busy = false;
+            this.bindEvents();
+        },
+
+        parseFlow: function (raw) {
+            if (!raw) {
+                return null;
+            }
+            try {
+                return JSON.parse(raw);
+            } catch (e) {
+                return null;
+            }
+        },
+
+        bindEvents: function () {
+            const self = this;
+            const $root = $(this.root);
+
+            $root.on('click', '.js-participation-stepper .supplier-participation__stage.is-accessible', function (event) {
+                event.preventDefault();
+                const stage = String(this.getAttribute('data-stage') || '');
+                if (!stage || !self.tenderId) {
+                    return;
+                }
+                self.goStep(stage);
+            });
+
+            $root.on('keydown', '.js-participation-stepper .supplier-participation__stage.is-accessible', function (event) {
+                if (event.key !== 'Enter' && event.key !== ' ') {
+                    return;
+                }
+                event.preventDefault();
+                const stage = String(this.getAttribute('data-stage') || '');
+                if (stage) {
+                    self.goStep(stage);
+                }
+            });
+
+            $root.on('click', '.js-participation-save-next', function (event) {
+                event.preventDefault();
+                self.saveNonPriceAndNext();
+            });
+
+            $root.on('click', '.js-participation-proposal-save', function (event) {
+                event.preventDefault();
+                self.saveProposal(false);
+            });
+            $root.on('click', '.js-participation-proposal-submit', function (event) {
+                event.preventDefault();
+                self.saveProposal(true);
+            });
+            $root.on('click', '.js-participation-proposal-withdraw', function (event) {
+                event.preventDefault();
+                self.withdrawProposal();
+            });
+            $root.on('change', '.js-participation-doc-file', function () {
+                const $row = $(this).closest('.js-participation-doc-row');
+                const file = this.files && this.files[0] ? this.files[0] : null;
+                if (!file) {
+                    return;
+                }
+                self.uploadProposalDoc($row, file);
+            });
+        },
+
+        goStep: function (step) {
+            if (!step || !this.baseUrl) {
+                return;
+            }
+            const sep = this.baseUrl.indexOf('?') >= 0 ? '&' : '?';
+            window.location.href = this.baseUrl + sep + 'step=' + encodeURIComponent(step);
+        },
+
+        showNonPriceMsg: function (text, isError) {
+            const $msg = $(this.root).find('.js-participation-nonprice-msg');
+            if (!$msg.length) {
+                return;
+            }
+            if (!text) {
+                $msg.prop('hidden', true).text('');
+                return;
+            }
+            $msg
+                .prop('hidden', false)
+                .css('color', isError ? '#b42318' : '#027a48')
+                .text(text);
+        },
+
+        setBusy: function (on) {
+            this.busy = !!on;
+            $(this.root).find(
+                '.js-participation-save-next, .js-participation-proposal-save, '
+                + '.js-participation-proposal-submit, .js-participation-proposal-withdraw'
+            )
+                .toggleClass('loading', this.busy)
+                .prop('disabled', this.busy);
+        },
+
+        showProposalMsg: function (text, isError) {
+            const $msg = $(this.root).find('.js-participation-proposal-msg');
+            if (!$msg.length) {
+                return;
+            }
+            if (!text) {
+                $msg.prop('hidden', true).text('');
+                return;
+            }
+            $msg
+                .prop('hidden', false)
+                .css('color', isError ? '#b42318' : '#027a48')
+                .text(text);
+        },
+
+        collectProposalPayload: function () {
+            const items = [];
+            $(this.root).find('.js-participation-price').each(function () {
+                const tenderItemId = parseInt(this.getAttribute('data-tender-item-id') || '0', 10) || 0;
+                if (tenderItemId <= 0) {
+                    return;
+                }
+                const raw = String($(this).val() || '').trim().replace(',', '.');
+                const price = raw === '' ? null : parseFloat(raw);
+                items.push({
+                    tender_item_id: tenderItemId,
+                    price_per_unit: price !== null && !isNaN(price) ? price : null
+                });
+            });
+
+            const documents = [];
+            $(this.root).find('.js-participation-doc-row').each(function () {
+                const tenderDocumentId = parseInt(this.getAttribute('data-tender-document-id') || '0', 10) || 0;
+                const fileLinkId = parseInt(this.getAttribute('data-file-link-id') || '0', 10) || 0;
+                const appDocId = parseInt(this.getAttribute('data-app-doc-id') || '0', 10) || 0;
+                const name = String(this.getAttribute('data-doc-name') || 'Документ');
+                if (tenderDocumentId <= 0) {
+                    return;
+                }
+                if (fileLinkId <= 0 && appDocId <= 0) {
+                    return;
+                }
+                const row = {
+                    tender_document_id: tenderDocumentId,
+                    name: name,
+                    file_link_id: fileLinkId > 0 ? fileLinkId : null
+                };
+                if (appDocId > 0) {
+                    row.id = appDocId;
+                }
+                documents.push(row);
+            });
+
+            const payload = { items: items };
+            if ($(this.root).find('.js-participation-doc-row').length) {
+                payload.documents = documents;
+            }
+            return payload;
+        },
+
+        uploadProposalDoc: function ($row, file) {
+            const self = this;
+            if (this.busy || this.tenderId <= 0) {
+                return;
+            }
+            const fd = new FormData();
+            fd.append('file', file);
+            this.setBusy(true);
+            this.showProposalMsg('Загрузка файла…', false);
+            $.fRequest({
+                url: '/api/supplier/tender/' + this.tenderId + '/file/upload/',
+                method: 'POST',
+                showMessages: false,
+                data: fd,
+                onSuccess: function (reply) {
+                    const fileLinkId = parseInt(reply.file_link_id, 10) || 0;
+                    $row.attr('data-file-link-id', String(fileLinkId));
+                    $row.find('.js-participation-doc-status').text(
+                        fileLinkId > 0
+                            ? ('файл загружен (#' + fileLinkId + ')')
+                            : 'файл не загружен'
+                    );
+                    self.setBusy(false);
+                    self.showProposalMsg('Файл загружен. Нажмите «Сохранить», чтобы привязать к заявке.', false);
+                },
+                onError: function (reply) {
+                    self.setBusy(false);
+                    self.showProposalMsg((reply && reply.message) || 'Не удалось загрузить файл', true);
+                }
+            }).catch(function () {
+                self.setBusy(false);
+                self.showProposalMsg('Не удалось загрузить файл', true);
+            });
+        },
+
+        saveProposal: function (thenSubmit) {
+            const self = this;
+            if (this.busy || this.tenderId <= 0) {
+                return;
+            }
+            this.setBusy(true);
+            this.showProposalMsg('');
+            $.fRequest({
+                url: '/api/supplier/tender/' + this.tenderId + '/save/',
+                method: 'POST',
+                showMessages: !thenSubmit,
+                data: { data: this.collectProposalPayload() },
+                onSuccess: function () {
+                    if (!thenSubmit) {
+                        window.location.reload();
+                        return;
+                    }
+                    $.fRequest({
+                        url: '/api/supplier/tender/' + self.tenderId + '/submit/',
+                        method: 'POST',
+                        showMessages: true,
+                        data: {},
+                        onSuccess: function () {
+                            window.location.href = '/cabinet/supplier/tender/' + self.tenderId + '/';
+                        },
+                        onError: function (reply) {
+                            self.setBusy(false);
+                            self.showProposalMsg((reply && reply.message) || 'Не удалось подать заявку', true);
+                        }
+                    }).catch(function () {
+                        self.setBusy(false);
+                        self.showProposalMsg('Не удалось подать заявку', true);
+                    });
+                },
+                onError: function (reply) {
+                    self.setBusy(false);
+                    self.showProposalMsg((reply && reply.message) || 'Не удалось сохранить', true);
+                }
+            }).catch(function () {
+                self.setBusy(false);
+                self.showProposalMsg('Не удалось сохранить', true);
+            });
+        },
+
+        withdrawProposal: function () {
+            const self = this;
+            if (this.busy || this.tenderId <= 0) {
+                return;
+            }
+            this.setBusy(true);
+            this.showProposalMsg('');
+            $.fRequest({
+                url: '/api/supplier/tender/' + this.tenderId + '/withdraw/',
+                method: 'POST',
+                showMessages: true,
+                data: {},
+                onSuccess: function () {
+                    window.location.href = '/cabinet/supplier/tender/' + self.tenderId + '/';
+                },
+                onError: function (reply) {
+                    self.setBusy(false);
+                    self.showProposalMsg((reply && reply.message) || 'Не удалось отозвать', true);
+                }
+            }).catch(function () {
+                self.setBusy(false);
+                self.showProposalMsg('Не удалось отозвать', true);
+            });
+        },
+
+        collectCriteria: function () {
+            const criteria = [];
+            $(this.root).find('.supplier-participation-nonprice__row').each(function () {
+                const criterionId = parseInt(this.getAttribute('data-criterion-id') || '0', 10) || 0;
+                if (criterionId <= 0) {
+                    return;
+                }
+                const $row = $(this);
+                criteria.push({
+                    criterion_id: criterionId,
+                    value: String($row.find('.js-participation-criterion-value').val() || '').trim(),
+                    confirmed: $row.find('.js-participation-criterion-confirmed').is(':checked') ? 1 : 0,
+                    mandatory: this.getAttribute('data-mandatory') === '1'
+                });
+            });
+            return criteria;
+        },
+
+        validateMandatory: function (criteria) {
+            for (let i = 0; i < criteria.length; i += 1) {
+                const row = criteria[i];
+                if (!row.mandatory) {
+                    continue;
+                }
+                if (!row.value && !row.confirmed) {
+                    return false;
+                }
+            }
+            return true;
+        },
+
+        nextStepFromGates: function (gates) {
+            gates = gates || {};
+            if (!gates.nonprice_done) {
+                return 'nonPrice';
+            }
+            if (!gates.approval_ok) {
+                return 'approval';
+            }
+            if (!gates.qualification_ok) {
+                return 'qualification';
+            }
+            return 'proposal';
+        },
+
+        saveNonPriceAndNext: function () {
+            const self = this;
+            if (this.busy || this.tenderId <= 0) {
+                return;
+            }
+
+            const criteria = this.collectCriteria();
+            const hasMandatory = criteria.some(function (row) { return !!row.mandatory; });
+            if (hasMandatory && !this.validateMandatory(criteria)) {
+                this.showNonPriceMsg('Заполните или подтвердите все обязательные критерии', true);
+                return;
+            }
+
+            const payloadCriteria = criteria.map(function (row) {
+                return {
+                    criterion_id: row.criterion_id,
+                    value: row.value,
+                    confirmed: row.confirmed
+                };
+            });
+
+            this.setBusy(true);
+            this.showNonPriceMsg('');
+
+            const payload = { criteria: payloadCriteria };
+            // nonprice_done ставим, если обязательных нет или они закрыты;
+            // сервер сам тоже выставит при mandatoryCriteriaAnswered.
+            if (!hasMandatory || this.validateMandatory(criteria)) {
+                payload.nonprice_done = 1;
+            }
+
+            $.fRequest({
+                url: '/api/supplier/tender/' + this.tenderId + '/save/',
+                method: 'POST',
+                showMessages: true,
+                data: { data: payload },
+                onSuccess: function (reply) {
+                    const gates = (reply && reply.gates) || {};
+                    if (hasMandatory && !gates.nonprice_done) {
+                        self.setBusy(false);
+                        self.showNonPriceMsg('Критерии сохранены, но обязательные ещё не закрыты', true);
+                        return;
+                    }
+                    self.goStep(self.nextStepFromGates(gates));
+                },
+                onError: function (reply) {
+                    self.setBusy(false);
+                    self.showNonPriceMsg((reply && reply.message) || 'Не удалось сохранить', true);
+                }
+            }).catch(function () {
+                self.setBusy(false);
+                self.showNonPriceMsg('Не удалось сохранить', true);
             });
         }
     });

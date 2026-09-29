@@ -45,6 +45,7 @@ class pb2bFrontendCabinetTenderAction extends pb2bFrontendCabinetAction
         $card = (array) ($notice['tender'] ?? []);
         $resolved_id = (int) ($card['id'] ?? $tender_id);
         $extra = (new pb2bTenderCollection())->getWithClassifiers($resolved_id);
+        $items = (array) ($notice['items'] ?? []);
 
         $organizer = null;
         $tender = new pb2bTender($resolved_id);
@@ -53,6 +54,68 @@ class pb2bFrontendCabinetTenderAction extends pb2bFrontendCabinetAction
             $organizer = new pb2bCompany($organizer_id);
             if (!(int) $organizer->id) {
                 $organizer = null;
+            }
+        }
+
+        $summary_city = '';
+        foreach ($items as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            $place = trim((string) ($item['delivery_place'] ?? ''));
+            if ($place !== '') {
+                $summary_city = $place;
+                break;
+            }
+        }
+
+        $summary_category = '';
+        $classifier_names = array();
+        foreach ((array) ($extra['classifiers'] ?? array()) as $classifier) {
+            if (!is_array($classifier)) {
+                continue;
+            }
+            $name = trim((string) ($classifier['classifier_name'] ?? $classifier['name'] ?? $classifier['title'] ?? ''));
+            if ($name === '') {
+                continue;
+            }
+            $classifier_names[] = $name;
+            $code = (string) ($classifier['classifier_type_code'] ?? '');
+            if ($code === 'category' && $summary_category === '') {
+                $summary_category = $name;
+            }
+        }
+        if ($summary_category === '' && $classifier_names) {
+            $summary_category = implode(', ', $classifier_names);
+        }
+
+        $items_max_total = $tender->getItemsMaxTotal();
+
+        $status_name = (string) ($card['status']['name'] ?? '');
+        $status_tone = 'info';
+        if (mb_strpos($status_name, 'Отмен') !== false || mb_strpos($status_name, 'Отозв') !== false) {
+            $status_tone = 'error';
+        } elseif (mb_strpos($status_name, 'Приём') !== false || mb_strpos($status_name, 'Сравнен') !== false || mb_strpos($status_name, 'Подан') !== false) {
+            $status_tone = 'success';
+        } elseif (mb_strpos($status_name, 'Черновик') !== false || mb_strpos($status_name, 'Ожид') !== false) {
+            $status_tone = 'warning';
+        }
+
+        $days_left_label = '';
+        $end_at = trim((string) ($card['end_at'] ?? ''));
+        if ($end_at !== '' && strpos($end_at, '0000-00-00') !== 0) {
+            $end_ts = strtotime($end_at);
+            if ($end_ts) {
+                $today = strtotime('today');
+                $end_day = strtotime(date('Y-m-d', $end_ts));
+                $diff = (int) round(($end_day - $today) / 86400);
+                if ($diff === 0) {
+                    $days_left_label = 'Сегодня';
+                } elseif ($diff === 1) {
+                    $days_left_label = 'Остался 1 день';
+                } elseif ($diff > 1) {
+                    $days_left_label = 'Осталось ' . $diff . ' дн.';
+                }
             }
         }
 
@@ -93,7 +156,7 @@ class pb2bFrontendCabinetTenderAction extends pb2bFrontendCabinetAction
         $this->view->assign([
             'tender_id' => $resolved_id,
             'card' => $card,
-            'items' => (array) ($notice['items'] ?? []),
+            'items' => $items,
             'documents' => (array) ($notice['documents'] ?? []),
             'criteria' => (array) ($notice['criteria'] ?? []),
             'application' => $application,
@@ -104,6 +167,20 @@ class pb2bFrontendCabinetTenderAction extends pb2bFrontendCabinetAction
             'classifiers' => (array) ($extra['classifiers'] ?? []),
             'organizer' => $organizer,
             'supplier' => $company,
+            'summary_city' => $summary_city,
+            'summary_category' => $summary_category,
+            'requires_prequalification' => (int) ($tender->data['past_prequal_tender_id'] ?? 0) > 0,
+            'items_max_total' => $items_max_total,
+            'status_tone' => $status_tone,
+            'days_left_label' => $days_left_label,
+            'ds_tabs' => array(
+                array('id' => 'notice', 'label' => 'Извещение', 'active' => true),
+                array('id' => 'procurementDocs', 'label' => 'Закупочная документация'),
+                array('id' => 'positions', 'label' => 'Позиции', 'count' => count($items)),
+                array('id' => 'documents', 'label' => 'Документы', 'count' => count((array) ($notice['documents'] ?? array()))),
+                array('id' => 'questions', 'label' => 'Вопросы'),
+                array('id' => 'nonPrice', 'label' => 'Неценовые критерии'),
+            ),
         ]);
         $this->setThemeTemplate('html/cabinet/supplier/tender.html');
     }

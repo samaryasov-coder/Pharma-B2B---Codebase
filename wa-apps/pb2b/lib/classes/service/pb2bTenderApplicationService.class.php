@@ -286,6 +286,185 @@ class pb2bTenderApplicationService extends pb2bBaseService
         return $nonprice_ok && $approval_ok && $qualification_ok;
     }
 
+    /**
+     * Stepper участия: состояния шагов и next_required — только по гейтам Service.
+     * JS не пересчитывает правила, только рисует и ходит по URL.
+     *
+     * @return array{
+     *   gates: array,
+     *   next_required_step: string,
+     *   current_step: string,
+     *   requested_step: string,
+     *   redirected: bool,
+     *   stages: list<array{id: string, label: string, state: string, accessible: bool}>,
+     *   approval_status: string,
+     *   qualification_status: string
+     * }
+     */
+    public function resolveParticipationFlow(
+        ?pb2bTenderApplication $application,
+        pb2bTender $tender,
+        string $requested_step = ''
+    ): array {
+        $gates = $this->gatePayload($application, $tender);
+        $approval_status = (string) ($gates['approval_status'] ?? 'not_required');
+        $qualification_status = (string) ($gates['qualification_status'] ?? 'not_required');
+
+        $next = $this->nextRequiredParticipationStep($gates);
+        $requested = pb2bTenderParticipationStep::tryParse($requested_step);
+        $requested_step = $requested ? $requested->value : '';
+
+        $approval_needed = !empty($gates['approval_required']) && $approval_status !== 'not_required';
+        $qualification_needed = !empty($gates['qualification_required'])
+            && $qualification_status !== 'not_required';
+
+        $accessible = array(
+            pb2bTenderParticipationStep::NON_PRICE->value => true,
+            pb2bTenderParticipationStep::APPROVAL->value => !empty($gates['nonprice_done']) && $approval_needed,
+            pb2bTenderParticipationStep::QUALIFICATION->value => !empty($gates['nonprice_done']) && $qualification_needed,
+            pb2bTenderParticipationStep::PROPOSAL->value => !empty($gates['proposal']),
+        );
+
+        $redirected = false;
+        if ($requested_step === '') {
+            $current = $next;
+        } elseif (empty($accessible[$requested_step])) {
+            $current = $next;
+            $redirected = true;
+        } else {
+            $current = $requested_step;
+        }
+
+        // Пропущенные (не требуются) этапы не показываем в степпере.
+        $stages = array();
+        foreach (pb2bTenderParticipationStep::ordered() as $step) {
+            $id = $step->value;
+            $state = $this->participationStageState(
+                $id,
+                $gates,
+                $approval_status,
+                $qualification_status,
+                $current
+            );
+            if ($state === 'skipped') {
+                continue;
+            }
+            $stages[] = array(
+                'id' => $id,
+                'label' => $step->name(),
+                'state' => $state,
+                'accessible' => !empty($accessible[$id]),
+            );
+        }
+
+        return array(
+            'gates' => $gates,
+            'next_required_step' => $next,
+            'current_step' => $current,
+            'requested_step' => $requested_step,
+            'redirected' => $redirected,
+            'stages' => $stages,
+            'approval_status' => $approval_status,
+            'qualification_status' => $qualification_status,
+        );
+    }
+
+    /**
+     * @param array{nonprice_done?: bool, approval_ok?: bool, qualification_ok?: bool, proposal?: bool} $gates
+     */
+    private function nextRequiredParticipationStep(array $gates): string
+    {
+        if (empty($gates['nonprice_done'])) {
+            return pb2bTenderParticipationStep::NON_PRICE->value;
+        }
+        if (empty($gates['approval_ok'])) {
+            return pb2bTenderParticipationStep::APPROVAL->value;
+        }
+        if (empty($gates['qualification_ok'])) {
+            return pb2bTenderParticipationStep::QUALIFICATION->value;
+        }
+
+        return pb2bTenderParticipationStep::PROPOSAL->value;
+    }
+
+    /**
+     * @param array{
+     *   nonprice_done?: bool,
+     *   nonprice_required?: bool,
+     *   approval_ok?: bool,
+     *   approval_required?: bool,
+     *   qualification_ok?: bool,
+     *   qualification_required?: bool,
+     *   proposal?: bool
+     * } $gates
+     */
+    private function participationStageState(
+        string $id,
+        array $gates,
+        string $approval_status,
+        string $qualification_status,
+        string $current
+    ): string {
+        if ($id === pb2bTenderParticipationStep::NON_PRICE->value) {
+            // nonprice_done=true и без обязательных критериев (gatePayload).
+            // Пройденный шаг — completed (синий + галочка), иначе active/available.
+            if (!empty($gates['nonprice_done'])) {
+                return $current === pb2bTenderParticipationStep::NON_PRICE->value
+                    ? 'active'
+                    : 'completed';
+            }
+
+            return $current === pb2bTenderParticipationStep::NON_PRICE->value ? 'active' : 'available';
+        }
+
+        if ($id === pb2bTenderParticipationStep::APPROVAL->value) {
+            if (empty($gates['nonprice_done']) && !empty($gates['nonprice_required'])) {
+                return 'locked';
+            }
+            if (empty($gates['approval_required']) || $approval_status === 'not_required') {
+                return 'skipped';
+            }
+            if ($approval_status === 'approved') {
+                return 'completed';
+            }
+            if ($approval_status === 'pending') {
+                return $current === pb2bTenderParticipationStep::APPROVAL->value ? 'active' : 'waiting';
+            }
+            if ($approval_status === 'rejected') {
+                return 'blocked';
+            }
+
+            return $current === pb2bTenderParticipationStep::APPROVAL->value ? 'active' : 'available';
+        }
+
+        if ($id === pb2bTenderParticipationStep::QUALIFICATION->value) {
+            if (empty($gates['nonprice_done']) && !empty($gates['nonprice_required'])) {
+                return 'locked';
+            }
+            if (empty($gates['qualification_required']) || $qualification_status === 'not_required') {
+                return 'skipped';
+            }
+            if ($qualification_status === 'passed') {
+                return 'completed';
+            }
+            if ($qualification_status === 'pending') {
+                return $current === pb2bTenderParticipationStep::QUALIFICATION->value ? 'active' : 'waiting';
+            }
+            if ($qualification_status === 'failed') {
+                return 'blocked';
+            }
+
+            return $current === pb2bTenderParticipationStep::QUALIFICATION->value ? 'active' : 'available';
+        }
+
+        // proposal
+        if (empty($gates['proposal'])) {
+            return 'locked';
+        }
+
+        return $current === pb2bTenderParticipationStep::PROPOSAL->value ? 'active' : 'available';
+    }
+
     private function getSupplierCompanyWithAssert(int $company_id): pb2bCompany
     {
         $company = new pb2bCompany($company_id);
@@ -364,7 +543,14 @@ class pb2bTenderApplicationService extends pb2bBaseService
     /**
      * Поля карточки списка, которых нет в общем resource тендера.
      *
-     * @return array{organizer: string, city: string, category: string, mnn: list<string>, requires_prequalification: int}
+     * @return array{
+     *   organizer: string,
+     *   city: string,
+     *   category: string,
+     *   mnn: list<string>,
+     *   requires_prequalification: int,
+     *   display_budget: float
+     * }
      */
     private function supplierListCard(pb2bTender $tender): array
     {
@@ -410,12 +596,17 @@ class pb2bTenderApplicationService extends pb2bBaseService
             }
         }
 
+        $budget = (float) ($row['budget'] ?? 0);
+        $items_max_total = $tender->getItemsMaxTotal();
+        $display_budget = $budget > 0 ? $budget : $items_max_total;
+
         return array(
             'organizer' => $organizer,
             'city' => $city,
             'category' => $category,
             'mnn' => array_values($mnn),
             'requires_prequalification' => (int) ($row['past_prequal_tender_id'] ?? 0) > 0 ? 1 : 0,
+            'display_budget' => $display_budget,
         );
     }
 
@@ -550,7 +741,14 @@ class pb2bTenderApplicationService extends pb2bBaseService
     }
 
     /**
-     * @return array{proposal: bool, nonprice_done: bool, approval_ok: bool, qualification_ok: bool}
+     * @return array{
+     *   proposal: bool,
+     *   nonprice_done: bool,
+     *   approval_ok: bool,
+     *   qualification_ok: bool,
+     *   approval_status: string,
+     *   qualification_status: string
+     * }
      */
     private function gatePayload(?pb2bTenderApplication $application, pb2bTender $tender): array
     {
@@ -559,12 +757,23 @@ class pb2bTenderApplicationService extends pb2bBaseService
         $approval_required = !empty($this->tenderRow($tender)['approval_required']);
         $approval_code = (string) ($row['approval_status'] ?? ($approval_required ? 'pending' : 'not_required'));
         $qualification_code = (string) ($row['qualification_status'] ?? 'not_required');
+        if ($approval_code === '' && !$approval_required) {
+            $approval_code = 'not_required';
+        }
+        if ($qualification_code === '') {
+            $qualification_code = 'not_required';
+        }
 
         return array(
             'proposal' => $this->canAccessProposal($application, $tender),
             'nonprice_done' => !empty($row['nonprice_done']) || !$has_mandatory,
+            'nonprice_required' => $has_mandatory,
             'approval_ok' => in_array($approval_code, array('approved', 'not_required'), true) || !$approval_required,
+            'approval_required' => $approval_required,
             'qualification_ok' => in_array($qualification_code, array('passed', 'not_required'), true),
+            'qualification_required' => $qualification_code !== 'not_required',
+            'approval_status' => $approval_code,
+            'qualification_status' => $qualification_code,
         );
     }
 
@@ -907,13 +1116,37 @@ class pb2bTenderApplicationService extends pb2bBaseService
      */
     private function candidateTendersForSupplier(int $supplier_company_id): array
     {
+        $statuses = (array) pb2bWaproHelper::getConfigOption('tender_statuses', 'code');
+        $priem_id = (int) ($statuses['priem_zayavok']['id'] ?? 0);
+        $published_id = (int) ($statuses['opublikovan']['id'] ?? 0);
+
         $model = new pb2bTenderModel();
+        // Актуальные по времени сверху: дедлайн не прошёл → приём/опубликован → ближайший end_at.
         $rows = $model->query(
             'SELECT id FROM pb2b_tender
              WHERE IFNULL(is_deleted, 0) = 0
-               AND organizer_company_id <> ?
-             ORDER BY (end_at IS NULL), end_at ASC, id DESC',
-            $supplier_company_id
+               AND organizer_company_id <> i:supplier_id
+             ORDER BY
+               CASE
+                 WHEN end_at IS NULL OR end_at = \'0000-00-00 00:00:00\' OR end_at > NOW() THEN 0
+                 ELSE 1
+               END ASC,
+               CASE
+                 WHEN status = i:priem_id THEN 0
+                 WHEN status = i:published_id THEN 1
+                 ELSE 2
+               END ASC,
+               CASE
+                 WHEN end_at IS NULL OR end_at = \'0000-00-00 00:00:00\' THEN 1
+                 ELSE 0
+               END ASC,
+               end_at ASC,
+               id DESC',
+            array(
+                'supplier_id' => $supplier_company_id,
+                'priem_id' => $priem_id,
+                'published_id' => $published_id,
+            )
         )->fetchAll();
         $out = array();
         foreach (is_array($rows) ? $rows : array() as $row) {

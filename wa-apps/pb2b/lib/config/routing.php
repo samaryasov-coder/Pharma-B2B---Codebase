@@ -20,6 +20,8 @@ return [
     "cabinet/$ROLE_BOTH/tenders/" => 'frontend/cabinetTenders',
     "cabinet/$ROLE_BUYER/tenders/form/<section>/" => 'frontend/cabinetTendersBuyerForm',
     "cabinet/$ROLE_BUYER/tender/<id>/" => 'frontend/cabinetTender',
+    // participation до generic tender/<id>/
+    "cabinet/$ROLE_SUPPLIER/tender/<id>/participation/" => 'frontend/cabinetTenderParticipation',
     "cabinet/$ROLE_SUPPLIER/tender/<id>/" => 'frontend/cabinetTender',
 
     "cabinet/$ROLE_BOTH/company-data/" => 'frontend/cabinetData',

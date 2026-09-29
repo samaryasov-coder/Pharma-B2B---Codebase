@@ -1,0 +1,134 @@
+{* Шаг proposal: цены по позициям + документы КП. *}
+{assign var=gates_proposal value=$gates.proposal|default:false}
+{assign var=can_edit value=$can_edit_proposal|default:true}
+{assign var=proposal_sub value=$proposal_sub|default:'lots'}
+
+{if $app_status_code == 'withdrawn'}
+    <div class="empty-container">
+        <span class="icon"><svg><use href="#icon-info"></use></svg></span>
+        <span class="title">Заявка отозвана</span>
+        <span class="des">Повторно участвовать в этом тендере нельзя.</span>
+    </div>
+{elseif !$gates_proposal}
+    <div class="empty-container">
+        <span class="icon"><svg><use href="#icon-info"></use></svg></span>
+        <span class="title">Подача пока недоступна</span>
+        <span class="des">Сначала закройте предыдущие этапы допуска (неценовые / одобрение / квалификация).</span>
+    </div>
+{else}
+    <div class="supplier-participation-proposal js-participation-proposal">
+        <div class="supplier-participation-proposal__subs" role="tablist" aria-label="Подшаги предложения">
+            <a
+                class="supplier-participation-proposal__sub{if $proposal_sub == 'lots'} is-active{/if}"
+                href="{$participation_url|escape}?step=proposal&amp;sub=lots"
+                role="tab"
+                aria-selected="{if $proposal_sub == 'lots'}true{else}false{/if}"
+            >Позиции и цены</a>
+            <a
+                class="supplier-participation-proposal__sub{if $proposal_sub == 'documents'} is-active{/if}"
+                href="{$participation_url|escape}?step=proposal&amp;sub=documents"
+                role="tab"
+                aria-selected="{if $proposal_sub == 'documents'}true{else}false{/if}"
+            >Документы</a>
+        </div>
+
+        <p class="des supplier-participation-proposal__status">
+            Статус заявки: <strong>{$app_status_name|default:'черновик'|escape}</strong>
+            {if $app_status_code == 'submitted'}
+                · сохранение вернёт заявку в черновик до повторной подачи
+            {/if}
+        </p>
+
+        <form class="js-participation-proposal-form supplier-participation-proposal__form" onsubmit="return false;">
+            <div class="supplier-participation-proposal__panel" data-sub="lots"{if $proposal_sub != 'lots'} hidden{/if}>
+                <h3 class="supplier-participation__step-title">Цены по позициям</h3>
+                {if $items}
+                    <table class="supplier-tender-table">
+                        <thead>
+                            <tr>
+                                <th>Позиция</th>
+                                <th>Кол-во</th>
+                                <th>Ед.</th>
+                                <th>Цена за ед., ₽</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {foreach $items as $item}
+                                {assign var=iid value=$item.id}
+                                <tr>
+                                    <td>{$item.name|default:'—'|escape}</td>
+                                    <td>{$item.qty|default:'—'|escape}</td>
+                                    <td>{$item.unit|default:'—'|escape}</td>
+                                    <td>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            class="input js-participation-price"
+                                            data-tender-item-id="{$iid|escape}"
+                                            value="{$app_prices[$iid]|default:''|escape}"
+                                            placeholder="0.00"
+                                            aria-label="Цена за единицу"
+                                            {if !$can_edit}disabled{/if}
+                                        >
+                                    </td>
+                                </tr>
+                            {/foreach}
+                        </tbody>
+                    </table>
+                {else}
+                    <p class="des">Нет позиций для ценообразования.</p>
+                {/if}
+            </div>
+
+            <div class="supplier-participation-proposal__panel" data-sub="documents"{if $proposal_sub != 'documents'} hidden{/if}>
+                <h3 class="supplier-participation__step-title">Запрашиваемые документы</h3>
+                {assign var=has_req_docs value=false}
+                {foreach $documents as $doc}
+                    {if $doc.kind == 'requirement'}
+                        {assign var=has_req_docs value=true}
+                    {/if}
+                {/foreach}
+
+                {if $has_req_docs}
+                    <div class="supplier-participation-proposal__docs">
+                        {foreach $documents as $doc}
+                            {if $doc.kind == 'requirement'}
+                                {assign var=did value=$doc.id}
+                                {assign var=adoc value=$app_documents[$did]|default:null}
+                                <div
+                                    class="supplier-participation-proposal__doc-row js-participation-doc-row"
+                                    data-tender-document-id="{$did|escape}"
+                                    data-doc-name="{$doc.name|default:'Документ'|escape}"
+                                    data-file-link-id="{$adoc.file_link_id|default:0|escape}"
+                                    data-app-doc-id="{$adoc.id|default:0|escape}"
+                                >
+                                    <div class="supplier-participation-proposal__doc-meta">
+                                        <span class="supplier-participation-proposal__doc-name">
+                                            {$doc.name|default:'Документ'|escape}
+                                            {if $doc.is_required}<span class="supplier-participation-nonprice__badge is-required">Обязательный</span>{/if}
+                                        </span>
+                                        <span class="des js-participation-doc-status">
+                                            {if $adoc.file_link_id|default:0}
+                                                файл загружен (#{$adoc.file_link_id|escape})
+                                            {else}
+                                                файл не загружен
+                                            {/if}
+                                        </span>
+                                    </div>
+                                    {if $can_edit}
+                                        <input type="file" class="js-participation-doc-file" accept=".pdf,.doc,.docx,application/pdf">
+                                    {/if}
+                                </div>
+                            {/if}
+                        {/foreach}
+                    </div>
+                {else}
+                    <p class="des">Организатор не запросил дополнительные документы.</p>
+                {/if}
+            </div>
+
+            <p class="des js-participation-proposal-msg" hidden></p>
+        </form>
+    </div>
+{/if}

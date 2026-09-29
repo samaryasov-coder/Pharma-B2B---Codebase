@@ -1,0 +1,75 @@
+{* Правый сайдбар участия — ParticipateCallout / SidePanel из layout. *}
+{assign var=app_status_code value=$application.status.code|default:''}
+{assign var=is_submitted value=($app_status_code == 'submitted')}
+{assign var=is_withdrawn value=($app_status_code == 'withdrawn')}
+{assign var=submitted_at value=$application.submitted_at|default:''}
+{assign var=can_edit_submitted value=$is_submitted}
+
+<aside class="supplier-tender-aside" aria-label="Участие в тендере">
+    {if $is_withdrawn}
+        <div class="supplier-participate">
+            <p class="supplier-participate__eyebrow">Участие в тендере</p>
+            <p class="supplier-participate__text">Заявка отозвана. Повторно участвовать в этом тендере нельзя.</p>
+        </div>
+    {elseif !$is_submitted}
+        <div class="supplier-participate">
+            <p class="supplier-participate__eyebrow">Участие в тендере</p>
+            <p class="supplier-participate__text">
+                Оформите заявку в едином потоке: неценовые критерии, документы на одобрение, квалификация и ценовое предложение.
+            </p>
+            <button type="button" class="supplier-participate__cta js-supplier-tender-participate">
+                Участвовать
+            </button>
+            <p class="supplier-participate__error js-supplier-tender-apply-error" hidden></p>
+        </div>
+
+        <div class="supplier-participate supplier-participate--secondary">
+            <button
+                type="button"
+                class="supplier-participate__outline js-supplier-ask-question"
+                data-tab="questions"
+            >
+                Задать вопрос
+            </button>
+        </div>
+    {else}
+        <div class="supplier-participate">
+            <span class="supplier-participate__status-title">Статус заявки</span>
+            <div class="supplier-participate__status-body">
+                <span class="supplier-participate__badge supplier-participate__badge--pending">
+                    На рассмотрении
+                </span>
+                {if $submitted_at}
+                    <div class="supplier-participate__meta">
+                        Отправлено {$submitted_at|date_format:"%d.%m.%Y в %H:%M"}
+                    </div>
+                {/if}
+                {if $card.end_at}
+                    <div class="supplier-participate__meta">
+                        Итоги до {$card.opening_at|default:$card.end_at|date_format:"%d.%m.%Y"}
+                    </div>
+                {/if}
+            </div>
+        </div>
+
+        <div class="supplier-participate supplier-participate--actions">
+            <button
+                type="button"
+                class="supplier-participate__cta js-supplier-aside-edit"
+                {if !$can_edit_submitted}disabled{/if}
+            >
+                Редактировать предложение
+            </button>
+            <button type="button" class="supplier-participate__outline js-supplier-kp-withdraw">
+                Отозвать предложение
+            </button>
+            <button
+                type="button"
+                class="supplier-participate__ghost js-supplier-ask-question"
+                data-tab="questions"
+            >
+                Задать вопрос
+            </button>
+        </div>
+    {/if}
+</aside>

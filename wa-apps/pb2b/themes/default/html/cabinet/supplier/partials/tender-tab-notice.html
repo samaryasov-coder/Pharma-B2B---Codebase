@@ -1,0 +1,163 @@
+{* Вкладка «Извещение» — как TenderNoticeOverview / TabNotice в pharma_layout. *}
+{assign var=vat_mode value=$card.vat_mode|default:''}
+{assign var=budget_val value=$display_budget|default:$card.budget|default:0}
+{assign var=delivery_address value=$card.delivery_terms|default:''}
+
+<div class="supplier-notice">
+    <section class="supplier-notice__section">
+        <h3 class="supplier-notice__heading">Параметры закупки</h3>
+        <div class="supplier-notice__params">
+            <div class="supplier-notice__param">
+                <p class="supplier-notice__param-text">
+                    Попозиционная закупка:
+                    <span class="supplier-notice__param-value">{if $card.itemized_enabled}Разрешена{else}Не разрешена{/if}</span>
+                </p>
+                <svg class="supplier-notice__param-help" aria-hidden="true"><use href="#icon-help"></use></svg>
+            </div>
+            <div class="supplier-notice__param">
+                <p class="supplier-notice__param-text">
+                    Подача аналогов закупаемой позиции:
+                    <span class="supplier-notice__param-value">{if $card.allow_analogues}Разрешена{else}Запрещена{/if}</span>
+                </p>
+                <svg class="supplier-notice__param-help" aria-hidden="true"><use href="#icon-help"></use></svg>
+            </div>
+            <div class="supplier-notice__param">
+                <p class="supplier-notice__param-text">
+                    Ограничение предложений указанных в заявке стоимости:
+                    <span class="supplier-notice__param-value">
+                        {if $card.hide_initial_price || $budget_val <= 0}
+                            Максимальная цена заявки не ограничена; сравнение по итоговой стоимости
+                        {else}
+                            Максимальная цена заявки {$budget_val|number_format:0:',':' '|escape} ₽
+                        {/if}
+                    </span>
+                </p>
+                <svg class="supplier-notice__param-help" aria-hidden="true"><use href="#icon-help"></use></svg>
+            </div>
+            <div class="supplier-notice__param">
+                <p class="supplier-notice__param-text">
+                    При выборе победителя учитывается:
+                    <span class="supplier-notice__param-value">{if $vat_mode == 'without_vat'}Без НДС{else}С НДС{/if}</span>
+                </p>
+                <svg class="supplier-notice__param-help" aria-hidden="true"><use href="#icon-help"></use></svg>
+            </div>
+        </div>
+    </section>
+
+    <section class="supplier-notice__section">
+        <h3 class="supplier-notice__heading">Оплата и доставка</h3>
+        <div class="supplier-notice__fields supplier-notice__fields--wide">
+            <div class="supplier-notice__field">
+                <div class="supplier-notice__field-label">Адрес поставки</div>
+                <div class="supplier-notice__field-value supplier-notice__address">
+                    {if $delivery_address}
+                        <span class="supplier-notice__address-text">{$delivery_address|escape|nl2br}</span>
+                        <button
+                            type="button"
+                            class="supplier-notice__copy js-notice-copy-address"
+                            data-copy="{$delivery_address|escape}"
+                            aria-label="Скопировать адрес поставки"
+                        >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            </svg>
+                        </button>
+                    {else}
+                        —
+                    {/if}
+                </div>
+            </div>
+            <div class="supplier-notice__field">
+                <div class="supplier-notice__field-label">Условия оплаты</div>
+                <div class="supplier-notice__field-value">
+                    {if $card.payment_terms}{$card.payment_terms|escape|nl2br}{else}—{/if}
+                </div>
+            </div>
+            <div class="supplier-notice__field">
+                <div class="supplier-notice__field-label">Дополнительные условия поставки</div>
+                <div class="supplier-notice__field-value">
+                    {if $card.additional_delivery_info}{$card.additional_delivery_info|escape|nl2br}{else}—{/if}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="supplier-notice__section">
+        <h3 class="supplier-notice__heading">Дополнительная информация</h3>
+        <div class="supplier-notice__fields">
+            <div class="supplier-notice__field">
+                <div class="supplier-notice__field-label">Окончание приёма заявок</div>
+                <div class="supplier-notice__date-tags">
+                    {if $card.end_at}
+                        <span class="supplier-notice__date-tag">{$card.end_at|date_format:"%d.%m.%Y"}г</span>
+                        <span class="supplier-notice__date-tag">{$card.end_at|date_format:"%H:%M"}</span>
+                    {else}
+                        <span class="supplier-notice__date-tag">—</span>
+                    {/if}
+                </div>
+            </div>
+            <div class="supplier-notice__field">
+                <div class="supplier-notice__field-label">Плановое подведение итогов</div>
+                <div class="supplier-notice__date-tags">
+                    {if $card.opening_at}
+                        <span class="supplier-notice__date-tag">{$card.opening_at|date_format:"%d.%m.%Y"}г</span>
+                        <span class="supplier-notice__date-tag">{$card.opening_at|date_format:"%H:%M"}</span>
+                    {else}
+                        <span class="supplier-notice__date-tag">—</span>
+                    {/if}
+                </div>
+            </div>
+            <div class="supplier-notice__field">
+                <div class="supplier-notice__field-label">Изменение стоимости</div>
+                <div class="supplier-notice__field-value">
+                    {if $card.only_price_reduction}
+                        Разрешено только снижение стоимости при изменении предложения
+                    {else}
+                        Ограничение только снижением стоимости не установлено
+                    {/if}
+                </div>
+            </div>
+            <div class="supplier-notice__field">
+                <div class="supplier-notice__field-label">Приоритеты выбора поставщика</div>
+                <div class="supplier-notice__field-value">
+                    {if $card.additional_info}
+                        {$card.additional_info|escape|nl2br}
+                    {else}
+                        Приоритет отдается выбору поставщика, предоставляющему минимальную цену.
+                    {/if}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="supplier-notice__section">
+        <h3 class="supplier-notice__heading">Контактная информация</h3>
+        <div class="supplier-notice__fields">
+            <div class="supplier-notice__field">
+                <div class="supplier-notice__field-label">Организатор</div>
+                <div class="supplier-notice__field-value">
+                    {if $organizer}{$organizer->getFullName()|escape}{else}—{/if}
+                </div>
+            </div>
+            <div class="supplier-notice__field">
+                <div class="supplier-notice__field-label">Контактное лицо</div>
+                <div class="supplier-notice__field-value">
+                    {if $organizer}{$organizer.data.contact_person|default:'—'|escape}{else}—{/if}
+                </div>
+            </div>
+            <div class="supplier-notice__field">
+                <div class="supplier-notice__field-label">E-mail</div>
+                <div class="supplier-notice__field-value">
+                    {if $organizer}{$organizer.data.registry_email|default:'—'|escape}{else}—{/if}
+                </div>
+            </div>
+            <div class="supplier-notice__field">
+                <div class="supplier-notice__field-label">Номер телефона</div>
+                <div class="supplier-notice__field-value">
+                    {if $organizer}{$organizer.data.phone|default:'—'|escape}{else}—{/if}
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
