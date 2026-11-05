@@ -1,0 +1,45 @@
+<section class="tender-application js-tender-participants-detail" aria-label="Предложение участника">
+    {capture assign=tender_application_header_actions}
+        <button type="button" class="button outline small js-tender-participants-back">
+            <svg aria-hidden="true"><use href="#icon-chevron-left"></use></svg>
+            К участникам
+        </button>
+    {/capture}
+    {include
+        file="html/cabinet/partials/page-header.html"
+        page_header_title="Предложение участника"
+        page_header_level="h3"
+        page_header_size="h4"
+        page_header_actions=$tender_application_header_actions
+        page_header_title_class=""
+        page_header_back_url=""
+    }
+    <div class="tender-application__loading js-tender-application-loading" role="status">Загрузка…</div>
+    <div class="tender-application__error js-tender-application-error" role="alert" hidden></div>
+    <div class="tender-application__layout js-tender-application-body" hidden>
+        <div class="tender-page__main tender-application__main js-tender-application-main">
+            {include
+                file="html/cabinet/partials/tabs.html"
+                tabs=$tender_application_tabs
+                tabs_aria="Разделы предложения участника"
+                tabs_size="large"
+                tabs_with_panels=false
+            }
+            <div class="tabs-content tender-application__panels">
+                {foreach $tender_application_tabs as $app_tab}
+                    <div class="tab-content{if $app_tab.active|default:false} is-active{/if}"
+                        role="tabpanel"
+                        data-tab="{$app_tab.id|escape}"
+                        {if !$app_tab.active|default:false}hidden{/if}>
+                        <div class="tender-application__panel js-tender-application-panel-body" data-panel="{$app_tab.id|escape}"></div>
+                    </div>
+                {/foreach}
+            </div>
+        </div>
+        <aside class="tender-page__aside tender-application__aside" aria-label="Карточка участника и решения">
+            <div class="tender-page__aside-content">
+                <div class="tender-application__participant js-tender-application-sidebar"></div>
+            </div>
+        </aside>
+    </div>
+</section>

@@ -1,0 +1,50 @@
+<div class="tender-nonprice">
+    {if $criteria|default:[]}
+        <p class="tender-nonprice__notice" role="note">Ответы увидит только организатор.</p>
+        <div class="tender-nonprice__list">
+            {foreach $criteria as $criterion}
+                <section class="detail-field tender-nonprice__criterion">
+                    <div class="detail-field">
+                        {include file="html/cabinet/partials/page-header.html"
+                            page_header_title=$criterion.name|default:'Критерий'
+                            page_header_level='h3'
+                            page_header_size='h4'
+                            page_header_actions=''
+                            page_header_back_url=''
+                            page_header_title_class=''}
+                        {if $criterion.description|default:''}
+                            <p class="detail-field__value">{$criterion.description|escape|nl2br}</p>
+                        {/if}
+                        {if $criterion.is_mandatory|default:0}
+                            <div>{include file="html/cabinet/partials/badge.html" badge_text='Обязательный' badge_size='small' badge_tone='error' badge_class='' badge_leading='' badge_variant='' badge_outline=false}</div>
+                        {/if}
+                    </div>
+                    <div class="tender-nonprice__answer">
+                        {if $criterion.type|default:'text' == 'confirmation'}
+                            <label class="checkbox">
+                                <input type="checkbox" disabled>
+                                <span class="checkmark" aria-hidden="true"></span>
+                                <span class="input-label">{$criterion.confirmation_text|default:'Подтверждаю'|escape}</span>
+                            </label>
+                        {elseif $criterion.type|default:'text' == 'file'}
+                            <button type="button" class="button secondary" disabled>Загрузить файл...</button>
+                        {elseif $criterion.type|default:'text' == 'date'}
+                            <div class="input-box">
+                                <input type="date" aria-label="{$criterion.name|default:'Дата'|escape}" disabled>
+                            </div>
+                        {else}
+                            <div class="textarea-box">
+                                <textarea rows="3" placeholder="Введите ответ" aria-label="{$criterion.name|default:'Ответ на критерий'|escape}" disabled></textarea>
+                            </div>
+                        {/if}
+                    </div>
+                </section>
+            {/foreach}
+        </div>
+    {else}
+        <div class="empty-container">
+            <span class="title">Нет критериев</span>
+            <span class="des">В этом тендере организатор не добавил неценовые критерии.</span>
+        </div>
+    {/if}
+</div>

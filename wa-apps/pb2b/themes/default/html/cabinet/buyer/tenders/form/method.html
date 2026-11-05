@@ -6,7 +6,7 @@
 
         <div class="tender-method-modal__list" role="radiogroup" aria-label="Способ закупки">
             {foreach $methods as $method}
-                <label class="tender-method-option{if !$method.available} is-disabled{/if}">
+                <label class="tender-method-option">
                     <input
                         type="radio"
                         class="tender-method-option__input"
@@ -16,15 +16,10 @@
                         data-code="{$method.code|escape}"
                         data-label="{$method.label|escape}"
                         data-title="{$method.create_title|escape}"
-                        data-available="{if $method.available}1{else}0{/if}"
-                        {if !$method.available}disabled{/if}
                     >
                     <span class="tender-method-option__radio" aria-hidden="true"></span>
                     <span class="tender-method-option__text">
                         <span class="tender-method-option__label">{$method.label|escape}</span>
-                        {if !$method.available}
-                            <span class="tender-method-option__badge">Пока недоступно</span>
-                        {/if}
                         <span class="tender-method-option__desc">{$method.description|escape}</span>
                     </span>
                 </label>
@@ -93,17 +88,12 @@
     text-align: left;
 }
 
-.tender-method-option:hover:not(.is-disabled) {
+.tender-method-option:hover {
     background: var(--gray-100);
 }
 
 .tender-method-option:has(.tender-method-option__input:checked) {
     background: var(--gray-100);
-}
-
-.tender-method-option.is-disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
 }
 
 .tender-method-option__input {
@@ -141,11 +131,6 @@
     font: var(--text-font-p2);
     font-weight: var(--font-weight-medium);
     color: var(--gray-900);
-}
-
-.tender-method-option__badge {
-    font: var(--text-font-p4);
-    color: var(--gray-500);
 }
 
 .tender-method-option__desc {

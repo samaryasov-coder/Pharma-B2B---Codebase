@@ -945,9 +945,7 @@ input.supplier {
     min-width: 200px;
 }
 
-.tender-filters .date-picker,
-.tender-create-period .date-picker,
-.zc-step-params .zc-date-field .date-picker {
+.tender-filters .date-picker {
     position: relative;
     background: var(--white);
     display: flex;
@@ -957,9 +955,7 @@ input.supplier {
     max-height: 70px;
 }
 
-.tender-filters .date-picker svg,
-.tender-create-period .date-picker svg,
-.zc-step-params .zc-date-field .date-picker svg {
+.tender-filters .date-picker svg {
     color: var(--gray-400);
     width: 18px;
     height: 18px;
@@ -1278,47 +1274,9 @@ input.supplier {
     color: var(--gray-900);
 }
 
-.creation-title {
-    font: var(--text-font-h1);
-}
-
-.tender-creation-upper {
-    display: flex;
-    justify-content: space-between;
-    gap: 24px;
-    align-items: center;
-}
-
-.tender-creation-upper.border-bottom,
 .creation-card-title.border-bottom {
     border-bottom: 1px solid var(--gray-200);
     padding-bottom: 12px;
-}
-
-.tender-creation-upper-buttons {
-    display: flex;
-    gap: 16px;
-    flex-shrink: 0;
-}
-
-.tender-creation-upper-buttons .button {
-    background: var(--gray-50);
-    border-radius: 12px;
-    transition: 0.3s ease all;
-    outline: none;
-    box-shadow: none;
-    --btn-bg-color: var(--gray-50);
-    --btn-text-color: var(--gray-900);
-    --btn-border-color: transparent;
-    --btn-radius: 12px;
-}
-
-.tender-creation-upper-buttons .button:hover {
-    background: var(--primary-900);
-    color: var(--white);
-    --btn-bg-color: var(--primary-900);
-    --btn-text-color: var(--white);
-    outline: none;
 }
 
 .cabinet-container .creation-steps {
@@ -1395,6 +1353,38 @@ input.supplier {
 
 .cabinet-container .creation-step.completed::after {
     background: var(--success-dark);
+}
+
+.cabinet-container .creation-step.is-current::after {
+    background: var(--success-dark);
+}
+
+.cabinet-container .creation-step.is-clickable {
+    cursor: pointer;
+}
+
+.cabinet-container .creation-step.is-invalid {
+    color: var(--error-base, #d92d20);
+}
+
+.cabinet-container .creation-step.is-invalid::before {
+    background-color: var(--error-base, #d92d20);
+    border: 1px solid var(--error-base, #d92d20);
+}
+
+.cabinet-container .creation-step.is-invalid.completed::before {
+    background-color: var(--error-base, #d92d20);
+    border-color: var(--error-base, #d92d20);
+}
+
+.cabinet-container .creation-step.is-invalid::after,
+.cabinet-container .creation-step.is-invalid.is-current::after,
+.cabinet-container .creation-step.is-invalid.completed::after {
+    background: var(--error-base, #d92d20);
+}
+
+.cabinet-container .creation-step:not(.is-clickable) {
+    cursor: default;
 }
 
 .cabinet-container .creation-card {
@@ -1538,10 +1528,6 @@ input.supplier {
     line-height: 143%;
 }
 
-.tender-creation-prequalification .creation-card-hint {
-    margin-left: 0;
-}
-
 .tender-creation-checkbox-wrap {
     padding-bottom: 0;
     border-bottom: none;
@@ -1640,191 +1626,9 @@ input.supplier {
     border-top: 1px solid var(--gray-200);
 }
 
-/* Глобальный стиль для кнопки "Отменить" — единый на всех шагах */
-.creation-manage-buttons .js-tender-create-cancel {
-    background: var(--white);
-    color: var(--gray-900);
-    border: 1px solid var(--gray-200);
-    box-shadow: none;
-    --btn-bg-color: var(--white);
-    --btn-text-color: var(--gray-900);
-    --btn-border-color: var(--gray-200);
-}
-.creation-manage-buttons .js-tender-create-cancel:hover {
-    background: var(--gray-50);
-    --btn-bg-color: var(--gray-50);
-}
-
-/* Глобальный стиль для кнопки "Назад" — единый на всех шагах */
-.creation-manage-buttons .manage-button.back,
-.creation-manage-buttons .js-tender-step-prev {
-    background: var(--gray-50);
-    color: var(--gray-900);
-    border: 1px solid var(--gray-100);
-    box-shadow: none;
-    --btn-bg-color: var(--gray-50);
-    --btn-text-color: var(--gray-900);
-}
-.creation-manage-buttons .manage-button.back:hover,
-.creation-manage-buttons .js-tender-step-prev:hover {
-    background: var(--gray-100);
-    color: var(--gray-900);
-    border-color: var(--gray-100);
-    --btn-bg-color: var(--gray-100);
-}
-
 .manage-buttons-right {
     display: flex;
     gap: 12px;
-}
-
-.tender-creation-closed-procedure {
-    opacity: 0;
-    max-height: 0;
-    border-radius: 12px;
-    background: var(--gray-50);
-    padding: 0;
-    transition: 0.3s ease all;
-}
-
-.tender-creation-prequalification {
-    opacity: 0;
-    max-height: 0;
-    margin-top: 0;
-    transition: 0.3s ease all;
-}
-
-.tender-creation-closed-procedure.visible,
-.tender-creation-prequalification.visible {
-    max-height: 100%;
-    opacity: 1;
-}
-
-.tender-creation-closed-procedure.visible {
-    padding: var(--input-padding-x-sm) var(--input-padding-y-sm);
-    margin-bottom: 16px;
-}
-
-.tender-creation-prequalification.visible {
-    margin-top: 16px;
-}
-
-.tender-creation-closed-procedure .select2-container--default,
-.tender-creation-prequalification .select2-container--default {
-    max-width: 480px;
-    width: 100% !important;
-    max-height: 52px;
-    margin: 8px 0;
-}
-
-.tender-creation-closed-procedure .select2-selection,
-.tender-creation-prequalification .select2-selection,
-.creation-card-primary-data .select2-selection {
-    max-height: 52px;
-    display: flex;
-}
-
-.tender-creation-closed-procedure .select2-container .select2-selection--multiple .select2-search--inline .select2-search__field,
-.tender-creation-prequalification .select2-container .select2-selection--multiple .select2-search--inline .select2-search__field,
-.creation-card-primary-data .select2-container .select2-selection--multiple .select2-search--inline .select2-search__field {
-    width: 100%;
-}
-
-.tender-creation-closed-procedure .select2-container .select2-selection .select2-selection__rendered,
-.tender-creation-prequalification .select2-container .select2-selection .select2-selection__rendered,
-.creation-card-primary-data .select2-container .select2-selection .select2-selection__rendered {
-    flex-wrap: nowrap;
-    overflow: hidden;
-}
-
-.tender-creation-closed-procedure .select2-container.select2-container--above  .select2-selection--multiple .select2-search--inline .select2-search__field,
-.tender-creation-prequalification .select2-container.select2-container--above  .select2-selection--multiple .select2-search--inline .select2-search__field,
-.creation-card-primary-data .select2-container.select2-container--above  .select2-selection--multiple .select2-search--inline .select2-search__field {
-    width: auto;
-}
-
-.tender-creation-closed-procedure .select2-container .select2-selection::after,
-.tender-creation-prequalification .select2-container .select2-selection::after {
-    content: '';
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    width: 16px;
-    height: 16px;
-    transform: translateY(-50%);
-    pointer-events: none;
-    background-color: var(--gray-900);
-
-    -webkit-mask: url("data:image/svg+xml,%3Csvg viewBox='0 0 17 17' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6.875 1.25C3.7684 1.25 1.25 3.7684 1.25 6.875C1.25 9.9816 3.7684 12.5 6.875 12.5C8.42847 12.5 9.83387 11.8711 10.8525 10.8525C11.8711 9.83387 12.5 8.42847 12.5 6.875C12.5 3.7684 9.9816 1.25 6.875 1.25ZM0 6.875C0 3.07804 3.07804 0 6.875 0C10.672 0 13.75 3.07804 13.75 6.875C13.75 8.54819 13.1516 10.0825 12.1583 11.2744L16.0669 15.1831C16.311 15.4271 16.311 15.8229 16.0669 16.0669C15.8229 16.311 15.4271 16.311 15.1831 16.0669L11.2744 12.1583C10.0825 13.1516 8.54819 13.75 6.875 13.75C3.07804 13.75 0 10.672 0 6.875Z' fill='black'/%3E%3C/svg%3E") no-repeat center;
-
-    mask: url("data:image/svg+xml,%3Csvg viewBox='0 0 17 17' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6.875 1.25C3.7684 1.25 1.25 3.7684 1.25 6.875C1.25 9.9816 3.7684 12.5 6.875 12.5C8.42847 12.5 9.83387 11.8711 10.8525 10.8525C11.8711 9.83387 12.5 8.42847 12.5 6.875C12.5 3.7684 9.9816 1.25 6.875 1.25ZM0 6.875C0 3.07804 3.07804 0 6.875 0C10.672 0 13.75 3.07804 13.75 6.875C13.75 8.54819 13.1516 10.0825 12.1583 11.2744L16.0669 15.1831C16.311 15.4271 16.311 15.8229 16.0669 16.0669C15.8229 16.311 15.4271 16.311 15.1831 16.0669L11.2744 12.1583C10.0825 13.1516 8.54819 13.75 6.875 13.75C3.07804 13.75 0 10.672 0 6.875Z' fill='black'/%3E%3C/svg%3E") no-repeat center;
-
-    -webkit-mask-size: contain;
-    mask-size: contain;
-}
-
-.closed-procedure-title {
-    font-size: var(--font-size-l1);
-    margin-bottom: 16px;
-}
-
-.tender-creation-closed-procedure .creation-card-hint {
-    margin-bottom: 0;
-}
-
-.tender-create-period {
-    max-height: 0;
-    opacity: 0;
-    transition: 0.3s ease all;
-    display: flex;
-    gap: 10px;
-    max-width: 480px;
-    margin-left: 60px;
-    pointer-events: none;
-}
-
-.tender-create-period.visible {
-    max-height: 100%;
-    opacity: 1;
-    pointer-events: all;
-}
-
-.tender-create-period.always-visible {
-    max-height: 100%;
-    opacity: 1;
-    pointer-events: all;
-    margin-left: 0;
-    margin-top: 14px;
-}
-
-.tender-create-period .date-picker {
-    flex: 1;
-}
-
-.tender-create-period input[type="time"] {
-    flex: 1;
-    position: relative;
-    background: var(--white);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    cursor: pointer;
-    max-height: 70px;
-    --slct-padding-px: var(--select-padding-x-md);
-    --slct-padding-py: var(--select-padding-y-md);
-    --slct-radius: var(--select-radius-md);
-    --slct-border-color: var(--border-color-input);
-    min-height: 52px;
-    padding: var(--slct-padding-py) var(--slct-padding-px);
-    border-radius: var(--slct-radius) !important;
-    font: var(--text-font-p2);
-    font-weight: var(--font-weight-regular);
-    border: 1px solid var(--slct-border-color);
-}
-
-
-.creation-card-primary-data {
-    max-width: 490px;
 }
 
 .input-title {
@@ -1864,10 +1668,6 @@ input.supplier {
     pointer-events: all;
 }
 
-.creation-card-primary-data {
-    max-width: 490px;
-}
-
 .tenders-search.notification {
     margin-bottom: 24px;
 }
@@ -1904,14 +1704,6 @@ input.supplier {
     color: var(--gray-900);
     background-color: var(--white);
     box-shadow: none;
-}
-
-.creation-card-primary-data {
-    max-width: 490px;
-}
-
-.creation-card-primary-data.is-full {
-    max-width: none;
 }
 
 .creation-card-categories-button.active {
@@ -2277,56 +2069,6 @@ input.supplier {
     height: 18px;
 }
 
-.tender-creation-radio-title {
-    font-size: var(--font-size-p2);
-    color: var(--gray-900);
-    margin-top: 24px;
-    margin-bottom: 14px;
-}
-
-.tender-creation-radios.purchase-options {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    margin-bottom: 0;
-}
-
-.tender-creation-radios.purchase-options.is-row {
-    flex-direction: row;
-    align-items: center;
-    gap: 24px;
-}
-
-.creation-card-divider {
-    height: 1px;
-    width: 100%;
-    background: var(--gray-200);
-    margin: 24px 0;
-}
-
-.tender-creation-checkboxes {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.tender-creation-hint {
-    font-size: var(--font-size-p3);
-    line-height: 143%;
-    color: var(--gray-600);
-    margin-bottom: 8px;
-}
-
-.tender-creation-checkboxes > .tender-creation-checkbox-wrap {
-    margin-bottom: 0;
-}
-
-.tender-creation-increment .input-suffix {
-    color: var(--gray-500);
-    font-size: var(--font-size-p2);
-    margin-right: 8px;
-}
-
 .add-info .add-info-inner {
     display: flex;
     flex-direction: column;
@@ -2539,16 +2281,6 @@ input.supplier {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-}
-
-.js-criteria-item .criteria-badge {
-    flex-shrink: 0;
-    padding: 1px 6px;
-    border-radius: 6px;
-    background: var(--error-light, #fee4e2);
-    color: var(--error-base, #d92d20);
-    font-size: 11px;
-    font-weight: var(--font-weight-medium);
 }
 
 .js-criteria-item .criteria-actions {
@@ -2871,22 +2603,6 @@ input.supplier {
     border-top: 1px solid var(--gray-200);
 }
 
-.tender-creation-radios.purchase-options .creation-radio-wrap {
-    border-radius: 0;
-    background: transparent;
-    padding: 0;
-    transition: 0.3s ease all;
-}
-
-.tender-creation-radios.purchase-options .creation-radio-wrap .radio-text {
-    font-size: var(--font-size-p2);
-    color: var(--gray-900);
-}
-
-.tender-creation-radios.purchase-options .creation-radio-wrap:has(input[type="radio"]:checked) {
-    background: transparent;
-}
-
 .creation-card-subtitle {
     margin-bottom: 4px;
 }
@@ -2896,8 +2612,7 @@ input.supplier {
     color: var(--gray-600);
 }
 
-.tender-creation-nds-select,
-.tender-creation-renewal-inner {
+.tender-creation-nds-select {
     margin-top: 0;
     max-width: 230px;
     margin-left: 30px;
@@ -2906,99 +2621,20 @@ input.supplier {
     transition: 0.3s ease all;
 }
 
-.tender-creation-nds-select.visible,
-.tender-creation-renewal-inner.visible {
+.tender-creation-nds-select.visible {
     margin-top: 8px;
     max-height: 100%;
     opacity: 1;
-}
-
-.tender-creation-renewal-inner.visible {
-    margin-top: 14px;
-    max-width: 100%;
-}
-
-.tender-creation-renewal-inner .tender-creation-renewal-select .select2-container {
-    max-width: 230px;
-    margin-top: 8px;
-    margin-bottom: 16px;
-}
-
-.tender-creation-radios.min-increment {
-    flex-direction: column;
-    margin-left: 30px;
-    max-height: 0;
-    opacity: 0;
-    transition: 0.3s ease all;
-}
-
-.tender-creation-radios.min-increment.visible {
-    max-height: 100%;
-    opacity: 1;
-    margin-top: 14px;
-}
-
-.tender-creation-radios.min-increment .creation-radio-wrap {
-    padding: 0;
-}
-
-.min-increment .creation-radio-wrap:has(input[type="radio"]:checked) {
-    background: transparent;
-}
-
-.tender-creation-increment {
-    margin-left: 30px;
-    max-height: 0;
-    opacity: 0;
-    transition: 0.3s ease all;
-}
-
-.tender-creation-increment.visible {
-    max-height: 100%;
-    opacity: 1;
-}
-
-.tender-creation-increment-buttons {
-    display: flex;
-    gap: 8px;
-    padding: var(--toggle-padding-y-sm);
-    border: 1px solid var(--gray-100);
-    border-radius: 10px;
-    background: var(--gray-50);
-    margin-bottom: 10px;
-    width: fit-content;
-}
-
-.increment-button {
-    color: var(--gray-400);
-    border-radius: var(--toggle-radius-lg);
-    padding: var(--tabs-padding-y-sm) var(--tabs-padding-x-md);
-    box-shadow: none;
-    background: transparent;
-    transition: 0.3s ease all;
-}
-
-.increment-button:hover {
-    color: var(--black);
-}
-
-.increment-button.active {
-    color: var(--black);
-    box-shadow: 0 0 4px 0 rgba(0, 0, 0, 0.08);
-    background: var(--white);
-    font-weight: var(--font-weight-semibold);
 }
 
 .tender-creation-input-field {
     margin-top: 14px;
 }
 
-.tender-creation-increment .input-box,
 .price-limit .tender-creation-input-field .input-box{
     max-width: 230px;
 }
 
-.tender-creation-increment .input-box svg,
 .tender-creation-input-field .input-box svg {
     width: 20px;
     height: 20px;
@@ -3015,10 +2651,6 @@ input.supplier {
 
 .creation-card-item:last-child {
     margin-bottom: 0;
-}
-
-.deadline-radio .tender-create-period {
-    margin-left: 30px;
 }
 
 .additional-info-text .input-box,
@@ -3168,11 +2800,6 @@ input.supplier {
 .contacts-info .creation-card-hint {
     margin-bottom: 8px;
     margin-top: 20px;
-}
-
-.tender-creation-upper-buttons svg {
-    width: 20px;
-    height: 20px;
 }
 
 .documents-container{

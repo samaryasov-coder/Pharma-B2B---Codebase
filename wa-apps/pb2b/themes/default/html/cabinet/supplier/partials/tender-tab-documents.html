@@ -1,0 +1,44 @@
+<div class="table-scroll" tabindex="0" role="region" aria-label="Документы для участия в тендере">
+    <table class="base-table" aria-label="Документы для участия в тендере">
+        <colgroup>
+            <col class="tender-documents__number">
+            <col class="tender-documents__name">
+            <col class="tender-documents__description">
+            <col class="tender-documents__template">
+            <col class="tender-documents__submission">
+        </colgroup>
+        <thead>
+            <tr>
+                <th scope="col">Номер</th>
+                <th scope="col">Наименование</th>
+                <th scope="col">Описание</th>
+                <th scope="col">Шаблон</th>
+                <th scope="col" aria-label="Подача документа"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {assign var=document_number value=0}
+            {foreach $documents as $document}
+                {if $document.kind == 'requirement'}
+                    {assign var=document_number value=$document_number+1}
+                    <tr>
+                        <td>{$document_number}</td>
+                        <td>{$document.name|escape}</td>
+                        <td>{$document.description|default:'—'|escape}</td>
+                        <td>
+                            {if $document.file_link_id|default:0 > 0}
+                                <a href="/api/supplier/tender/{$tender.id|intval}/documents/download/?scope=template&amp;document_id={$document.id|intval}" hx-boost="false">{$document.file_name|default:'Скачать шаблон'|escape}</a>
+                            {else}
+                                <span class="base-table__hint">—</span>
+                            {/if}
+                        </td>
+                        <td><span class="base-table__hint">Добавьте при подаче заявки</span></td>
+                    </tr>
+                {/if}
+            {/foreach}
+            {if !$document_number}
+                <tr><td colspan="5" class="base-table__empty">Заказчик не запросил документы для участия</td></tr>
+            {/if}
+        </tbody>
+    </table>
+</div>

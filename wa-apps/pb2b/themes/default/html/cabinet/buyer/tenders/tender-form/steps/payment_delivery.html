@@ -1,0 +1,93 @@
+<div class="tender-form-step js-payment-delivery-step">
+    <section class="tender-form-card">
+        <div class="tender-form-card__head">
+            <h2 class="tender-form-card__title">Условия оплаты и доставки</h2>
+        </div>
+
+        <div class="tender-form-section">
+            <div class="tender-form-group">
+                <div class="tender-form-field">
+                    <label class="tender-form-field__label" for="tender-delivery-address">Адрес</label>
+                    <div class="tender-form-list js-delivery-address-list">
+                        <div class="tender-form-list__item js-payment-list-item">
+                            <div class="tender-form-textarea">
+                                <textarea id="tender-delivery-address" class="js-delivery-address" name="delivery_addresses[]" maxlength="500" rows="3" placeholder="Индекс, Страна Область, населенный пункт, Улица, дом, Строение/корпус, квартира/офис"></textarea>
+                                <div class="tender-form-textarea__counter char-counter">0/500</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="button outline tender-form-action js-add-delivery-address">
+                    <svg><use href="#icon-plus"></use></svg>
+                    <span>Добавить еще адрес</span>
+                </button>
+            </div>
+
+            <div class="tender-form-field">
+                <label class="tender-form-field__label" for="tender-additional-delivery">Дополнительные условия поставки</label>
+                <div class="tender-form-textarea">
+                    <textarea id="tender-additional-delivery" class="js-field-additional-delivery" name="additional_delivery_info" maxlength="200" rows="3" placeholder="Время работы склада, возможна ли частичная отгрузка, когда требуется поставка или оказание услуги"></textarea>
+                    <div class="tender-form-textarea__counter char-counter">0/200</div>
+                </div>
+            </div>
+
+            <div class="tender-form-group js-price-request-only">
+                <div class="tender-form-field tender-form-select">
+                    <label class="tender-form-field__label" for="tender-payment-terms">Условия оплаты</label>
+                    <select id="tender-payment-terms" class="select2 filter-select js-field-payment" name="payment_terms" data-placeholder="Выберите условия оплаты из ваших шаблонов">
+                        <option value=""></option>
+                    </select>
+                </div>
+                <button type="button" class="button outline tender-form-action js-add-payment-terms">
+                    <svg><use href="#icon-plus"></use></svg>
+                    <span>Добавить другие условия</span>
+                </button>
+            </div>
+
+            <input type="hidden" class="js-field-budget" name="budget" value="">
+        </div>
+    </section>
+
+    <section class="tender-form-card">
+        <div class="tender-form-card__head">
+            <h2 class="tender-form-card__title">Контакты</h2>
+        </div>
+
+        <div class="tender-form-group">
+            <div class="tender-form-field tender-form-select">
+                <label class="tender-form-field__label" for="tender-contact">Контакты</label>
+                <div class="tender-form-list js-contact-list">
+                    <div class="tender-form-list__item js-payment-list-item">
+                        <select id="tender-contact" class="select2 filter-select js-tender-contact" name="tender_contacts[]" data-placeholder="Выберите контакт из списка организации">
+                            <option value=""></option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="tender-form-actions">
+                <button type="button" class="button outline js-add-tender-contact">
+                    <svg><use href="#icon-plus"></use></svg>
+                    <span>Добавить еще контакт</span>
+                </button>
+                <button type="button" class="button outline js-create-external-contact">
+                    <svg><use href="#icon-plus"></use></svg>
+                    <span>Создать новый контакт вне организации</span>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <label class="checkbox tender-form-control tender-form-consent">
+        <input type="checkbox" name="info_messages_consent" value="1" class="js-field-info-consent">
+        <span class="checkmark" aria-hidden="true"></span>
+        <span class="tender-form-control__copy"><span class="input-label">Я даю согласие на получение информационных сообщений</span></span>
+    </label>
+
+    <div class="creation-manage-buttons">
+        <a class="manage-button button large outline js-tender-create-cancel" href="/cabinet/buyer/tenders/" hx-get="/cabinet/buyer/tenders/" hx-target=".js-main-content" hx-push-url="true">Отменить</a>
+        <div class="manage-buttons-right">
+            <button type="button" class="manage-button button large secondary back js-tender-step-prev">Назад</button>
+            <button type="button" class="manage-button button large primary js-tender-step-next">Продолжить</button>
+        </div>
+    </div>
+</div>

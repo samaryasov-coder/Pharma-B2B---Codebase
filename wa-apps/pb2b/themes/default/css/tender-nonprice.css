@@ -1,0 +1,40 @@
+.tender-nonprice {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    min-width: 0;
+    padding: 0 24px;
+}
+
+.tender-nonprice__notice {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: var(--gray-100);
+    color: var(--gray-900);
+    font: var(--text-font-p2);
+    font-weight: var(--font-weight-regular);
+}
+
+.tender-nonprice__list {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    min-width: 0;
+}
+
+.tender-nonprice__criterion {
+    gap: 34px;
+    padding-bottom: 24px;
+}
+
+.tender-nonprice__criterion > .detail-field {
+    gap: 4px;
+}
+
+.tender-nonprice__answer {
+    min-width: 0;
+    width: 440px;
+    max-width: 100%;
+}

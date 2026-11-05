@@ -56,6 +56,11 @@ abstract readonly class pb2bBaseDto
         }
     }
 
+    public function has(string $property): bool
+    {
+        return (new ReflectionProperty($this, $property))->isInitialized($this);
+    }
+
     public function merge(array $data): array
     {
         return array_merge($this->toArray(), $data);

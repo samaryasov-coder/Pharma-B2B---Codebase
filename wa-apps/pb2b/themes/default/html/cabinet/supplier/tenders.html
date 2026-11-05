@@ -1,9 +1,10 @@
 <div class="cabinet-container js-cabinet-page" data-page="tenders" data-role="supplier">
     <div class="js-tenders-list-view buyer-tenders supplier-tenders">
         <div class="buyer-tenders__top">
-            <div class="buyer-tenders__header">
-                <h1 class="buyer-tenders__title">Доступные тендеры</h1>
-            </div>
+            {include file="html/cabinet/partials/page-header.html"
+                page_header_title="Доступные тендеры"
+                page_header_actions=""
+                page_header_back_url=""}
 
             <div class="supplier-tenders__panel">
                 <div class="supplier-tenders__search">
@@ -49,19 +50,17 @@
         </div>
 
         <div class="buyer-tenders__body">
-            <div class="supplier-tenders__tabs" role="tablist" aria-label="Списки тендеров">
-                <span class="supplier-tenders__tab is-active js-tenders-tab" role="tab" tabindex="0" aria-selected="true" data-tab="all">
-                    <span class="supplier-tenders__tab-label">Все</span>
-                    <span class="supplier-tenders__tab-count js-tenders-tab-count" data-tab="all">0</span>
-                </span>
-                <span class="supplier-tenders__tab js-tenders-tab" role="tab" tabindex="0" aria-selected="false" data-tab="participations">
-                    <span class="supplier-tenders__tab-label">Мои участия</span>
-                    <span class="supplier-tenders__tab-count js-tenders-tab-count" data-tab="participations">0</span>
-                </span>
-                <span class="supplier-tenders__tab js-tenders-tab" role="tab" tabindex="0" aria-selected="false" data-tab="favorites">
-                    <span class="supplier-tenders__tab-label">Избранные</span>
-                    <span class="supplier-tenders__tab-count js-tenders-tab-count" data-tab="favorites">0</span>
-                </span>
+            <div class="js-supplier-tenders-tabs">
+                {include file="html/cabinet/partials/tabs.html"
+                    tabs=[
+                        ['id' => 'all', 'label' => 'Все', 'count' => 0, 'active' => true],
+                        ['id' => 'participations', 'label' => 'Мои участия', 'count' => 0],
+                        ['id' => 'favorites', 'label' => 'Избранные', 'count' => 0]
+                    ]
+                    tabs_aria="Списки тендеров"
+                    tabs_size="large"
+                    tabs_count_class="js-tenders-tab-count"
+                    tabs_with_panels=false}
             </div>
 
             <div class="supplier-tenders__section-title js-tenders-section-title">Все тендеры</div>

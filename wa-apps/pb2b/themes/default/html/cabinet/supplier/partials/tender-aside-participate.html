@@ -1,43 +1,40 @@
-{* Правый сайдбар: вход в /participation/ до подачи. После submit — hero-баннер. *}
-{assign var=app_status_code value=$application.status.code|default:''}
+{assign var=app_status_code value=$application.status|default:''}
 {assign var=is_submitted value=($app_status_code == 'submitted')}
 {assign var=is_draft value=($app_status_code == 'draft')}
 {assign var=is_withdrawn value=($app_status_code == 'withdrawn')}
-{assign var=participation_url value=$participation_url|default:('/cabinet/supplier/tender/'|cat:$tender_id|cat:'/participation/')}
+{assign var=is_canceled value=in_array($participation.tender_status_code, ['cancelled', 'unsuccessful'])}
+{assign var=aside_tab value=$supplier_aside_tab|default:'notice'}
 
-{if $is_submitted}
-    {* CTA и статус — в tender-participation-hero.html *}
-{elseif $is_withdrawn}
-<aside class="supplier-tender-aside" aria-label="Участие в тендере">
-    <div class="supplier-participate">
-        <p class="supplier-participate__eyebrow">Участие в тендере</p>
-        <p class="supplier-participate__text">Заявка отозвана. Повторно участвовать в этом тендере нельзя.</p>
-    </div>
-</aside>
-{else}
-<aside class="supplier-tender-aside" aria-label="Участие в тендере">
-    <div class="supplier-participate">
-        <p class="supplier-participate__eyebrow">Участие в тендере</p>
-        <p class="supplier-participate__text">
-            Оформите заявку в едином потоке: неценовые критерии, документы на одобрение, квалификация и ценовое предложение.
-        </p>
-        <a
-            class="supplier-participate__cta js-supplier-tender-participate"
-            href="{$participation_url|escape}"
-            hx-boost="false"
-        >
-            {if $is_draft}Продолжить оформление{else}Участвовать{/if}
-        </a>
-    </div>
-
-    <div class="supplier-participate supplier-participate--secondary">
-        <button
-            type="button"
-            class="supplier-participate__outline js-supplier-ask-question"
-            data-tab="questions"
-        >
-            Задать вопрос
-        </button>
+{if !$is_submitted}
+<aside class="tender-page__aside" aria-label="Участие и заявки тендера">
+    <div class="tender-page__aside-content tender-side-panel">
+        {if !$is_canceled && !$is_withdrawn && (!$participation.closed || $aside_tab != 'questions')}
+        <div class="tender-side-panel__actions">
+            {if !$is_canceled && !$is_withdrawn && $aside_tab != 'questions'}
+                <button type="button" class="button secondary js-supplier-ask-question" data-tab="questions">Задать вопрос</button>
+            {/if}
+            {if !$is_canceled && !$is_withdrawn && !$participation.closed}
+                <a class="button primary js-supplier-tender-participate" href="{$participation.url|escape}" hx-boost="false">{if $is_draft}Продолжить оформление{else}Участвовать{/if}</a>
+            {/if}
+        </div>
+        {/if}
+        {if $is_withdrawn || $is_canceled || $participation.closed}
+            <section class="tender-side-card">
+                <div class="tender-side-card__head">
+                    <h3 class="tender-side-card__title">{if $is_withdrawn}Заявка отозвана{elseif $is_canceled}Процедура завершена{else}Приём заявок завершён{/if}</h3>
+                </div>
+                <p class="tender-side-card__empty">{if $is_withdrawn}Срок подачи заявок завершён.{elseif $is_canceled}В этой процедуре нельзя подать новое предложение.{else}Срок подачи предложений истёк. Новую заявку подать нельзя.{/if}</p>
+            </section>
+        {/if}
+        {if in_array($aside_tab, ['notice', 'procurementDocs'])}
+            <section class="tender-side-card">
+                <div class="tender-side-card__head">
+                    <h3 class="tender-side-card__title">Последние поступившие заявки</h3>
+                    <button type="button" class="button ghost small icon-only" disabled aria-label="Список заявок пока недоступен" title="Список заявок поставщику пока недоступен"><img src="{$wa_theme_url}img/icons/details/chevron-right.svg" width="18" height="18" alt=""></button>
+                </div>
+                <p class="tender-side-card__empty">Список заявок поставщику пока недоступен.</p>
+            </section>
+        {/if}
     </div>
 </aside>
 {/if}

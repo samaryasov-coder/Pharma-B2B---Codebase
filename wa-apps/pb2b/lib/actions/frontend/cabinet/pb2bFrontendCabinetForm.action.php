@@ -20,6 +20,15 @@ abstract class pb2bFrontendCabinetFormAction extends pb2bFrontendCabinetAction
             return;
         }
 
+        $section_method = new ReflectionMethod($this, $method);
+        if (!$section_method->isPublic()
+            || $section_method->getDeclaringClass()->getName() !== static::class
+            || $section_method->getNumberOfRequiredParameters() > 0
+        ) {
+            $this->setThemeTemplate('error.form.html');
+            return;
+        }
+
         $this->setCabinetThemeTemplate($template_name, false);
         $this->$method();
     }

@@ -977,7 +977,9 @@ abstract class pb2bWaproModel extends waModel
             $field = $col;
         }
         if (isset($field)) {
-            if (empty($table)) {
+            if ($table === $this->table) {
+                $check = $this->fieldExists($col);
+            } elseif (empty($table)) {
                 $check = $this->fieldExists($col);
                 if (!$check) {
                     if (empty($this->join_tables)) {

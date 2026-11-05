@@ -106,7 +106,7 @@
                 }
 
                 var companyType = $.trim($companyTypeSelect.val() || '');
-                var isOrganization = companyType === '1';
+                var isOrganization = companyType === 'organization';
 
                 if (isOrganization) {
                     $organizationTypeField.show();

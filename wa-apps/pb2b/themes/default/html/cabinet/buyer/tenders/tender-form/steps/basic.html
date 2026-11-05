@@ -1,0 +1,110 @@
+<div class="tender-form-step">
+            <section class="tender-form-card">
+                <div class="tender-form-card__head">
+                <h2 class="tender-form-card__title">Основные данные</h2>
+                <p class="tender-form-card__hint">Заполните все основные данные извещения</p>
+                </div>
+
+                <div class="tender-form-fields">
+                    <div class="tender-form-field">
+                    <div class="input-title">Наименование извещения</div>
+                    <div class="input-wrap tenders-search">
+                        <div class="input-box">
+                            <input type="text" class="input tenders js-field-title" name="title" placeholder="Введите наименование извещения">
+                        </div>
+                    </div>
+
+                    </div>
+                    <div class="tender-form-field">
+                    <div class="input-title svg">
+                        Релевантные теги
+                        <svg><use href="#icon-question"></use></svg>
+                    </div>
+                    <div class="js-tags-selected creation-card-results-tags"></div>
+                    <div class="input-wrap tenders-search">
+                        <div class="input-box">
+                            <span class="input-prefix"><svg><use href="#icon-search"></use></svg></span>
+                            <input type="text" class="input tenders js-field-tags-search" placeholder="Поиск тега или синонима (HPLC, WFI, LIMS…)" autocomplete="off">
+                        </div>
+                    </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="tender-form-card">
+                <div class="tender-form-card__head">
+                <h2 class="tender-form-card__title">Категории</h2>
+                <p class="tender-form-card__hint">Выберите все подходящие категории из собственного классификатора или ЕСКЛП</p>
+                </div>
+
+                <div class="creation-card-categories">
+                    <div class="js-classifier-tabs">
+                        {include file="html/cabinet/partials/tabs.html"
+                            tabs=[['id'=>'common', 'label'=>'Общий классификатор', 'active'=>true], ['id'=>'esklp', 'label'=>'ЕСКЛП']]
+                            tabs_aria="Классификатор категорий"
+                            tabs_size="small"
+                            tabs_with_panels=false}
+                    </div>
+
+                    <div class="creation-card-categories-results common-classifier active is-flat" data-tab="common">
+                        <div class="input-wrap tenders-search notification">
+                            <div class="input-box">
+                                <span class="input-prefix"><svg><use href="#icon-search"></use></svg></span>
+                                <input type="text" class="input tenders js-classifier-search" data-tab="common" placeholder="Поиск по классификатору">
+                            </div>
+                        </div>
+                        <div class="creation-card-categories-result js-classifier-tree" data-tab="common">
+                            <div class="creation-card-hint js-classifier-tree-status tender-form-card__hint" style="margin:8px 0;">Загрузка классификатора…</div>
+                        </div>
+                        <div class="creation-card-results-tags-title">Выбранные категории</div>
+                        <div class="creation-card-results-tags js-classifier-selected" data-tab="common"></div>
+                        <div class="creation-card-results-empty js-classifier-empty" data-tab="common">Категории не выбраны</div>
+                    </div>
+
+                    <div class="creation-card-categories-results esklp is-flat" data-tab="esklp">
+                        <div class="input-wrap tenders-search notification">
+                            <div class="input-box">
+                                <span class="input-prefix"><svg><use href="#icon-search"></use></svg></span>
+                                <input type="text" class="input tenders js-classifier-search" data-tab="esklp" placeholder="Поиск по классификатору">
+                            </div>
+                        </div>
+                        <div class="creation-card-categories-result js-classifier-tree" data-tab="esklp">
+                            <div class="creation-card-hint tender-form-card__hint" style="margin:8px 0;">Справочник ЕСКЛП будет подключён на следующем этапе.</div>
+                        </div>
+                        <div class="creation-card-results-tags-title">Выбранные категории</div>
+                        <div class="creation-card-results-tags js-classifier-selected" data-tab="esklp"></div>
+                        <div class="creation-card-results-empty js-classifier-empty" data-tab="esklp">Категории не выбраны</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="file-upload-card tender-form-card">
+                <div class="tender-form-card__head">
+                <h2 class="tender-form-card__title">Файлы технического задания</h2>
+                <p class="tender-form-card__hint">Загрузите все файлы технического задания</p>
+                </div>
+
+                <div class="creation-card-file-area">
+                    <div class="file-drop-zone js-tech-spec-dropzone">
+                        <div class="file-drop-icon">
+                            <svg><use href="#icon-file-upload"></use></svg>
+                        </div>
+                        <div class="file-drop-text">
+                            <span class="file-browse-btn">Нажмите сюда</span>
+                            <span class="file-drop-primary"> или перетащите файл для загрузки файлов</span>
+                        </div>
+                        <div class="file-drop-hint">Поддерживаемый формат: .word, PDF<br>Макс. размер файлов: 10 МБ</div>
+                        <input type="file" class="file-input js-tech-spec-file-input" multiple accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+                    </div>
+                </div>
+                <div class="file-list js-tech-spec-file-list"></div>
+            </section>
+
+            <div class="creation-manage-buttons">
+                <a class="manage-button button large outline js-tender-create-cancel" href="/cabinet/buyer/tenders/" hx-get="/cabinet/buyer/tenders/" hx-target=".js-main-content" hx-push-url="true">Отменить</a>
+                <div class="manage-buttons-right">
+                    <button type="button" class="manage-button button large secondary back js-tender-step-prev">Назад</button>
+                    <button type="button" class="manage-button button large primary js-tender-step-next" disabled>Продолжить</button>
+                </div>
+            </div>
+</div>

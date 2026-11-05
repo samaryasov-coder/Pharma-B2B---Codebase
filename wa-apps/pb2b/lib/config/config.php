@@ -176,8 +176,8 @@ return [
         'company' => [
             'fields' => [
                 'name' => ['type' => 'string', 'max_length' => 255, 'min_length' => 1, 'name' => 'название', 'viewed' => true, 'required' => false],
-                'company_type' => array('type' => 'config', 'code' => 'company_type', 'name' => 'Тип компании', 'viewed' => true, 'nullable' => false, 'required' => true),
-                'type_organization' => array('type' => 'config', 'code' => 'type_organization', 'name' => 'Тип организации', 'viewed' => true, 'nullable' => true, 'required' => false),
+                'company_type' => ['type' => 'string', 'max_length' => 32, 'name' => 'Тип компании', 'viewed' => true, 'nullable' => false, 'required' => true],
+                'type_organization' => ['type' => 'string', 'max_length' => 32, 'name' => 'Тип организации', 'viewed' => true, 'nullable' => true, 'required' => false],
 
                 'buyer' => ['type' => 'checkbox', 'name' => 'Покупатель', 'viewed' => true, 'required' => false],
                 'supplier' => ['type' => 'checkbox', 'name' => 'Поставщик', 'viewed' => true, 'required' => false],
@@ -251,7 +251,7 @@ return [
                 'company_id' => ['type' => 'int', 'name' => 'ID компании', 'nullable' => false, 'required' => true],
                 'auto_request' => array('type'=> 'int', 'name'=> 'Автоматический запрос документов', 'nullable' => false, 'required' => false, 'min' => 0, 'max' => 1),
                 'refresh_period_days' => ['type'=> 'int', 'name'=> 'Период обновления процесса', 'nullable' => true, 'required' => false],
-                
+
             ],
             'cases' => ['шаблон', 'шаблона', 'шаблону', 'шаблон', 'шаблоном', 'шаблоне', 'шаблоны', 'шаблонов', 'шаблонам', 'шаблоны', 'шаблонами', 'шаблонах'],
         ],
@@ -283,7 +283,7 @@ return [
                 'contact_id' => ['type' => 'int', 'name' => 'ID контактного лица', 'nullable' => true, 'required' => false],
             ],
         ],
-        
+
         'docflow_request_item' => [
             'fields' => [
                 'request_id' => ['type' => 'int', 'name' => 'ID процесса', 'nullable' => false, 'required' => true],
@@ -306,13 +306,18 @@ return [
                 'type' => ['type' => 'config', 'code' => 'tender_types', 'name' => 'Тип тендера', 'nullable' => false, 'required' => true],
                 'status' => ['type' => 'config', 'code' => 'tender_statuses', 'name' => 'Статус', 'nullable' => false, 'required' => false],
                 'number' => ['type' => 'string', 'name' => 'Реестровый номер', 'nullable' => false, 'required' => true, 'max_length' => 64, 'min_length' => 1],
-                'title' => ['type' => 'string', 'name' => 'Наименование', 'nullable' => false, 'required' => true, 'max_length' => 255, 'min_length' => 1],
+                'title' => array('type' => 'string', 'name' => 'Наименование', 'nullable' => false, 'required' => false, 'max_length' => 255),
                 'organizer_company_id' => ['type' => 'int', 'name' => 'ID компании-организатора', 'nullable' => false, 'required' => true],
                 'responsible_contact_id' => ['type' => 'int', 'name' => 'ID ответственного контакта', 'nullable' => false, 'required' => true],
                 'is_private' => ['type' => 'checkbox', 'name' => 'Закрытая', 'nullable' => true, 'required' => false],
                 'submission_form' => ['type' => 'config', 'code' => 'tender_submission_forms', 'name' => 'Форма участия', 'nullable' => true, 'required' => false],
                 'retendering_enabled' => ['type' => 'checkbox', 'name' => 'Переторжка', 'nullable' => true, 'required' => false],
                 'itemized_enabled' => ['type' => 'checkbox', 'name' => 'Попозиционная', 'nullable' => true, 'required' => false],
+                /** Wave 3: как tender.status — в БД id словаря tender_winner_selection_modes. */
+                'winner_selection_mode' => ['type' => 'config', 'code' => 'tender_winner_selection_modes', 'name' => 'Режим выбора победителя', 'nullable' => false, 'required' => false],
+                'winner_selection_completed' => ['type' => 'checkbox', 'name' => 'Выбор победителя завершён', 'nullable' => true, 'required' => false],
+                'finished_without_winner' => ['type' => 'checkbox', 'name' => 'Завершено без победителя', 'nullable' => true, 'required' => false],
+                'finished_without_winner_reason' => ['type' => 'text', 'name' => 'Причина завершения без победителя', 'nullable' => true, 'required' => false],
                 'approval_required' => ['type' => 'checkbox', 'name' => 'Согласование', 'nullable' => true, 'required' => false],
                 'hide_initial_price' => ['type' => 'checkbox', 'name' => 'Скрывать начальную цену', 'nullable' => true, 'required' => false],
                 'hide_participants_count' => ['type' => 'checkbox', 'name' => 'Скрывать число участников', 'nullable' => true, 'required' => false],
@@ -358,6 +363,32 @@ return [
             'cases' => ['тендер', 'тендера', 'тендеру', 'тендер', 'тендером', 'тендере', 'тендеры', 'тендеров', 'тендерам', 'тендеры', 'тендерами', 'тендерах'],
         ],
 
+        'tenderInvitation' => array(
+            'fields' => array(
+                'tender_id' => array('type' => 'int', 'name' => 'ID тендера', 'nullable' => false, 'required' => true),
+                'supplier_company_id' => array('type' => 'int', 'name' => 'ID поставщика', 'nullable' => false, 'required' => true),
+                'invited_by_contact_id' => array('type' => 'int', 'name' => 'ID автора приглашения', 'nullable' => true, 'required' => false),
+                'status' => array('type' => 'string', 'name' => 'Статус', 'nullable' => false, 'required' => true, 'max_length' => 32),
+                'sent_at' => array('type' => 'datetime', 'name' => 'Дата отправки', 'nullable' => true, 'required' => false),
+                'responded_at' => array('type' => 'datetime', 'name' => 'Дата ответа', 'nullable' => true, 'required' => false),
+            ),
+            'cases' => array('приглашение', 'приглашения', 'приглашению', 'приглашение', 'приглашением', 'приглашении', 'приглашения', 'приглашений', 'приглашениям', 'приглашения', 'приглашениями', 'приглашениях'),
+        ),
+
+        'tenderCriterion' => array(
+            'fields' => array(
+                'tender_id' => array('type' => 'int', 'name' => 'ID тендера', 'nullable' => false, 'required' => true),
+                'type' => array('type' => 'string', 'name' => 'Тип ответа', 'nullable' => false, 'required' => true, 'max_length' => 32),
+                'name' => array('type' => 'string', 'name' => 'Название критерия', 'nullable' => false, 'required' => true, 'max_length' => 255),
+                'description' => array('type' => 'text', 'name' => 'Описание', 'nullable' => true, 'required' => false),
+                'confirmation_text' => array('type' => 'string', 'name' => 'Текст подтверждения', 'nullable' => true, 'required' => false, 'max_length' => 255),
+                'weight' => array('type' => 'decimal', 'name' => 'Вес', 'nullable' => true, 'required' => false),
+                'is_mandatory' => array('type' => 'checkbox', 'name' => 'Обязательный', 'nullable' => false, 'required' => false),
+                'sort' => array('type' => 'int', 'name' => 'Сортировка', 'nullable' => false, 'required' => false),
+            ),
+            'cases' => array('критерий', 'критерия', 'критерию', 'критерий', 'критерием', 'критерии', 'критерии', 'критериев', 'критериям', 'критерии', 'критериями', 'критериях'),
+        ),
+
         'tender_classifier' => [
             'fields' => [
                 'tender_id' => ['type' => 'int', 'name' => 'ID тендера', 'nullable' => false, 'required' => true],
@@ -396,7 +427,7 @@ return [
             'cases' => ['документ тендера', 'документа тендера', 'документу тендера', 'документ тендера', 'документом тендера', 'документе тендера', 'документы тендера', 'документов тендера', 'документам тендера', 'документы тендера', 'документами тендера', 'документах тендера'],
         ],
 
-        /** КП / заявка участия. Таблица pb2b_application (2.1). type=string: в БД code, не id. */
+        /** КП / заявка участия. Таблица pb2b_tender_application (2.1). type=string: в БД code, не id. */
         'tender_application' => [
             'fields' => [
                 'tender_id' => ['type' => 'int', 'name' => 'ID тендера', 'nullable' => false, 'required' => true],
@@ -409,6 +440,7 @@ return [
                 'approval_comment' => ['type' => 'text', 'name' => 'Комментарий одобрения', 'nullable' => true, 'required' => false],
                 'qualification_comment' => ['type' => 'text', 'name' => 'Комментарий квалификации', 'nullable' => true, 'required' => false],
                 'admission_comment' => ['type' => 'text', 'name' => 'Комментарий допуска', 'nullable' => true, 'required' => false],
+                'is_winner' => ['type' => 'checkbox', 'name' => 'Победитель процедуры', 'nullable' => true, 'required' => false],
                 'submitted_at' => ['type' => 'datetime', 'name' => 'Дата подачи', 'nullable' => true, 'required' => false],
                 'withdrawn_at' => ['type' => 'datetime', 'name' => 'Дата отзыва', 'nullable' => true, 'required' => false],
                 'create_datetime' => ['type' => 'datetime', 'name' => 'Дата создания', 'nullable' => true, 'required' => false],
@@ -425,6 +457,7 @@ return [
                 'unit' => ['type' => 'string', 'name' => 'Единица (снимок)', 'nullable' => true, 'required' => false, 'max_length' => 32],
                 'price_per_unit' => ['type' => 'decimal', 'name' => 'Цена за единицу', 'nullable' => true, 'required' => false],
                 'vat_rate' => ['type' => 'string', 'name' => 'Ставка НДС', 'nullable' => true, 'required' => false, 'max_length' => 16],
+                'is_winner' => ['type' => 'checkbox', 'name' => 'Победитель позиции', 'nullable' => true, 'required' => false],
                 'sort' => ['type' => 'int', 'name' => 'Сортировка', 'nullable' => true, 'required' => false],
             ],
             'cases' => ['строка цены', 'строки цены', 'строке цены', 'строку цены', 'строкой цены', 'строке цены', 'строки цен', 'строк цен', 'строкам цен', 'строки цен', 'строками цен', 'строках цен'],
@@ -454,103 +487,142 @@ return [
         ],
 
         'prequal' => [
-            'fields' => [
-                'procedure_code' => ['type' => 'string', 'name' => 'Код процедуры', 'nullable' => true, 'required' => false, 'max_length' => 32],
-                'title' => ['type' => 'string', 'name' => 'Наименование ПК', 'nullable' => false, 'required' => true, 'max_length' => 255],
-                'reviewer_company_id' => ['type' => 'int', 'name' => 'ID компании-организатора', 'nullable' => false, 'required' => true],
-                'provider_company_id' => ['type' => 'int', 'name' => 'ID ответственного контакта', 'nullable' => false, 'required' => true],
-                'status' => ['type' => 'config', 'code' => 'prequal_statuses', 'name' => 'Статус процесса', 'nullable' => false, 'required' => true],
-                'is_private' => ['type' => 'checkbox', 'name' => 'Закрытая', 'nullable' => true, 'required' => false],
-                'validity_months' => ['type' => 'int', 'name' => 'Срок действия квалификации, мес.', 'nullable' => true, 'required' => false],
-                'accept_start_at' => ['type' => 'datetime', 'name' => 'Начало приёма заявок', 'nullable' => true, 'required' => false],
-                'accept_end_at' => ['type' => 'datetime', 'name' => 'Окончание приёма заявок', 'nullable' => true, 'required' => false],
-                'file_set_id' => ['type' => 'int', 'name' => 'ID набора файлов', 'nullable' => true, 'required' => false],
-                'description' => ['type' => 'text', 'name' => 'Описание', 'nullable' => true, 'required' => false],
-                'wizard_extra_json' => ['type' => 'text', 'name' => 'Доп. параметры мастера (JSON)', 'nullable' => true, 'required' => false],
-                'cancellation_reason' => ['type' => 'text', 'name' => 'Причина отмены', 'nullable' => true, 'required' => false],
-            ],
+            'fields' => array(
+                'procedure_code' => array('type' => 'string', 'name' => 'Код процедуры', 'nullable' => false, 'required' => true, 'max_length' => 32),
+                'title' => array('type' => 'string', 'name' => 'Наименование ПК', 'nullable' => false, 'required' => false, 'max_length' => 255),
+                'reviewer_id' => array('type' => 'int', 'name' => 'Компания-организатор', 'nullable' => false, 'required' => true),
+                'contact_id' => array('type' => 'int', 'name' => 'Ответственный контакт', 'nullable' => false, 'required' => true),
+                'provider_id' => array('type' => 'int', 'name' => 'Прежний получатель', 'nullable' => true, 'required' => false),
+                'status' => array('type' => 'config', 'code' => 'prequal_statuses', 'name' => 'Статус процесса', 'nullable' => false, 'required' => true),
+                'is_private' => array('type' => 'checkbox', 'name' => 'Закрытая', 'nullable' => false, 'required' => false),
+                'validity_months' => array('type' => 'int', 'name' => 'Срок квалификации, мес.', 'nullable' => true, 'required' => false),
+                'accept_start_datetime' => array('type' => 'datetime', 'name' => 'Начало приёма', 'nullable' => true, 'required' => false),
+                'accept_end_datetime' => array('type' => 'datetime', 'name' => 'Окончание приёма', 'nullable' => true, 'required' => false),
+                'results_planned_datatime' => array('type' => 'datetime', 'name' => 'Плановая дата итогов', 'nullable' => true, 'required' => false),
+                'requires_audit' => array('type' => 'checkbox', 'name' => 'Требуется аудит', 'nullable' => false, 'required' => false),
+                'audit_info' => array('type' => 'text', 'name' => 'Информация об аудите', 'nullable' => true, 'required' => false),
+                'requires_samples' => array('type' => 'checkbox', 'name' => 'Требуются образцы', 'nullable' => false, 'required' => false),
+                'samples_info' => array('type' => 'text', 'name' => 'Требования к образцам', 'nullable' => true, 'required' => false),
+                'auto_extend' => array('type' => 'checkbox', 'name' => 'Автопродление', 'nullable' => false, 'required' => false),
+                'additional_info' => array('type' => 'text', 'name' => 'Дополнительная информация', 'nullable' => true, 'required' => false),
+                'delivery_terms' => array('type' => 'string', 'name' => 'Условия доставки', 'nullable' => true, 'required' => false, 'max_length' => 500),
+                'file_set_id' => array('type' => 'int', 'name' => 'Прежний набор файлов', 'nullable' => true, 'required' => false),
+                'description' => array('type' => 'text', 'name' => 'Описание', 'nullable' => true, 'required' => false),
+                'cancellation_reason' => array('type' => 'text', 'name' => 'Причина отмены', 'nullable' => true, 'required' => false),
+            ),
             'cases' => ['процедура ПК', 'процедуры ПК', 'процедуре ПК', 'процедуру ПК', 'процедурой ПК', 'процедуре ПК', 'процедуры ПК', 'процедур ПК', 'процедурам ПК', 'процедуры ПК', 'процедурами ПК', 'процедурах ПК'],
         ],
 
-        // 'prequalSubject' => [
-        //     'fields' => [
-        //         'prequal_procedure_id' => ['type' => 'int', 'name' => 'ID процедуры ПК', 'nullable' => false, 'required' => true],
-        //         'name' => ['type' => 'string', 'name' => 'Название предмета', 'nullable' => false, 'required' => true, 'max_length' => 255],
-        //         'description' => ['type' => 'text', 'name' => 'Описание', 'nullable' => true, 'required' => false],
-        //         'okpd2_id' => ['type' => 'int', 'name' => 'OKPD2', 'nullable' => true, 'required' => false],
-        //         'esklp_filter_json' => ['type' => 'text', 'name' => 'Фильтр ЕСКЛП (JSON)', 'nullable' => true, 'required' => false],
-        //         'sort' => ['type' => 'int', 'name' => 'Сортировка', 'nullable' => true, 'required' => false],
-        //     ],
-        //     'cases' => ['предмет квалификации', 'предмета квалификации', 'предмету квалификации', 'предмет квалификации', 'предметом квалификации', 'предмете квалификации', 'предметы квалификации', 'предметов квалификации', 'предметам квалификации', 'предметы квалификации', 'предметами квалификации', 'предметах квалификации'],
-        // ],
+        'prequalItem' => array(
+            'fields' => array(
+                'prequal_id' => array('type' => 'int', 'name' => 'ID процедуры ПК', 'nullable' => false, 'required' => true),
+                'name' => array('type' => 'string', 'name' => 'Предмет квалификации', 'nullable' => false, 'required' => true, 'max_length' => 255),
+                'qty' => array('type' => 'decimal', 'name' => 'Количество', 'nullable' => true, 'required' => false),
+                'unit_id' => array('type' => 'int', 'name' => 'Единица измерения', 'nullable' => true, 'required' => false),
+                'file_set_id' => array('type' => 'int', 'name' => 'Прежний набор файлов', 'nullable' => true, 'required' => false),
+                'comment' => array('type' => 'text', 'name' => 'Комментарий', 'nullable' => true, 'required' => false),
+                'sort' => array('type' => 'int', 'name' => 'Порядок', 'nullable' => false, 'required' => false),
+            ),
+            'cases' => array('предмет квалификации', 'предмета квалификации', 'предмету квалификации', 'предмет квалификации', 'предметом квалификации', 'предмете квалификации', 'предметы квалификации', 'предметов квалификации', 'предметам квалификации', 'предметы квалификации', 'предметами квалификации', 'предметах квалификации'),
+        ),
+        'prequalDocument' => array(
+            'fields' => array(
+                'prequal_id' => array('type' => 'int', 'name' => 'ID процедуры ПК', 'nullable' => false, 'required' => true),
+                'name' => array('type' => 'string', 'name' => 'Название документа', 'nullable' => false, 'required' => true, 'max_length' => 255),
+                'description' => array('type' => 'string', 'name' => 'Описание', 'nullable' => false, 'required' => false, 'max_length' => 500),
+                'file_set_id' => array('type' => 'int', 'name' => 'Прежний набор файлов', 'nullable' => true, 'required' => false),
+                'sort' => array('type' => 'int', 'name' => 'Порядок', 'nullable' => false, 'required' => false),
+            ),
+            'cases' => array('документ ПК', 'документа ПК', 'документу ПК', 'документ ПК', 'документом ПК', 'документе ПК', 'документы ПК', 'документов ПК', 'документам ПК', 'документы ПК', 'документами ПК', 'документах ПК'),
+        ),
+        'prequalClassifier' => array(
+            'fields' => array(
+                'prequal_id' => array('type' => 'int', 'name' => 'ID процедуры ПК', 'nullable' => false, 'required' => true),
+                'row_kind' => array('type' => 'int', 'name' => 'Вид связи', 'nullable' => false, 'required' => true),
+                'classifier_type' => array('type' => 'int', 'name' => 'Тип классификатора', 'nullable' => true, 'required' => false),
+                'classifier_id' => array('type' => 'int', 'name' => 'Узел классификатора', 'nullable' => true, 'required' => false),
+                'tag_id' => array('type' => 'int', 'name' => 'Тег', 'nullable' => true, 'required' => false),
+                'sort' => array('type' => 'int', 'name' => 'Порядок', 'nullable' => false, 'required' => false),
+            ),
+            'cases' => array('классификация ПК', 'классификации ПК', 'классификации ПК', 'классификацию ПК', 'классификацией ПК', 'классификации ПК', 'классификации ПК', 'классификаций ПК', 'классификациям ПК', 'классификации ПК', 'классификациями ПК', 'классификациях ПК'),
+        ),
 
-        // 'prequalRequirement' => [
-        //     'fields' => [
-        //         'prequal_procedure_id' => ['type' => 'int', 'name' => 'ID процедуры ПК', 'nullable' => false, 'required' => true],
-        //         'name' => ['type' => 'string', 'name' => 'Название документа', 'nullable' => false, 'required' => true, 'max_length' => 255],
-        //         'comment' => ['type' => 'text', 'name' => 'Комментарий', 'nullable' => true, 'required' => false],
-        //         'sample_file_id' => ['type' => 'int', 'name' => 'ID образца', 'nullable' => true, 'required' => false],
-        //         'is_required' => ['type' => 'checkbox', 'name' => 'Обязательный', 'nullable' => true, 'required' => false],
-        //         'sort' => ['type' => 'int', 'name' => 'Сортировка', 'nullable' => true, 'required' => false],
-        //     ],
-        //     'cases' => ['требование ПК', 'требования ПК', 'требованию ПК', 'требование ПК', 'требованием ПК', 'требовании ПК', 'требования ПК', 'требований ПК', 'требованиям ПК', 'требования ПК', 'требованиями ПК', 'требованиях ПК'],
-        // ],
+        'prequalInvitation' => array(
+            'fields' => array(
+                'prequal_id' => array('type' => 'int', 'name' => 'Процедура ПК', 'nullable' => false, 'required' => true, 'min' => 1),
+                'supplier_company_id' => array('type' => 'int', 'name' => 'Компания поставщика', 'nullable' => false, 'required' => true, 'min' => 1),
+                'invited_by_contact_id' => array('type' => 'int', 'name' => 'Автор приглашения', 'nullable' => false, 'required' => true, 'min' => 1),
+                'status' => array('type' => 'config', 'name' => 'Статус приглашения', 'nullable' => false, 'required' => true, 'code' => 'prequal_invitation_statuses'),
+                'sent_at' => array('type' => 'datetime', 'name' => 'Отправлено', 'nullable' => true, 'required' => false),
+                'create_datetime' => array('type' => 'datetime', 'name' => 'Создано', 'nullable' => true, 'required' => false),
+                'update_datetime' => array('type' => 'datetime', 'name' => 'Изменено', 'nullable' => true, 'required' => false),
+            ),
+            'cases' => array('приглашение ПК', 'приглашения ПК', 'приглашению ПК', 'приглашение ПК', 'приглашением ПК', 'приглашении ПК', 'приглашения ПК', 'приглашений ПК', 'приглашениям ПК', 'приглашения ПК', 'приглашениями ПК', 'приглашениях ПК'),
+        ),
 
-        // 'prequalApplication' => [
-        //     'fields' => [
-        //         'prequal_procedure_id' => ['type' => 'int', 'name' => 'ID процедуры ПК', 'nullable' => false, 'required' => true],
-        //         'supplier_company_id' => ['type' => 'int', 'name' => 'ID компании-поставщика', 'nullable' => false, 'required' => true],
-        //         'submitted_by_contact_id' => ['type' => 'int', 'name' => 'ID контакта', 'nullable' => true, 'required' => false],
-        //         'status' => ['type' => 'string', 'name' => 'Статус заявки', 'nullable' => false, 'required' => false, 'max_length' => 32],
-        //         'file_set_id' => ['type' => 'int', 'name' => 'ID набора файлов', 'nullable' => true, 'required' => false],
-        //         'supplier_comment' => ['type' => 'text', 'name' => 'Комментарий поставщика', 'nullable' => true, 'required' => false],
-        //         'submitted_at' => ['type' => 'datetime', 'name' => 'Дата подачи', 'nullable' => true, 'required' => false],
-        //     ],
-        //     'cases' => ['заявка на ПК', 'заявки на ПК', 'заявке на ПК', 'заявку на ПК', 'заявкой на ПК', 'заявке на ПК', 'заявки на ПК', 'заявок на ПК', 'заявкам на ПК', 'заявки на ПК', 'заявками на ПК', 'заявках на ПК'],
-        // ],
+        'prequalApplication' => array(
+            'fields' => array(
+                'prequal_id' => array('type' => 'int', 'name' => 'Процедура ПК', 'nullable' => false, 'required' => true, 'min' => 1),
+                'supplier_company_id' => array('type' => 'int', 'name' => 'Компания поставщика', 'nullable' => false, 'required' => true, 'min' => 1),
+                'contact_id' => array('type' => 'int', 'name' => 'Создатель пакета', 'nullable' => false, 'required' => true, 'min' => 1),
+                'status' => array('type' => 'config', 'name' => 'Статус пакета', 'nullable' => false, 'required' => true, 'code' => 'prequal_application_statuses', 'min' => 1),
+                'submitted_at' => array('type' => 'datetime', 'name' => 'Отправлено', 'nullable' => true, 'required' => false),
+                'withdrawn_at' => array('type' => 'datetime', 'name' => 'Отозвано', 'nullable' => true, 'required' => false),
+                'create_datetime' => array('type' => 'datetime', 'name' => 'Создано', 'nullable' => true, 'required' => false),
+                'update_datetime' => array('type' => 'datetime', 'name' => 'Изменено', 'nullable' => true, 'required' => false),
+            ),
+            'cases' => array('пакет ПК', 'пакета ПК', 'пакету ПК', 'пакет ПК', 'пакетом ПК', 'пакете ПК', 'пакеты ПК', 'пакетов ПК', 'пакетам ПК', 'пакеты ПК', 'пакетами ПК', 'пакетах ПК'),
+        ),
 
-        // 'prequalApplicationItem' => [
-        //     'fields' => [
-        //         'application_id' => ['type' => 'int', 'name' => 'ID заявки', 'nullable' => false, 'required' => true],
-        //         'requirement_id' => ['type' => 'int', 'name' => 'ID требования', 'nullable' => true, 'required' => false],
-        //         'name' => ['type' => 'string', 'name' => 'Название', 'nullable' => false, 'required' => true, 'max_length' => 255],
-        //         'reviewer_comment' => ['type' => 'text', 'name' => 'Комментарий покупателя', 'nullable' => true, 'required' => false],
-        //         'provider_comment' => ['type' => 'text', 'name' => 'Комментарий поставщика', 'nullable' => true, 'required' => false],
-        //         'sample_file_id' => ['type' => 'int', 'name' => 'ID образца', 'nullable' => true, 'required' => false],
-        //         'provider_file_id' => ['type' => 'int', 'name' => 'ID файла поставщика', 'nullable' => true, 'required' => false],
-        //         'is_required' => ['type' => 'checkbox', 'name' => 'Обязательный', 'nullable' => true, 'required' => false],
-        //         'status' => ['type' => 'string', 'name' => 'Статус', 'nullable' => false, 'required' => false, 'max_length' => 32],
-        //         'sort' => ['type' => 'int', 'name' => 'Сортировка', 'nullable' => true, 'required' => false],
-        //     ],
-        //     'cases' => ['элемент заявки ПК', 'элемента заявки ПК', 'элементу заявки ПК', 'элемент заявки ПК', 'элементом заявки ПК', 'элементе заявки ПК', 'элементы заявки ПК', 'элементов заявки ПК', 'элементам заявки ПК', 'элементы заявки ПК', 'элементами заявки ПК', 'элементах заявки ПК'],
-        // ],
+        'prequalApplicationItem' => array(
+            'fields' => array(
+                'application_id' => array('type' => 'int', 'name' => 'Пакет ПК', 'nullable' => false, 'required' => true, 'min' => 1),
+                'prequal_item_id' => array('type' => 'int', 'name' => 'Предмет квалификации', 'nullable' => false, 'required' => true, 'min' => 1),
+                'decision' => array('type' => 'config', 'name' => 'Результат квалификации', 'nullable' => true, 'required' => false, 'code' => 'prequal_decision_types', 'min' => 1),
+                'decision_comment' => array('type' => 'text', 'name' => 'Комментарий решения', 'nullable' => true, 'required' => false),
+                'decided_by_contact_id' => array('type' => 'int', 'name' => 'Автор решения', 'nullable' => true, 'required' => false, 'min' => 1),
+                'decided_at' => array('type' => 'datetime', 'name' => 'Дата решения', 'nullable' => true, 'required' => false),
+                'valid_until' => array('type' => 'datetime', 'name' => 'Квалификация действует до', 'nullable' => true, 'required' => false),
+                'create_datetime' => array('type' => 'datetime', 'name' => 'Создано', 'nullable' => true, 'required' => false),
+                'update_datetime' => array('type' => 'datetime', 'name' => 'Изменено', 'nullable' => true, 'required' => false),
+            ),
+            'cases' => array('предмет пакета ПК', 'предмета пакета ПК', 'предмету пакета ПК', 'предмет пакета ПК', 'предметом пакета ПК', 'предмете пакета ПК', 'предметы пакета ПК', 'предметов пакета ПК', 'предметам пакета ПК', 'предметы пакета ПК', 'предметами пакета ПК', 'предметах пакета ПК'),
+        ),
 
-        // 'prequalDecision' => [
-        //     'fields' => [
-        //         'application_id' => ['type' => 'int', 'name' => 'ID заявки', 'nullable' => false, 'required' => true],
-        //         'prequal_subject_id' => ['type' => 'int', 'name' => 'ID предмета', 'nullable' => true, 'required' => false],
-        //         'decision' => ['type' => 'string', 'name' => 'Решение', 'nullable' => false, 'required' => true, 'max_length' => 32],
-        //         'reason' => ['type' => 'text', 'name' => 'Причина', 'nullable' => true, 'required' => false],
-        //         'decided_by_contact_id' => ['type' => 'int', 'name' => 'ID контакта', 'nullable' => false, 'required' => true],
-        //         'decided_at' => ['type' => 'datetime', 'name' => 'Дата решения', 'nullable' => false, 'required' => true],
-        //         'valid_until' => ['type' => 'datetime', 'name' => 'Действует до', 'nullable' => true, 'required' => false],
-        //     ],
-        //     'cases' => ['решение по ПК', 'решения по ПК', 'решению по ПК', 'решение по ПК', 'решением по ПК', 'решении по ПК', 'решения по ПК', 'решений по ПК', 'решениям по ПК', 'решения по ПК', 'решениями по ПК', 'решениях по ПК'],
-        // ],
+        'prequalApplicationDocument' => array(
+            'fields' => array(
+                'application_id' => array('type' => 'int', 'name' => 'Пакет ПК', 'nullable' => false, 'required' => true, 'min' => 1),
+                'prequal_document_id' => array('type' => 'int', 'name' => 'Запрашиваемый документ', 'nullable' => false, 'required' => true, 'min' => 1),
+                'file_link_id' => array('type' => 'int', 'name' => 'Ссылка на файл', 'nullable' => true, 'required' => false, 'min' => 1),
+                'provider_comment' => array('type' => 'text', 'name' => 'Комментарий поставщика', 'nullable' => true, 'required' => false),
+                'status' => array('type' => 'config', 'name' => 'Статус проверки документа', 'nullable' => false, 'required' => true, 'code' => 'prequal_application_document_statuses', 'min' => 1),
+                'uploaded_at' => array('type' => 'datetime', 'name' => 'Загружено', 'nullable' => true, 'required' => false),
+                'valid_until' => array('type' => 'datetime', 'name' => 'Документ действует до', 'nullable' => true, 'required' => false),
+                'review_comment' => array('type' => 'text', 'name' => 'Комментарий проверки', 'nullable' => true, 'required' => false),
+                'reviewed_by_contact_id' => array('type' => 'int', 'name' => 'Проверяющий', 'nullable' => true, 'required' => false, 'min' => 1),
+                'reviewed_at' => array('type' => 'datetime', 'name' => 'Дата проверки', 'nullable' => true, 'required' => false),
+                'create_datetime' => array('type' => 'datetime', 'name' => 'Создано', 'nullable' => true, 'required' => false),
+                'update_datetime' => array('type' => 'datetime', 'name' => 'Изменено', 'nullable' => true, 'required' => false),
+            ),
+            'cases' => array('документ пакета ПК', 'документа пакета ПК', 'документу пакета ПК', 'документ пакета ПК', 'документом пакета ПК', 'документе пакета ПК', 'документы пакета ПК', 'документов пакета ПК', 'документам пакета ПК', 'документы пакета ПК', 'документами пакета ПК', 'документах пакета ПК'),
+        ),
 
-        // 'prequalApplicationLog' => [
-        //     'fields' => [
-        //         'application_id' => ['type' => 'int', 'name' => 'ID заявки', 'nullable' => false, 'required' => true],
-        //         'log_status' => ['type' => 'string', 'name' => 'Событие', 'nullable' => false, 'required' => true, 'max_length' => 64],
-        //         'status_from' => ['type' => 'string', 'name' => 'Статус от', 'nullable' => true, 'required' => false, 'max_length' => 32],
-        //         'status_to' => ['type' => 'string', 'name' => 'Статус до', 'nullable' => true, 'required' => false, 'max_length' => 32],
-        //         'author_contact_id' => ['type' => 'int', 'name' => 'ID контакта', 'nullable' => true, 'required' => false],
-        //         'author_company_id' => ['type' => 'int', 'name' => 'ID компании', 'nullable' => true, 'required' => false],
-        //         'comment' => ['type' => 'text', 'name' => 'Комментарий', 'nullable' => true, 'required' => false],
-        //         'file_set_id' => ['type' => 'int', 'name' => 'ID набора файлов', 'nullable' => true, 'required' => false],
-        //     ],
-        //     'cases' => ['запись журнала ПК', 'записи журнала ПК', 'записи журнала ПК', 'запись журнала ПК', 'записью журнала ПК', 'записи журнала ПК', 'записи журнала ПК', 'записей журнала ПК', 'записям журнала ПК', 'записи журнала ПК', 'записями журнала ПК', 'записях журнала ПК'],
-        // ],
+        'prequalApplicationHistory' => array(
+            'fields' => array(
+                'application_id' => array('type' => 'int', 'name' => 'Пакет ПК', 'nullable' => false, 'required' => true, 'min' => 1),
+                'application_item_id' => array('type' => 'int', 'name' => 'Предмет пакета', 'nullable' => true, 'required' => false, 'min' => 1),
+                'application_document_id' => array('type' => 'int', 'name' => 'Документ пакета', 'nullable' => true, 'required' => false, 'min' => 1),
+                'action' => array('type' => 'string', 'name' => 'Действие', 'nullable' => false, 'required' => true, 'max_length' => 64, 'min_length' => 1),
+                'status_from' => array('type' => 'config', 'name' => 'Предыдущее состояние пакета', 'nullable' => true, 'required' => false, 'code' => 'prequal_application_statuses', 'min' => 1),
+                'status_to' => array('type' => 'config', 'name' => 'Новое состояние пакета', 'nullable' => true, 'required' => false, 'code' => 'prequal_application_statuses', 'min' => 1),
+                'actor_contact_id' => array('type' => 'int', 'name' => 'Автор', 'nullable' => true, 'required' => false, 'min' => 1),
+                'actor_company_id' => array('type' => 'int', 'name' => 'Компания автора', 'nullable' => true, 'required' => false, 'min' => 1),
+                'comment' => array('type' => 'text', 'name' => 'Комментарий', 'nullable' => true, 'required' => false),
+                'data_json' => array('type' => 'text', 'name' => 'Снимок изменения', 'nullable' => true, 'required' => false),
+                'create_datetime' => array('type' => 'datetime', 'name' => 'Создано', 'nullable' => true, 'required' => false),
+            ),
+            'cases' => array('событие пакета ПК', 'события пакета ПК', 'событию пакета ПК', 'событие пакета ПК', 'событием пакета ПК', 'событии пакета ПК', 'события пакета ПК', 'событий пакета ПК', 'событиям пакета ПК', 'события пакета ПК', 'событиями пакета ПК', 'событиях пакета ПК'),
+        ),
 
         // 'qualifiedPool' => [
         //     'fields' => [
@@ -565,7 +637,7 @@ return [
         //     'fields' => [
         //         'qualified_pool_id' => ['type' => 'int', 'name' => 'ID пула', 'nullable' => false, 'required' => true],
         //         'supplier_company_id' => ['type' => 'int', 'name' => 'ID поставщика', 'nullable' => false, 'required' => true],
-        //         'prequal_subject_id' => ['type' => 'int', 'name' => 'ID предмета', 'nullable' => true, 'required' => false],
+        //         'prequal_item_id' => ['type' => 'int', 'name' => 'ID предмета', 'nullable' => true, 'required' => false],
         //         'prequal_procedure_id' => ['type' => 'int', 'name' => 'ID процедуры ПК', 'nullable' => false, 'required' => true],
         //         'decision_id' => ['type' => 'int', 'name' => 'ID решения', 'nullable' => false, 'required' => true],
         //         'valid_until' => ['type' => 'datetime', 'name' => 'Действует до', 'nullable' => false, 'required' => true],
@@ -576,8 +648,8 @@ return [
     ],
     'docflow_process_types' => [
         1 => [
-            'id' => 1, 
-            'name' => 'Одобрение поставщиков', 
+            'id' => 1,
+            'name' => 'Одобрение поставщиков',
             'reviewer_company_type' => 'buyer',
             'tender_type_id' => 4,
             'procedure_code_type' => 'supplier_approval',
@@ -599,6 +671,14 @@ return [
             'create_title' => 'Создание процедуры предварительной квалификации',
             'show_in_create_modal' => 1,
             'create_modal_sort' => 50,
+            'create_steps' => [
+                ['key' => 'privacy', 'label' => 'Доступ и видимость'],
+                ['key' => 'basic', 'label' => 'Основные данные'],
+                ['key' => 'purchase_params', 'label' => 'Параметры закупки'],
+                ['key' => 'payment_delivery', 'label' => 'Условия оплаты и доставки'],
+                ['key' => 'lots', 'label' => 'Перечень предметов квалификации'],
+                ['key' => 'invitation', 'label' => 'Рассылка'],
+            ],
         ],
         2 => [
             'id' => 2,
@@ -609,6 +689,13 @@ return [
             'create_title' => 'Создание процедуры быстрой закупки',
             'show_in_create_modal' => 1,
             'create_modal_sort' => 10,
+            'create_steps' => [
+                ['key' => 'privacy', 'label' => 'Доступ и видимость'],
+                ['key' => 'basic', 'label' => 'Основные данные'],
+                ['key' => 'purchase_params', 'label' => 'Параметры закупки'],
+                ['key' => 'lots', 'label' => 'Заполнение лотов'],
+                ['key' => 'invitation', 'label' => 'Рассылка'],
+            ],
         ],
         3 => [
             'id' => 3,
@@ -619,6 +706,14 @@ return [
             'create_title' => 'Создание процедуры запроса цен',
             'show_in_create_modal' => 1,
             'create_modal_sort' => 20,
+            'create_steps' => [
+                ['key' => 'privacy', 'label' => 'Доступ и видимость'],
+                ['key' => 'basic', 'label' => 'Основные данные'],
+                ['key' => 'purchase_params', 'label' => 'Параметры закупки'],
+                ['key' => 'payment_delivery', 'label' => 'Условия оплаты и доставки'],
+                ['key' => 'lots', 'label' => 'Заполнение лотов'],
+                ['key' => 'invitation', 'label' => 'Рассылка'],
+            ],
         ],
         4 => [
             'id' => 4,
@@ -629,6 +724,12 @@ return [
             'create_title' => 'Создание процедуры закупки у единственного поставщика',
             'show_in_create_modal' => 1,
             'create_modal_sort' => 30,
+            'create_steps' => [
+                ['key' => 'basic', 'label' => 'Основные данные'],
+                ['key' => 'purchase_params', 'label' => 'Параметры закупки'],
+                ['key' => 'payment_delivery', 'label' => 'Условия оплаты и доставки'],
+                ['key' => 'lots', 'label' => 'Позиции и обоснование'],
+            ],
         ],
         5 => [
             'id' => 5,
@@ -639,6 +740,14 @@ return [
             'create_title' => 'Создание процедуры запроса предложений',
             'show_in_create_modal' => 1,
             'create_modal_sort' => 40,
+            'create_steps' => [
+                ['key' => 'privacy', 'label' => 'Доступ и видимость'],
+                ['key' => 'basic', 'label' => 'Основные данные'],
+                ['key' => 'purchase_params', 'label' => 'Параметры закупки'],
+                ['key' => 'payment_delivery', 'label' => 'Условия оплаты и доставки'],
+                ['key' => 'lots', 'label' => 'Заполнение лотов'],
+                ['key' => 'invitation', 'label' => 'Рассылка'],
+            ],
         ],
         6 => [
             'id' => 6,
@@ -649,24 +758,32 @@ return [
             'create_title' => 'Создание процедуры аукциона',
             'show_in_create_modal' => 0,
             'create_modal_sort' => 60,
+            'create_steps' => [
+                ['key' => 'privacy', 'label' => 'Доступ и видимость'],
+                ['key' => 'basic', 'label' => 'Основные данные'],
+                ['key' => 'purchase_params', 'label' => 'Параметры закупки'],
+                ['key' => 'payment_delivery', 'label' => 'Условия оплаты и доставки'],
+                ['key' => 'lots', 'label' => 'Заполнение лотов'],
+                ['key' => 'invitation', 'label' => 'Рассылка'],
+            ],
         ],
     ],
     'tender_statuses' => [
-        1 => ['id' => 1, 'code' => 'draft', 'name' => 'Черновик'],
-        2 => ['id' => 2, 'code' => 'na_soglasovanii', 'name' => 'На согласовании'],
-        3 => ['id' => 3, 'code' => 'opublikovan', 'name' => 'Опубликована'],
-        4 => ['id' => 4, 'code' => 'priem_zayavok', 'name' => 'Приём заявок'],
-        5 => ['id' => 5, 'code' => 'vskrytie_zayavok', 'name' => 'Вскрытие заявок'],
-        6 => ['id' => 6, 'code' => 'rassmotrenie_i_dopusk', 'name' => 'Рассмотрение и допуск'],
-        7 => ['id' => 7, 'code' => 'peretorzhka_aktivna', 'name' => 'Переторжка'],
-        8 => ['id' => 8, 'code' => 'auktsionnye_torgi', 'name' => 'Аукционные торги'],
-        9 => ['id' => 9, 'code' => 'otsenka', 'name' => 'Оценка'],
-        10 => ['id' => 10, 'code' => 'podvedenie_itogov', 'name' => 'Подведение итогов'],
-        11 => ['id' => 11, 'code' => 'zaklyuchenie_dogovora', 'name' => 'Заключение договора'],
-        12 => ['id' => 12, 'code' => 'arkhiv', 'name' => 'Архив'],
-        13 => ['id' => 13, 'code' => 'otmenen', 'name' => 'Отменена'],
-        14 => ['id' => 14, 'code' => 'nesostoyalsya', 'name' => 'Несостоялась'],
-        15 => ['id' => 15, 'code' => 'priostanovlen', 'name' => 'Приостановлена'],
+        1 => ['id' => 1, 'code' => 'draft', 'name' => 'Черновик', 'tone' => 'warning'],
+        2 => ['id' => 2, 'code' => 'pending_approval', 'name' => 'На согласовании', 'tone' => 'info'],
+        3 => ['id' => 3, 'code' => 'published', 'name' => 'Опубликована', 'tone' => 'info'],
+        4 => ['id' => 4, 'code' => 'accepting_applications', 'name' => 'Приём заявок', 'tone' => 'success'],
+        5 => ['id' => 5, 'code' => 'opening_applications', 'name' => 'Вскрытие заявок', 'tone' => 'info'],
+        6 => ['id' => 6, 'code' => 'review_and_admission', 'name' => 'Рассмотрение и допуск', 'tone' => 'info'],
+        7 => ['id' => 7, 'code' => 'rebidding', 'name' => 'Переторжка', 'tone' => 'info'],
+        8 => ['id' => 8, 'code' => 'auction', 'name' => 'Аукционные торги', 'tone' => 'info'],
+        9 => ['id' => 9, 'code' => 'evaluation', 'name' => 'Оценка', 'tone' => 'info'],
+        10 => ['id' => 10, 'code' => 'summarizing_results', 'name' => 'Подведение итогов', 'tone' => 'info'],
+        11 => ['id' => 11, 'code' => 'contract_signing', 'name' => 'Заключение договора', 'tone' => 'info'],
+        12 => ['id' => 12, 'code' => 'archived', 'name' => 'Архив', 'tone' => 'info'],
+        13 => ['id' => 13, 'code' => 'cancelled', 'name' => 'Отменена', 'tone' => 'error'],
+        14 => ['id' => 14, 'code' => 'unsuccessful', 'name' => 'Несостоялась', 'tone' => 'info'],
+        15 => ['id' => 15, 'code' => 'suspended', 'name' => 'Приостановлена', 'tone' => 'info'],
     ],
     'tender_submission_forms' => [
         1 => ['id' => 1, 'code' => 'open', 'name' => 'Открытая'],
@@ -683,11 +800,11 @@ return [
         1 => ['id' => 1, 'code' => 'tech_spec', 'name' => 'Техническое задание'],
         2 => ['id' => 2, 'code' => 'requirement', 'name' => 'Запрашиваемый документ'],
     ],
-    /** status в pb2b_application — строковый code, не id tender_statuses. */
+    /** status в pb2b_tender_application — строковый code, не id tender_statuses. */
     'tender_application_statuses' => [
-        1 => ['id' => 1, 'code' => 'draft', 'name' => 'Черновик'],
-        2 => ['id' => 2, 'code' => 'submitted', 'name' => 'Подана'],
-        3 => ['id' => 3, 'code' => 'withdrawn', 'name' => 'Отозвана'],
+        1 => ['id' => 1, 'code' => 'draft', 'name' => 'Черновик', 'tone' => 'info'],
+        2 => ['id' => 2, 'code' => 'submitted', 'name' => 'Подана', 'tone' => 'success'],
+        3 => ['id' => 3, 'code' => 'withdrawn', 'name' => 'Отозвана', 'tone' => 'error'],
     ],
     'tender_application_status_transitions' => [
         'draft' => ['submitted', 'withdrawn'],
@@ -707,25 +824,31 @@ return [
         4 => ['id' => 4, 'code' => 'not_required', 'name' => 'Не требуется'],
     ],
     'tender_application_admission_statuses' => [
-        1 => ['id' => 1, 'code' => 'pending', 'name' => 'Ожидает'],
-        2 => ['id' => 2, 'code' => 'admitted', 'name' => 'Допущен'],
-        3 => ['id' => 3, 'code' => 'rejected', 'name' => 'Отклонён'],
+        1 => ['id' => 1, 'code' => 'pending', 'name' => 'На рассмотрении', 'tone' => 'warning'],
+        2 => ['id' => 2, 'code' => 'admitted', 'name' => 'Допущен', 'tone' => 'success'],
+        3 => ['id' => 3, 'code' => 'rejected', 'name' => 'Отклонён', 'tone' => 'error'],
+    ],
+
+    'tender_winner_selection_modes' => [
+        1 => ['id' => 1, 'code' => 'none', 'name' => 'Не выбран'],
+        2 => ['id' => 2, 'code' => 'all', 'name' => 'Один победитель'],
+        3 => ['id' => 3, 'code' => 'positional', 'name' => 'Попозиционный'],
     ],
     'tender_status_transitions' => [
-        'draft' => ['na_soglasovanii', 'opublikovan', 'otmenen'],
-        'na_soglasovanii' => ['draft', 'opublikovan', 'otmenen'],
-        'opublikovan' => ['priem_zayavok', 'otmenen'],
-        'priem_zayavok' => ['vskrytie_zayavok', 'otmenen', 'priostanovlen'],
-        'vskrytie_zayavok' => ['rassmotrenie_i_dopusk', 'otmenen'],
-        'rassmotrenie_i_dopusk' => ['peretorzhka_aktivna', 'auktsionnye_torgi', 'otsenka', 'otmenen', 'nesostoyalsya', 'priostanovlen'],
-        'peretorzhka_aktivna' => ['rassmotrenie_i_dopusk'],
-        'auktsionnye_torgi' => ['otsenka', 'nesostoyalsya'],
-        'otsenka' => ['podvedenie_itogov'],
-        'podvedenie_itogov' => ['zaklyuchenie_dogovora', 'arkhiv'],
-        'zaklyuchenie_dogovora' => ['arkhiv'],
-        'priostanovlen' => ['priem_zayavok', 'rassmotrenie_i_dopusk'],
-        'otmenen' => ['arkhiv'],
-        'nesostoyalsya' => ['arkhiv'],
+        'draft' => ['pending_approval', 'published', 'cancelled'],
+        'pending_approval' => ['draft', 'published', 'cancelled'],
+        'published' => ['accepting_applications', 'cancelled'],
+        'accepting_applications' => ['opening_applications', 'cancelled', 'suspended'],
+        'opening_applications' => ['review_and_admission', 'cancelled'],
+        'review_and_admission' => ['rebidding', 'auction', 'evaluation', 'cancelled', 'unsuccessful', 'suspended'],
+        'rebidding' => ['review_and_admission'],
+        'auction' => ['evaluation', 'unsuccessful'],
+        'evaluation' => ['summarizing_results'],
+        'summarizing_results' => ['contract_signing', 'archived'],
+        'contract_signing' => ['archived'],
+        'suspended' => ['accepting_applications', 'review_and_admission'],
+        'cancelled' => ['archived'],
+        'unsuccessful' => ['archived'],
     ],
     'docflow_request_statuses' => [
         1 => ['id' => 1, 'code' => 'waiting_provider', 'name' => 'Ожидает документы'],
@@ -800,6 +923,9 @@ return [
         7 => ['id' => 7, 'code' => 'cancelled', 'name' => 'Отменена'],
         8 => ['id' => 8, 'code' => 'suspended', 'name' => 'Приостановлена'],
     ],
+    'prequal_invitation_statuses' => array(
+        'invited' => array('code' => 'invited', 'name' => 'Приглашён'),
+    ),
     'prequal_application_statuses' => [
         1 => ['id' => 1, 'code' => 'draft', 'name' => 'Черновик'],
         2 => ['id' => 2, 'code' => 'submitted', 'name' => 'Подана'],
@@ -808,7 +934,7 @@ return [
         5 => ['id' => 5, 'code' => 'expired', 'name' => 'Истёк срок'],
         6 => ['id' => 6, 'code' => 'withdrawn', 'name' => 'Отозвана'],
     ],
-    'prequal_application_item_statuses' => [
+    'prequal_application_document_statuses' => [
         1 => ['id' => 1, 'code' => 'waiting_provider', 'name' => 'Ожидает документ'],
         2 => ['id' => 2, 'code' => 'uploaded', 'name' => 'Документ загружен'],
         3 => ['id' => 3, 'code' => 'accepted', 'name' => 'Документ принят'],

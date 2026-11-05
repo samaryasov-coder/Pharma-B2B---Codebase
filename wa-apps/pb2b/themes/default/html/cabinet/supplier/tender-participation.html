@@ -8,6 +8,7 @@
     data-page="participation"
     data-role="supplier"
     data-id="{$tender_id|escape}"
+    data-application-id="{$application.id|default:0|escape}"
     data-app-status="{$app_status_code|escape}"
     data-step="{$participation_step|escape}"
     data-next-step="{$participation_next_step|escape}"
@@ -31,7 +32,7 @@
         <nav class="supplier-participation__panel" aria-label="Этапы участия">
             <div class="supplier-participation__panel-head">
                 <h2 class="supplier-participation__panel-title">Этапы участия</h2>
-                <span class="supplier-participation__panel-badge">Шаг {$step_number} из {$stages_total}</span>
+                <span class="badge badge--shared badge--small neutral">Шаг {$step_number} из {$stages_total}</span>
             </div>
 
             <ol class="supplier-participation__stepper js-participation-stepper">

@@ -3,6 +3,77 @@
     --table-border-color:         var(--gray-200);
 }
 
+.table-scroll {
+    min-width: 0;
+    max-width: var(--table-max-width, 100%);
+    overflow-x: auto;
+}
+
+table.base-table {
+    width: 100%;
+    min-width: var(--table-min-width, 0px);
+    margin: 0;
+    border: 1px solid var(--table-border-color) !important;
+    border-radius: var(--table-border-radius);
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: fixed;
+    overflow: hidden;
+    background: var(--white);
+    color: var(--gray-900);
+}
+
+table.base-table > thead > tr > th,
+table.base-table > tbody > tr > td {
+    box-sizing: border-box;
+    text-align: left;
+    vertical-align: middle;
+    overflow-wrap: anywhere;
+}
+
+table.base-table > thead > tr > th {
+    height: 48px;
+    padding: 11px 16px;
+    border-bottom: 1px solid var(--table-border-color);
+    background: var(--white);
+    color: var(--gray-500);
+    letter-spacing: 0.1px;
+}
+
+table.base-table > tbody > tr > td {
+    height: 56px;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--gray-100);
+}
+
+table.base-table > tbody > tr:last-child > td {
+    border-bottom: 0;
+}
+
+.base-table a {
+    color: var(--primary-900);
+    text-decoration: underline;
+    text-underline-position: from-font;
+}
+
+.base-table__value {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.base-table__hint {
+    color: var(--gray-500);
+    font: var(--text-font-p3);
+    font-weight: var(--font-weight-regular);
+}
+
+table.base-table .base-table__empty {
+    text-align: center;
+    color: var(--gray-600);
+}
+
 table{
     border: 0 !important;
 }
@@ -45,17 +116,21 @@ table.dataTable thead>tr>th div.dt-column-header .dt-column-title{
     color: var(--gray-500);
 }
 
-table.dataTable>thead>tr>th{
+table.dataTable>thead>tr>th,
+table.base-table>thead>tr>th{
     border-bottom-color: var(--table-border-color);;
-    padding: 12px 16px;
     font: var(--text-font-l1);
     font-weight: var(--font-weight-medium);
+}
+table.dataTable>thead>tr>th{
+    padding: 12px 16px;
 }
 table.dataTable>thead>tr>th:hover{
     outline: 0 !important;
 }
 
-table.dataTable>tbody>tr>td{
+table.dataTable>tbody>tr>td,
+table.base-table>tbody>tr>td{
     border-bottom-color: var(--gray-100);
     font: var(--text-font-p2);
     font-weight: var(--font-weight-regular);

@@ -1,0 +1,4 @@
+ALTER TABLE pb2b_prequal
+    MODIFY COLUMN results_planned_datatime DATETIME NULL DEFAULT NULL,
+    MODIFY COLUMN provider_id INT NULL DEFAULT NULL,
+    MODIFY COLUMN file_set_id INT NULL DEFAULT NULL;

@@ -1,0 +1,22 @@
+<div class="tender-form-step">
+    <section class="tender-form-card">
+        <div class="tender-form-card__head">
+            <h2 class="tender-form-card__title" tabindex="-1">Основные данные</h2>
+            <p class="tender-form-card__hint">Укажите, для каких направлений вы отбираете поставщиков.</p>
+        </div>
+        <div class="tender-form-fields">
+            <div class="tender-form-field">
+                <label class="input-title" for="prequal-title">Наименование процедуры</label>
+                <input id="prequal-title" class="input" type="text" name="title" maxlength="255" placeholder="Введите наименование процедуры" value="{$prequal_data.title|default:''|escape}">
+            </div>
+            <div class="tender-form-field">
+                <label class="input-title" for="prequal-description">Описание процедуры</label>
+                <textarea id="prequal-description" class="input" name="description" rows="5" placeholder="Опишите цель квалификации и требования к поставщикам">{$prequal_data.description|default:''|escape}</textarea>
+            </div>
+        </div>
+    </section>
+    <div class="prequal-footer">
+        <button type="button" class="button outline js-prequal-back">Назад</button>
+        <button type="submit" class="button primary js-prequal-save">Сохранить изменения</button>
+    </div>
+</div>

@@ -4,6 +4,9 @@ class pb2bTenderApplicationResource extends pb2bBaseJsonResource
 {
     private bool $include_prices = false;
 
+    /** Показывать is_winner (только buyer; поставщику в Wave 3 не отдаём). */
+    private bool $include_winner = false;
+
     /** @var list<object|array> */
     private array $items = array();
 
@@ -13,19 +16,21 @@ class pb2bTenderApplicationResource extends pb2bBaseJsonResource
     /** @var list<object|array> */
     private array $criteria = array();
 
-    protected array $casts = [
-        'int' => ['id', 'tender_id', 'supplier_company_id', 'nonprice_done'],
-        'string' => [
-            'submitted_at',
-            'withdrawn_at',
-            'create_datetime',
-            'update_datetime',
-        ],
-    ];
+    protected array $casts = array(
+        'int' => array('id', 'tender_id', 'supplier_company_id', 'nonprice_done'),
+        'string' => array('submitted_at', 'withdrawn_at', 'create_datetime', 'update_datetime'),
+    );
 
     public function withPrices(bool $include = true): static
     {
         $this->include_prices = $include;
+
+        return $this;
+    }
+
+    public function withWinnerFlags(bool $include = true): static
+    {
+        $this->include_winner = $include;
 
         return $this;
     }
@@ -65,16 +70,7 @@ class pb2bTenderApplicationResource extends pb2bBaseJsonResource
      */
     public static function isBuyerPriceVisible(string $tender_status_code): bool
     {
-        return in_array($tender_status_code, array(
-            'vskrytie_zayavok',
-            'rassmotrenie_i_dopusk',
-            'peretorzhka_aktivna',
-            'auktsionnye_torgi',
-            'otsenka',
-            'podvedenie_itogov',
-            'zaklyuchenie_dogovora',
-            'arkhiv',
-        ), true);
+        return pb2bTenderStatus::isBuyerPriceVisible($tender_status_code);
     }
 
     public function toArray(): array
@@ -85,7 +81,7 @@ class pb2bTenderApplicationResource extends pb2bBaseJsonResource
         $qualification_code = trim((string) ($row['qualification_status'] ?? ''));
         $admission_code = trim((string) ($row['admission_status'] ?? ''));
 
-        return array(
+        $out = array(
             'id' => (int) ($row['id'] ?? 0),
             'tender_id' => (int) ($row['tender_id'] ?? 0),
             'supplier_company_id' => (int) ($row['supplier_company_id'] ?? 0),
@@ -106,6 +102,11 @@ class pb2bTenderApplicationResource extends pb2bBaseJsonResource
             'documents' => pb2bTenderApplicationDocumentResource::collection($this->documents),
             'criteria' => pb2bTenderApplicationCriterionResource::collection($this->criteria),
         );
+        if ($this->include_winner) {
+            $out['is_winner'] = !empty($row['is_winner']) ? 1 : 0;
+        }
+
+        return $out;
     }
 
     /**
@@ -116,7 +117,10 @@ class pb2bTenderApplicationResource extends pb2bBaseJsonResource
         $out = array();
         foreach ($this->items as $item) {
             $resource = new pb2bTenderApplicationItemResource($item);
-            $out[] = $resource->withPrices($this->include_prices)->resolve();
+            $out[] = $resource
+                ->withPrices($this->include_prices)
+                ->withWinnerFlags($this->include_winner)
+                ->resolve();
         }
 
         return $out;
@@ -127,21 +131,18 @@ class pb2bTenderApplicationResource extends pb2bBaseJsonResource
      */
     private static function codePayload(string $option, string $code): array
     {
-        $id = 0;
-        $name = '';
-        foreach ((array) pb2bWaproHelper::getConfigOption($option) as $row) {
-            if (!is_array($row) || (string) ($row['code'] ?? '') !== $code) {
-                continue;
-            }
-            $id = (int) ($row['id'] ?? 0);
-            $name = (string) ($row['name'] ?? '');
-            break;
+        $row = pb2bWaproHelper::getConfigOption($option, 'code')[$code] ?? array();
+        $tone = $row['tone'] ?? null;
+
+        $status = array(
+            'id' => (int) ($row['id'] ?? 0),
+            'code' => $code,
+            'name' => (string) ($row['name'] ?? ''),
+        );
+        if ($tone !== null) {
+            $status['tone'] = (string) $tone;
         }
 
-        return array(
-            'id' => $id,
-            'code' => $code,
-            'name' => $name,
-        );
+        return $status;
     }
 }

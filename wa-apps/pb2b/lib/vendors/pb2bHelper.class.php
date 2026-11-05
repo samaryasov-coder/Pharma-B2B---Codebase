@@ -5,6 +5,39 @@
  */
 class pb2bHelper
 {
+    static public function resolveTenderDeadline(string $end_at, bool $include_expired): array
+    {
+        $label = '';
+        $expired = false;
+        $end_at = trim($end_at);
+        if ($end_at === '' || strpos($end_at, '0000-00-00') === 0) {
+            return array('label' => $label, 'expired' => $expired);
+        }
+
+        $end_ts = strtotime($end_at);
+        if (!$end_ts) {
+            return array('label' => $label, 'expired' => $expired);
+        }
+
+        $today = strtotime('today');
+        $end_day = strtotime(date('Y-m-d', $end_ts));
+        $diff = (int) round(($end_day - $today) / 86400);
+        if ($diff < 0) {
+            if ($include_expired) {
+                $label = 'Срок истёк';
+                $expired = true;
+            }
+        } elseif ($diff === 0) {
+            $label = 'Сегодня';
+        } elseif ($diff === 1) {
+            $label = 'Остался 1 день';
+        } else {
+            $label = 'Осталось ' . $diff . ' дн.';
+        }
+
+        return array('label' => $label, 'expired' => $expired);
+    }
+
     /**
      * @param ?string $log_name
      * @param array $records
@@ -499,10 +532,18 @@ class pb2bHelper
     {
         static $types = null;
         if ($types === null) {
-            $types = pb2bWaproHelper::getConfigOption('type_organization');
+            $types = pb2bWaproHelper::getConfigOption('type_organization', 'code');
         }
 
-        return $types[$type]['name'] ?? 'ИП';
+        if (isset($types[$type]['name'])) {
+            return $types[$type]['name'];
+        }
+        foreach ($types as $option) {
+            if ((string) ($option['id'] ?? '') === (string) $type) {
+                return $option['name'];
+            }
+        }
+        return 'ИП';
     }
 
     static public function getStatusType(int|string $type)

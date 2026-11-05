@@ -10,12 +10,17 @@ class pb2bCompanyService
     public function createCompany(pb2bCompanyDto $company_dto, int $contact_id): pb2bCompany
     {
         $contact = new waContact($contact_id);
-        if (!$contact->exists())
+        if (!$contact->exists()) {
             throw new waException('Пользователь не найден, необходима авторизация', pb2bHttpStatus::BAD_REQUEST);
+        }
 
         $company = new pb2bCompany();
-        $result_save = $company->save($company_dto->toArray());
-        waLog::log($result_save, 'lol.log');
+        $data = $company_dto->toArray();
+        $data['contact_id'] = $contact_id;
+        $result_save = $company->save($data);
+        if (!empty($result_save['error'])) {
+            throw new waException((string) ($result_save['message'] ?? 'Не удалось создать компанию'), pb2bHttpStatus::BAD_REQUEST);
+        }
         return $company;
     }
 }

@@ -15,7 +15,7 @@
         <p class="supplier-participation-gate__text">
             Организатор одобрил вашу заявку. Можно переходить к следующим этапам.
         </p>
-        <span class="supplier-participation-gate__badge is-ok">{$status_name|escape}</span>
+        {include file="html/cabinet/partials/badge.html" badge_text=$status_name badge_tone='success'}
     {elseif $is_rejected}
         <div class="supplier-participation-gate__icon is-error" aria-hidden="true">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -26,7 +26,7 @@
         <p class="supplier-participation-gate__text">
             Организатор отклонил запрос на одобрение. Подача ценового предложения недоступна.
         </p>
-        <span class="supplier-participation-gate__badge is-error">{$status_name|escape}</span>
+        {include file="html/cabinet/partials/badge.html" badge_text=$status_name badge_tone='error'}
     {else}
         <div class="supplier-participation-gate__icon is-wait" aria-hidden="true">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -38,6 +38,6 @@
         <p class="supplier-participation-gate__text">
             Для этого тендера требуется одобрение поставщика. После решения организатора шаг закроется автоматически.
         </p>
-        <span class="supplier-participation-gate__badge is-wait">{$status_name|escape}</span>
+        {include file="html/cabinet/partials/badge.html" badge_text=$status_name badge_tone='warning'}
     {/if}
 </div>

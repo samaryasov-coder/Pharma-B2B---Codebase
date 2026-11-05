@@ -1,0 +1,133 @@
+.tender-evaluation {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-width: 0;
+    padding: 0 24px 24px;
+}
+
+.tender-evaluation [hidden] {
+    display: none !important;
+}
+
+.tender-evaluation .page-header {
+    flex-wrap: wrap;
+}
+
+.tender-evaluation__review,
+.tender-evaluation__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.tender-evaluation__review p {
+    margin: 0;
+}
+
+.tender-evaluation__toolbar {
+    margin-bottom: 12px;
+}
+
+.tender-evaluation__toolbar label {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+}
+
+.tender-evaluation__label-column {
+    width: 360px;
+}
+
+.tender-evaluation__supplier-column {
+    width: 300px;
+}
+
+.tender-evaluation__table > tbody > .tender-evaluation__group > td {
+    height: 33px;
+    padding: 0 8px;
+    background: var(--gray-50);
+}
+
+.tender-evaluation__chevron {
+    display: inline-block;
+}
+
+.tender-evaluation [aria-expanded="false"] .tender-evaluation__chevron {
+    transform: rotate(180deg);
+}
+
+.tender-evaluation__unit-price {
+    display: block;
+    margin-top: 4px;
+}
+
+.tender-evaluation__table > tfoot > tr > td {
+    padding: 12px 16px;
+    background: var(--white);
+}
+
+.tender-evaluation__loading,
+.tender-evaluation__empty,
+.tender-evaluation__error {
+    padding: 16px;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--table-border-radius);
+    font: var(--text-font-p2);
+}
+
+.tender-evaluation__error {
+    color: var(--error-base);
+}
+
+.tender-evaluation__file + .tender-evaluation__file {
+    margin-top: 8px;
+}
+
+.tender-evaluation__supplier-head,
+.tender-evaluation__column-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tender-evaluation__drag {
+    cursor: grab;
+    flex-shrink: 0;
+}
+
+.tender-evaluation__column-actions {
+    margin-top: 4px;
+}
+
+.tender-evaluation__table .is-evaluation-drop-target {
+    background: var(--gray-100);
+}
+
+.tender-evaluation-template-form,
+.tender-evaluation-template-form__name,
+.tender-evaluation-template-form fieldset {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    text-align: left;
+}
+
+.tender-evaluation-template-form fieldset {
+    border: 0;
+    padding: 0;
+    margin: 0;
+}
+
+.tender-evaluation-template-form__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.tender-evaluation-template-form [hidden] {
+    display: none !important;
+}

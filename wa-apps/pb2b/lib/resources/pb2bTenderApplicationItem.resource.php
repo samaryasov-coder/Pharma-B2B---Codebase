@@ -4,6 +4,8 @@ class pb2bTenderApplicationItemResource extends pb2bBaseJsonResource
 {
     private bool $include_prices = false;
 
+    private bool $include_winner = false;
+
     protected array $casts = [
         'int' => ['id', 'application_id', 'tender_item_id', 'sort'],
         'string' => ['unit', 'vat_rate'],
@@ -12,6 +14,13 @@ class pb2bTenderApplicationItemResource extends pb2bBaseJsonResource
     public function withPrices(bool $include = true): static
     {
         $this->include_prices = $include;
+
+        return $this;
+    }
+
+    public function withWinnerFlags(bool $include = true): static
+    {
+        $this->include_winner = $include;
 
         return $this;
     }
@@ -29,6 +38,9 @@ class pb2bTenderApplicationItemResource extends pb2bBaseJsonResource
             'vat_rate' => $row['vat_rate'] ?? null,
             'sort' => (int) ($row['sort'] ?? 0),
         );
+        if ($this->include_winner) {
+            $out['is_winner'] = !empty($row['is_winner']) ? 1 : 0;
+        }
         if (!$this->include_prices) {
             return $out;
         }

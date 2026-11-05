@@ -3,7 +3,7 @@
 -- Статусы — строковые code из config tender_application_* (не tender_statuses).
 -- file_link_id → pb2b_file_links.id; FK не ставим — как у lots-wave.
 
-CREATE TABLE IF NOT EXISTS pb2b_application (
+CREATE TABLE IF NOT EXISTS pb2b_tender_application (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     tender_id INT UNSIGNED NOT NULL,
     supplier_company_id INT UNSIGNED NOT NULL,
@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS pb2b_application (
     KEY ix_tender_status (tender_id, status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS pb2b_application_item (
+CREATE TABLE IF NOT EXISTS pb2b_tender_application_item (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     application_id INT UNSIGNED NOT NULL,
     tender_item_id INT UNSIGNED NOT NULL,
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS pb2b_application_item (
     KEY ix_tender_item_id (tender_item_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS pb2b_application_document (
+CREATE TABLE IF NOT EXISTS pb2b_tender_application_document (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     application_id INT UNSIGNED NOT NULL,
     tender_document_id INT UNSIGNED NULL DEFAULT NULL COMMENT 'requirement извещения, если есть',
@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS pb2b_application_document (
     KEY ix_file_link_id (file_link_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS pb2b_application_criterion (
+CREATE TABLE IF NOT EXISTS pb2b_tender_application_criterion (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     application_id INT UNSIGNED NOT NULL,
     criterion_id INT UNSIGNED NOT NULL,

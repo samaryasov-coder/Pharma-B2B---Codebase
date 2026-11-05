@@ -1,0 +1,49 @@
+<div class="cabinet-container js-cabinet-page supplier-application" data-page="tender-application" data-role="supplier" data-id="{$card.id|escape}">
+    {assign var=application_header_number value=$card.number|default:$card.id}
+    {assign var=application_header_title value='Заявка на участие в тендере №'|cat:$application_header_number}
+    {capture assign="application_header_actions"}
+        <a class="button outline" href="{$actions.tender_url|escape}">Перейти на страницу тендера</a>
+    {/capture}
+    {include file="html/cabinet/partials/page-header.html"
+        page_header_title=$application_header_title
+        page_header_actions=$application_header_actions
+        page_header_back_url=""}
+
+    <div class="js-supplier-application-tabs">
+        {include file="html/cabinet/partials/tabs.html" tabs=$tabs tabs_aria="Разделы заявки" tabs_size="large" tabs_with_panels=false}
+        <div class="supplier-application__body">
+            <div class="supplier-application__content">
+                {foreach $tabs as $tab}
+                    {if $tab.template}
+                        <div class="tab-content{if $tab.active} is-active{/if}" role="tabpanel" data-tab="{$tab.id|escape}"{if !$tab.active} hidden{/if}>
+                            {include file=$tab.template}
+                        </div>
+                    {/if}
+                {/foreach}
+            </div>
+            <aside class="supplier-application__aside" aria-label="Информация о заявке">
+                <h2>Информация о заявке</h2>
+                <div class="supplier-application__aside-content">
+                    <dl class="supplier-application__fields">
+                        <div><dt>Статус</dt><dd>{include file="html/cabinet/partials/badge.html" badge_text=$application_status.name|default:'—' badge_tone=$application_status.tone|default:'info'}</dd></div>
+                        <div><dt>Дата подачи</dt><dd>{if $application.submitted_at}{$application.submitted_at|date_format:'%d.%m.%Y'}{else}—{/if}</dd></div>
+                    </dl>
+                    <div class="supplier-application__actions">
+                        {if $actions.can_edit}
+                            <div class="supplier-application__edit">
+                                <a class="button primary" href="{$actions.edit_url|escape}">{$actions.edit_label|escape}</a>
+                                <p class="supplier-application__hint">Редактировать позиции можно до окончания времени приёма заявок</p>
+                            </div>
+                        {else}
+                            <p class="supplier-application__hint">Редактирование заявки недоступно в текущем состоянии.</p>
+                        {/if}
+                        {if $actions.can_withdraw}
+                            <button type="button" class="button destruct-light js-application-withdraw">Отозвать заявку</button>
+                        {/if}
+                        <p class="supplier-application__error js-application-error" role="alert" hidden></p>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,18 @@
+.tender-page__panel--documents {
+    --table-min-width: 900px;
+    --table-max-width: 1304px;
+}
+
+.tender-documents__number {
+    width: 90px;
+}
+
+.tender-documents__name {
+    width: 25.9%;
+}
+
+.tender-documents__description,
+.tender-documents__template,
+.tender-documents__submission {
+    width: 24.7%;
+}

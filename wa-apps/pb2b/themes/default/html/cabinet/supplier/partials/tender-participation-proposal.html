@@ -158,9 +158,9 @@
                                                         {$doc.name|default:'Документ'|escape}
                                                     </span>
                                                     {if $doc.is_required}
-                                                        <span class="supplier-participation-nonprice__badge is-required">Обязательный</span>
+                                                        {include file="html/cabinet/partials/badge.html" badge_text="Обязательный" badge_size="small" badge_tone="error"}
                                                     {else}
-                                                        <span class="supplier-participation-nonprice__badge">Необязательный</span>
+                                                        {include file="html/cabinet/partials/badge.html" badge_text="Необязательный" badge_size="small"}
                                                     {/if}
                                                 </div>
                                                 {if $doc.description|default:''}

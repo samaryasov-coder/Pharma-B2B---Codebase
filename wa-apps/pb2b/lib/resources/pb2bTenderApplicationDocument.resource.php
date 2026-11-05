@@ -19,6 +19,7 @@ class pb2bTenderApplicationDocumentResource extends pb2bBaseJsonResource
             'tender_document_id' => $tender_document_id > 0 ? $tender_document_id : null,
             'name' => (string) ($row['name'] ?? ''),
             'comment' => $row['comment'] ?? null,
+            'file_name' => (string) ($row['file_name'] ?? ''),
             'file_link_id' => $file_link_id > 0 ? $file_link_id : null,
             'sort' => (int) ($row['sort'] ?? 0),
         );

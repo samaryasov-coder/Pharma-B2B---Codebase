@@ -1,140 +1,158 @@
+{assign var=tender_data value=$tender.data}
 {* Карточка извещения для поставщика. Участие — только /participation/. *}
-{assign var=published value=$card.published_at|default:''}
-{assign var=app_status_code value=$application.status.code|default:''}
-{assign var=display_budget value=$card.budget|default:0}
-{if $display_budget <= 0 && $items_max_total|default:0 > 0}
-    {assign var=display_budget value=$items_max_total}
+{assign var=published value=$tender_data.published_at|default:''}
+{assign var=app_status_code value=$application.status|default:''}
+{assign var=tender_header_title value=$tender_type.name|default:'Запрос цен'}
+{if $tender_data.number}
+    {assign var=tender_header_title value=$tender_header_title|cat:' №'|cat:$tender_data.number}
 {/if}
-{assign var=participation_url value=$participation_url|default:('/cabinet/supplier/tender/'|cat:$card.id|default:$tender_id|cat:'/participation/')}
-
 <div
     class="cabinet-container js-cabinet-page"
     data-page="tender"
     data-role="supplier"
-    data-id="{$card.id|default:$tender_id|escape}"
+    data-id="{$tender.id|escape}"
     data-app-status="{$app_status_code|escape}"
-    data-participation-url="{$participation_url|escape}"
+    data-participation-url="{$participation.url|escape}"
 >
-    <div class="supplier-tender-page buyer-tender-page">
-        <header class="supplier-tender-page__header">
-            <div class="supplier-tender-page__title-row">
-                <h1 class="supplier-tender-page__title">
-                    {$card.type.name|default:'Запрос цен'|escape}{if $card.number} №{$card.number|escape}{/if}
-                </h1>
-                <div class="supplier-tender-page__actions">
-                    <button type="button" class="button outline supplier-tender-page__fav js-supplier-tender-fav" aria-pressed="false">
-                        <svg aria-hidden="true"><use href="#icon-star"></use></svg>
-                        <span>Добавить в избранное</span>
-                    </button>
-                </div>
-            </div>
-        </header>
+    <div class="tender-page">
+        <div class="tender-page__header">
+            {capture assign="tender_header_actions"}
+                {if $application}
+                    <a class="button outline" href="/cabinet/supplier/tender/{$tender.id|escape}/application/">Моя заявка</a>
+                {/if}
+                <button type="button" class="button outline js-supplier-tender-fav" aria-pressed="false">
+                    <svg aria-hidden="true"><use href="#icon-star"></use></svg>
+                    <span>Добавить в избранное</span>
+                </button>
+            {/capture}
+            {include file="html/cabinet/partials/page-header.html"
+                page_header_title=$tender_header_title
+                page_header_actions=$tender_header_actions
+                page_header_back_url=""}
 
-        <section class="supplier-tender-info" aria-label="Сводка извещения">
-            <div class="supplier-tender-info__main">
-                <div class="supplier-tender-info__meta">
-                    <span class="supplier-tender-info__date">
-                        Дата публикации: {if $published}{$published|date_format:"%d.%m.%Y"}{else}—{/if}
-                        &bull;
-                        Категория: {$summary_category|default:'—'|escape}
-                    </span>
-                    <span class="supplier-tender-card__status supplier-tender-card__status--{$status_tone|default:'info'|escape}">
-                        {$card.status.name|default:'—'|escape}
-                    </span>
-                </div>
-
-                <div class="supplier-tender-info__heading">
-                    <h2 class="supplier-tender-info__title">{$card.title|default:'Без названия'|escape}</h2>
-                    {if $requires_prequalification || $card.approval_required}
-                        <div class="supplier-tender-card__tags">
-                            {if $requires_prequalification}
-                                <span class="supplier-tender-card__req">
-                                    <svg aria-hidden="true"><use href="#icon-info"></use></svg>
-                                    <span>Требуется предварительная квалификация</span>
-                                </span>
-                            {/if}
-                            {if $card.approval_required}
-                                <span class="supplier-tender-card__req">
-                                    <svg aria-hidden="true"><use href="#icon-info"></use></svg>
-                                    <span>Требуется одобрение поставщика</span>
-                                </span>
-                            {/if}
-                        </div>
-                    {/if}
-                </div>
-
-                <div class="supplier-tender-card__place">
-                    <div class="supplier-tender-card__place-row">
-                        <span class="supplier-tender-card__place-label">Город:</span>
-                        <span class="supplier-tender-card__place-value">{$summary_city|default:'—'|escape}</span>
-                    </div>
-                    <div class="supplier-tender-card__place-row">
-                        <span class="supplier-tender-card__place-label">Организатор:</span>
-                        <div class="supplier-tender-info__org-line">
-                            <span class="supplier-tender-card__place-value">
-                                {if $organizer}{$organizer->getFullName()|escape}{else}—{/if}
-                            </span>
-                            <span class="supplier-tender-info__type">
-                                <svg aria-hidden="true"><use href="#icon-tag"></use></svg>
-                                <span class="supplier-tender-info__type-label">{$card.type.name|default:'Запрос цен'|escape}</span>
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="supplier-tender-info__divider" aria-hidden="true"></div>
-
-            <div class="supplier-tender-info__side">
-                <div class="supplier-tender-info__side-block supplier-tender-info__side-block--price">
-                    <span class="supplier-tender-info__side-label">Начальная цена контракта</span>
-                    <span class="supplier-tender-info__price">
-                        {if $card.hide_initial_price || $display_budget <= 0}
-                            Цена не указана
-                        {else}
-                            {$display_budget|number_format:0:',':' '|escape} ₽
-                        {/if}
-                    </span>
-                </div>
-                <div class="supplier-tender-info__side-block supplier-tender-info__side-block--deadline">
-                    <span class="supplier-tender-info__side-label">Окончание приема заявок</span>
-                    <div class="supplier-tender-info__deadline">
-                        <span class="supplier-tender-info__deadline-date">
-                            {if $card.end_at}{$card.end_at|date_format:"%d.%m.%Y в %H:%M"}{else}—{/if}
+            <section class="supplier-tender-info" aria-label="Сводка извещения">
+                <div class="supplier-tender-info__main">
+                    <div class="supplier-tender-info__meta">
+                        <span class="supplier-tender-info__date">
+                            <span>Дата публикации: {if $published}{$published|date_format:"%d.%m.%Y"}{else}—{/if}</span>
+                            <span>Категория: {$summary.category|default:'—'|escape}</span>
                         </span>
-                        {if $days_left_label}
-                            <span class="supplier-tender-info__days">{$days_left_label|escape}</span>
+                        {include file="html/cabinet/partials/badge.html" badge_text=$tender_status.name|default:'—' badge_tone=$tender_status.tone|default:'info'}
+                    </div>
+
+                    <div class="supplier-tender-info__heading">
+                        <h2 class="supplier-tender-info__title">{$tender_data.title|default:'Без названия'|escape}</h2>
+                        {if $participation.requires_prequalification || $tender_data.approval_required}
+                            {capture assign="tender_requirement_icon"}<svg><use href="#icon-info"></use></svg>{/capture}
+                            <div class="supplier-tender-card__tags">
+                                {if $participation.requires_prequalification}
+                                    {include file="html/cabinet/partials/badge.html" badge_text="Требуется предварительная квалификация" badge_variant="tag" badge_outline=true badge_leading=$tender_requirement_icon}
+                                {/if}
+                                {if $tender_data.approval_required}
+                                    {include file="html/cabinet/partials/badge.html" badge_text="Требуется одобрение поставщика" badge_variant="tag" badge_outline=true badge_leading=$tender_requirement_icon}
+                                {/if}
+                            </div>
                         {/if}
                     </div>
-                </div>
-            </div>
-        </section>
 
-        {if $app_status_code == 'submitted'}
-            {include file="html/cabinet/supplier/partials/tender-participation-hero.html"}
-        {/if}
-
-        <div class="supplier-tender-body{if $app_status_code == 'submitted'} supplier-tender-body--submitted{/if}">
-            <div class="supplier-tender-body__main js-ds-tabs-scope">
-                {include
-                    file="html/cabinet/partials/ds-tabs-underline.html"
-                    ds_tabs=$ds_tabs
-                    ds_tabs_aria="Разделы извещения"
-                    ds_tabs_with_panels=false
-                }
-                <div class="ds-tabs-panels">
-                    <div class="ds-tabs-panel js-ds-tabs-panel is-active" role="tabpanel" data-tab-panel="notice">
-                        {include file="html/cabinet/supplier/partials/tender-tab-notice.html"}
+                    <div class="supplier-tender-card__place">
+                        <div class="supplier-tender-card__place-row">
+                            <span class="supplier-tender-card__place-label">Место поставки:</span>
+                            <span class="supplier-tender-card__place-value">{$summary.place|default:'—'|escape}</span>
+                        </div>
+                        <div class="supplier-tender-card__place-row">
+                            <span class="supplier-tender-card__place-label">Организатор:</span>
+                            <div class="supplier-tender-info__org-line">
+                                <span class="supplier-tender-card__place-value">
+                                    {if $organizer}{$organizer->getFullName()|escape}{else}—{/if}
+                                </span>
+                                {capture assign="tender_type_icon"}<img src="{$wa_theme_url}img/icons/details/tag.svg" width="16" height="16" alt="">{/capture}
+                                {include file="html/cabinet/partials/badge.html" badge_text=$tender_type.name|default:'Запрос цен' badge_size='small' badge_variant='tag' badge_leading=$tender_type_icon badge_leading_position='outside'}
+                            </div>
+                        </div>
                     </div>
-                    <div class="ds-tabs-panel js-ds-tabs-panel" role="tabpanel" data-tab-panel="procurementDocs" hidden></div>
-                    <div class="ds-tabs-panel js-ds-tabs-panel" role="tabpanel" data-tab-panel="positions" hidden></div>
-                    <div class="ds-tabs-panel js-ds-tabs-panel" role="tabpanel" data-tab-panel="documents" hidden></div>
-                    <div class="ds-tabs-panel js-ds-tabs-panel" role="tabpanel" data-tab-panel="questions" hidden></div>
-                    <div class="ds-tabs-panel js-ds-tabs-panel" role="tabpanel" data-tab-panel="nonPrice" hidden></div>
                 </div>
+
+                <div class="supplier-tender-info__divider" aria-hidden="true"></div>
+
+                <div class="supplier-tender-info__side">
+                    <div class="supplier-tender-info__side-block supplier-tender-info__side-block--price">
+                        <span class="supplier-tender-info__side-label">Начальная цена контракта</span>
+                        <span class="supplier-tender-info__price">
+                            {if $tender_data.hide_initial_price || $tender_data.budget === null || $tender_data.budget === '' || $tender_data.budget <= 0}
+                                Не указан
+                            {else}
+                                {$tender_data.budget|number_format:0:',':' '|escape} ₽
+                            {/if}
+                        </span>
+                    </div>
+                    <div class="supplier-tender-info__side-block supplier-tender-info__side-block--deadline">
+                        <span class="supplier-tender-info__side-label">Окончание приема заявок</span>
+                        <div class="supplier-tender-info__deadline">
+                            <span class="supplier-tender-info__deadline-date">
+                                {if $tender_data.end_at}{$tender_data.end_at|date_format:"%d.%m.%Y в %H:%M"}{else}—{/if}
+                            </span>
+                            {if $deadline.label}
+                                {include file="html/cabinet/partials/badge.html" badge_text=$deadline.label badge_size='small' badge_variant='tag' badge_outline=true}
+                            {/if}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {if $app_status_code == 'submitted'}
+                {include file="html/cabinet/supplier/partials/tender-participation-hero.html"}
+            {/if}
+
+        </div>
+
+        <div class="tender-page__body js-tender-tabs">
+            <div class="tender-page__tabs">
+                {include
+                    file="html/cabinet/partials/tabs.html"
+                    tabs=$tabs
+                    tabs_aria="Разделы извещения"
+                    tabs_size="large"
+                    tabs_with_panels=false
+                }
             </div>
 
-            {include file="html/cabinet/supplier/partials/tender-aside-participate.html"}
+            <div class="tender-page__panels tabs-content">
+                <div class="tab-content tender-page__panel tender-page__panel--notice{if $app_status_code != 'submitted'} tender-page__panel--with-aside{/if} is-active" role="tabpanel" data-tab="notice">
+                    <div class="tender-page__main">
+                        {include file="html/cabinet/partials/tender-tab-notice.html" notice=$tender_data}
+                    </div>
+                    {include file="html/cabinet/supplier/partials/tender-aside-participate.html" supplier_aside_tab='notice'}
+                </div>
+                <div class="tab-content tender-page__panel tender-page__panel--procurementDocs{if $app_status_code != 'submitted'} tender-page__panel--with-aside{/if}" role="tabpanel" data-tab="procurementDocs" hidden>
+                    <div class="tender-page__main">
+                        {include file="html/cabinet/partials/document-files.html" document_files=$procurement_documents document_download_url="/api/supplier/tender/{$tender.id}/documents/download/"}
+                    </div>
+                    {include file="html/cabinet/supplier/partials/tender-aside-participate.html" supplier_aside_tab='procurementDocs'}
+                </div>
+                <div class="tab-content tender-page__panel tender-page__panel--positions" role="tabpanel" data-tab="positions" hidden>
+                    <div class="tender-page__main">
+                        {include file="html/cabinet/supplier/partials/tender-tab-positions.html"}
+                    </div>
+                </div>
+                <div class="tab-content tender-page__panel tender-page__panel--documents" role="tabpanel" data-tab="documents" hidden>
+                    <div class="tender-page__main">
+                        {include file="html/cabinet/supplier/partials/tender-tab-documents.html"}
+                    </div>
+                </div>
+                <div class="tab-content tender-page__panel tender-page__panel--questions{if $app_status_code != 'submitted'} tender-page__panel--with-aside{/if}" role="tabpanel" data-tab="questions" hidden>
+                    <div class="tender-page__main">
+                        {include file="html/cabinet/supplier/partials/tender-tab-questions.html"}
+                    </div>
+                    {include file="html/cabinet/supplier/partials/tender-aside-participate.html" supplier_aside_tab='questions'}
+                </div>
+                <div class="tab-content tender-page__panel tender-page__panel--nonPrice{if $app_status_code != 'submitted'} tender-page__panel--with-aside{/if}" role="tabpanel" data-tab="nonPrice" hidden>
+                    <div class="tender-page__main">
+                        {include file="html/cabinet/supplier/partials/tender-tab-nonprice.html"}
+                    </div>
+                    {include file="html/cabinet/supplier/partials/tender-aside-participate.html" supplier_aside_tab='nonPrice'}
+                </div>
+            </div>
         </div>
     </div>
 </div>

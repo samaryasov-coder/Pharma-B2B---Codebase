@@ -1,0 +1,159 @@
+<div class="tender-form-step">
+    <section class="tender-form-card">
+        <div class="tender-form-card__head">
+            <h2 class="tender-form-card__title">Доступ к процедуре</h2>
+            <p class="tender-form-card__hint">Выберите, кто сможет видеть и участвовать в вашей закупке.</p>
+        </div>
+
+        <div class="tender-form-section">
+            <div class="tender-form-options">
+                <label class="radio outline tender-form-control tender-form-option">
+                    <input type="radio" name="is_private" value="0" checked>
+                    <span class="radiomark" aria-hidden="true"></span>
+                    <span class="tender-form-control__copy">
+                        <span class="input-label">Открытая процедура</span>
+                        <span class="input-hint">Заявки могут подавать все зарегистрированные пользователи</span>
+                    </span>
+                </label>
+                <label class="radio outline tender-form-control tender-form-option">
+                    <input type="radio" name="is_private" value="1">
+                    <span class="radiomark" aria-hidden="true"></span>
+                    <span class="tender-form-control__copy">
+                        <span class="input-label">Закрытая процедура</span>
+                        <span class="input-hint">Заявки могут подавать только приглашённые пользователи</span>
+                    </span>
+                </label>
+            </div>
+
+            <div class="tender-form-panel tender-form-reveal js-private-invites">
+                <div class="tender-form-control__label">Перечень участников, допущенных к процедуре</div>
+                <div class="tender-form-field tender-form-field--participants">
+                    <div class="tender-form-card__hint">Введите наименование компании</div>
+                    <select class="js-invite-select" name="invitations[]" multiple data-placeholder="Введите название компании"></select>
+                    <div class="tender-form-card__hint">Добавьте названия компаний, которые будут допущены к процедуре</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tender-form-panel js-past-prequal-wrap" style="display:none;">
+            <label class="checkbox tender-form-control">
+                <input type="checkbox" name="past_prequalification" value="1" class="js-field-past-prequal">
+                <span class="checkmark" aria-hidden="true"></span>
+                <span class="tender-form-control__copy">
+                    <span class="input-label">Проведена предварительная квалификация поставщиков</span>
+                    <span class="input-hint">Связать запрос с проведённой ранее предварительной квалификацией</span>
+                </span>
+            </label>
+            <div class="tender-form-field tender-form-reveal js-past-prequal-block">
+                <div class="tender-form-card__hint">Введите наименование или номер процедуры предварительной квалификации</div>
+                <div class="input-box tender-form-search">
+                    <input type="text" class="input js-field-past-prequal-query" placeholder="Введите номер предварительной квалификации">
+                    <span class="input-postfix"><svg aria-hidden="true"><use href="#icon-search"></use></svg></span>
+                </div>
+            </div>
+        </div>
+
+        <hr class="tender-form-divider js-price-request-only">
+
+        <div class="tender-form-fields js-price-request-only">
+            <label class="checkbox tender-form-control">
+                <input type="checkbox" name="approval_required" value="1" class="js-field-approval-required">
+                <span class="checkmark" aria-hidden="true"></span>
+                <span class="tender-form-control__copy">
+                    <span class="input-label">Требуется предварительная аккредитация поставщиков</span>
+                    <span class="input-hint">Подача заявок возможна только после аккредитации</span>
+                </span>
+            </label>
+
+            <div class="tender-form-panel tender-form-reveal js-approval-period-wrap">
+                <label class="checkbox tender-form-control">
+                    <input type="checkbox" name="approval_custom_period" value="1" class="js-field-approval-period">
+                    <span class="checkmark" aria-hidden="true"></span>
+                    <span class="tender-form-control__copy">
+                        <span class="input-label">Установить период предоставления документов отличным от срока завершения тендера</span>
+                    </span>
+                </label>
+                <div class="tender-form-period tender-form-reveal js-approval-period-fields">
+                    <div class="date-picker">
+                        <input type="text" class="date-select filter-date js-field-approval-date" name="approval_docs_date" placeholder="ДД.ММ.ГГГГ" readonly>
+                        <svg aria-hidden="true"><use href="#icon-calendar"></use></svg>
+                    </div>
+                    <div class="date-picker time">
+                        <input type="text" class="time js-field-approval-time" name="approval_docs_time" placeholder="00:00" readonly>
+                        <svg aria-hidden="true"><use href="#icon-clock"></use></svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="tender-form-card js-price-request-only">
+        <div class="tender-form-card__head">
+            <h2 class="tender-form-card__title">Видимость</h2>
+            <p class="tender-form-card__hint">Выберите параметры видимости</p>
+        </div>
+
+        <div class="tender-form-fields">
+            <label class="checkbox tender-form-control">
+                <input type="checkbox" name="hide_initial_price" value="1" class="js-field-hide-initial-price">
+                <span class="checkmark" aria-hidden="true"></span>
+                <span class="tender-form-control__copy">
+                    <span class="input-label">Скрывать начальную цену</span>
+                    <span class="input-hint">Участники не видят начальную цену. Участники могут подавать цену выше начальной.</span>
+                </span>
+            </label>
+
+            <label class="checkbox tender-form-control">
+                <input type="checkbox" name="hide_participants_count" value="1" class="js-field-hide-participants">
+                <span class="checkmark" aria-hidden="true"></span>
+                <span class="tender-form-control__copy">
+                    <span class="input-label">Скрывать количество участников</span>
+                    <span class="input-hint">Для участников количество поданных заявок скрыто.<br>Для организатора количество поступивших заявок отображается.</span>
+                </span>
+            </label>
+
+            <div class="tender-form-field">
+                <label class="checkbox tender-form-control">
+                    <input type="checkbox" name="hide_participant_prices" value="hidePrices" class="js-field-hide-prices">
+                    <span class="checkmark" aria-hidden="true"></span>
+                    <span class="tender-form-control__copy">
+                        <span class="input-label">Скрывать цены участников</span>
+                        <span class="input-hint">Участники не видят цены друг друга.<br>Настройки применяются в зависимости от типа процедуры.</span>
+                    </span>
+                </label>
+                <div class="tender-form-fields tender-form-reveal tender-form-reveal--indented js-hide-prices-options">
+                    <label class="radio outline tender-form-control">
+                        <input type="radio" name="rank_prices" value="yes">
+                        <span class="radiomark" aria-hidden="true"></span>
+                        <span class="tender-form-control__copy">
+                            <span class="input-label">Использовать ранги по ценам</span>
+                            <span class="input-hint">Для участников: вместо цен отображается ранг участника. Цены скрыты до объявления следующего этапа или подведения итогов.<br>Для организатора: вместо цен отображается ранг участника. Цены скрыты до окончания подачи заявок.<br>Использование числового параметра для распределения рангов недоступно.</span>
+                        </span>
+                    </label>
+                    <label class="radio outline tender-form-control">
+                        <input type="radio" name="rank_prices" value="no">
+                        <span class="radiomark" aria-hidden="true"></span>
+                        <span class="tender-form-control__copy">
+                            <span class="input-label">Не использовать ранги по ценам</span>
+                            <span class="input-hint">Для участников: цены всегда скрыты.<br>Для организатора: цены скрыты до окончания подачи заявок.</span>
+                        </span>
+                    </label>
+                </div>
+            </div>
+
+            <label class="checkbox tender-form-control">
+                <input type="checkbox" name="organizer_sees_names" value="1" class="js-field-organizer-sees-names">
+                <span class="checkmark" aria-hidden="true"></span>
+                <span class="tender-form-control__copy">
+                    <span class="input-label">Наименования участников в процессе подачи заявок видны организатору (доступно при ранжировании)</span>
+                    <span class="input-hint">Для участников наименования других участников скрыты.<br>Для организатора наименования участников отображаются.</span>
+                </span>
+            </label>
+        </div>
+    </section>
+
+    <div class="creation-manage-buttons">
+        <a class="button large outline js-tender-create-cancel" href="/cabinet/buyer/tenders/" hx-get="/cabinet/buyer/tenders/" hx-target=".js-main-content" hx-push-url="true">Отменить</a>
+        <button type="button" class="button large primary js-tender-step-next">Продолжить</button>
+    </div>
+</div>

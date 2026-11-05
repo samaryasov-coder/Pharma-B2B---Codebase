@@ -1,5 +1,5 @@
 <h1>
-	{$error_code|default:"500"}
-	{$error_message|default:"Неизвестная ошибка"}
+	{$error_code|default:"500"|intval}
+	{$error_message|default:"Неизвестная ошибка"|escape}
 </h1>
 

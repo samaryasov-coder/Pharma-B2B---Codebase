@@ -432,6 +432,15 @@
             });
 
 
+            $(document).on('htmx:beforeSwap', function (e) {
+                const detail = e.originalEvent ? e.originalEvent.detail : e.detail;
+                if (detail && detail.target === self.$htmxContent[0]
+                    && detail.xhr.getResponseHeader('X-PB2B-Page-Error') === '1') {
+                    detail.shouldSwap = true;
+                    detail.isError = false;
+                }
+            });
+
             $(document).on('htmx:afterSettle', function () {
                 self.$htmxLoader.removeClass('is-active');
                 const el = self.$htmxContent;
@@ -498,7 +507,7 @@
 
         init: function(root) {
             this.root = root;
-            this.tabs = new TabManager({
+            this.tabs = new TabsManager({
                 container: this.root,
             });
 

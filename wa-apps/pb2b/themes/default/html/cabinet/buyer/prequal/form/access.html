@@ -1,0 +1,40 @@
+<div class="tender-form-step">
+    <section class="tender-form-card">
+        <div class="tender-form-card__head">
+            <h2 class="tender-form-card__title" tabindex="-1">Доступ к процедуре</h2>
+            <p class="tender-form-card__hint">Выберите, какие поставщики смогут видеть процедуру и подавать документы.</p>
+        </div>
+        <fieldset class="prequal-access">
+            <legend class="prequal-visually-hidden">Форма доступа</legend>
+            <label class="radio outline tender-form-control tender-form-option">
+                <input type="radio" name="is_private" value="0"{if !$prequal_data.is_private|default:0} checked{/if}>
+                <span class="radiomark" aria-hidden="true"></span>
+                <span class="tender-form-control__copy">
+                    <span class="input-label">Открытая процедура</span>
+                    <span class="input-hint">Участвовать могут все зарегистрированные поставщики.</span>
+                </span>
+            </label>
+            <label class="radio outline tender-form-control tender-form-option">
+                <input type="radio" name="is_private" value="1"{if $prequal_data.is_private|default:0} checked{/if}>
+                <span class="radiomark" aria-hidden="true"></span>
+                <span class="tender-form-control__copy">
+                    <span class="input-label">Закрытая процедура</span>
+                    <span class="input-hint">Участвовать могут только выбранные компании.</span>
+                </span>
+            </label>
+        </fieldset>
+        <div class="tender-form-field js-prequal-suppliers-wrap"{if !$prequal_data.is_private|default:0} hidden{/if}>
+            <label class="input-title" for="prequal-suppliers">Компании, допущенные к процедуре</label>
+            <select id="prequal-suppliers" class="js-prequal-suppliers" name="invitations[]" multiple>
+                {foreach $prequal_invitations as $invitation}
+                    <option value="{$invitation.supplier_company_id|escape}" selected>{$invitation.supplier_name|default:$invitation.supplier_company_id|escape}</option>
+                {/foreach}
+            </select>
+            <p class="tender-form-card__hint">Список можно дополнить при редактировании черновика.</p>
+        </div>
+    </section>
+    <div class="prequal-footer">
+        <a href="/cabinet/buyer/tenders/" class="button outline">Отменить</a>
+        <button type="button" class="button primary js-prequal-next">Сохранить и продолжить</button>
+    </div>
+</div>

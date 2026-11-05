@@ -1,20 +1,16 @@
 <div class="cabinet-container js-cabinet-page" data-page="data">
     <div class="title">Данные компании</div>
     <div class="content">
-        <ul class="tabs vertical">
-            <li data-tab="data" class="tab-btn">
-                <a href="#data">Информация о компании</a>
-            </li>
-            <li data-tab="signatures" class="tab-btn">
-                <a href="#signatures">Подписи</a>
-            </li>
-            <li data-tab="roles" class="tab-btn">
-                <a href="#roles">Роли</a>
-            </li>
-            <li data-tab="employees" class="tab-btn">
-                <a href="#employees">Сотрудники</a>
-            </li>
-        </ul>
+        {include file="html/cabinet/partials/tabs.html"
+            tabs=[
+                ['id' => 'data', 'label' => 'Информация о компании'],
+                ['id' => 'signatures', 'label' => 'Подписи'],
+                ['id' => 'roles', 'label' => 'Роли'],
+                ['id' => 'employees', 'label' => 'Сотрудники']
+            ]
+            tabs_aria="Разделы данных компании"
+            tabs_size="vertical"
+            tabs_with_panels=false}
         <div class="tab-content" data-tab="data">
             <div class="tabs-container">
                 <span class="section-title">Информация о компании</span>

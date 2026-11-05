@@ -1,0 +1,23 @@
+<div class="tender-page__aside-content tender-side-panel">
+    <div class="tender-side-panel__actions">
+        <button type="button" class="button primary js-buyer-start-review"{if !$permissions.can_start_review} disabled{/if}>Начать рассмотрение предложений</button>
+        <span class="js-buyer-evaluation-started" hidden>Рассмотрение начато</span>
+        <div class="js-buyer-evaluation-error" role="alert" hidden></div>
+    </div>
+    <section class="tender-side-card">
+        <div class="tender-side-card__head">
+            <h3 class="tender-side-card__title">Последние поступившие заявки</h3>
+            <a class="button ghost small icon-only" href="/cabinet/buyer/tender/{$tender.id|intval}/?tab=participants#participants" aria-label="Открыть список заявок"><img src="{$wa_theme_url}img/icons/details/chevron-right.svg" width="18" height="18" alt=""></a>
+        </div>
+        <div class="tender-side-card__applications">
+            {foreach $recent_applications as $recent_application}
+                <article class="tender-side-card__entry">
+                    <time class="tender-side-card__date">{if $recent_application.submitted_at}{$recent_application.submitted_at|date_format:'%d.%m.%Y, %H:%M:%S'}{else}—{/if}</time>
+                    <a class="button link tender-side-card__name" href="/cabinet/buyer/tender/{$tender.id|intval}/?tab=participants&amp;application={$recent_application.id|intval}#participants">Заявка №{$recent_application.id|intval}</a>
+                </article>
+            {foreachelse}
+                <p class="tender-side-card__empty">Предложения пока не поступили.</p>
+            {/foreach}
+        </div>
+    </section>
+</div>

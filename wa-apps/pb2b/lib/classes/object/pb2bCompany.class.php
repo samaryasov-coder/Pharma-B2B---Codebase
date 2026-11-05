@@ -56,6 +56,23 @@ class pb2bCompany extends pb2bWaproObject
         return pb2bOrganizationType::tryFrom($this->data['type_organization'] ?? '');
     }
 
+    private function companyTypeConfigId(mixed $company_type): ?int
+    {
+        $company_type = (string) ($company_type ?? '');
+        if ($company_type === '') {
+            return null;
+        }
+
+        $types = pb2bWaproHelper::getConfigOption('company_type', 'code');
+        if (isset($types[$company_type]['id'])) {
+            return (int) $types[$company_type]['id'];
+        }
+
+        // Read compatibility for rows created before the string-code contract.
+        $id = (int) $company_type;
+        return $id > 0 ? $id : null;
+    }
+
     /**
      * Возвращает полное название компании (тип + имя)
      */
@@ -69,7 +86,7 @@ class pb2bCompany extends pb2bWaproObject
                 return "{$cmp_type->shortName()} \"$name\"";
             case pb2bCompanyType::ORGANIZATION:
                 $org_type = $this->getOrganizationType();
-                return "{$org_type->name()} \"$name\"";
+                return $org_type ? "{$org_type->name()} \"$name\"" : "Организация \"$name\"";
         }
         return $name;
     }
@@ -86,44 +103,20 @@ class pb2bCompany extends pb2bWaproObject
             return array('error' => true, 'message' => 'Ошибка: выберите минимум один тип компании (Покупатель или Поставщик)');
         }
 
-        $company_type_config = pb2bWaproHelper::getConfigOption('company_type', 'code');
-        if (empty($company_type_config) || !is_array($company_type_config)) {
-            return array('error' => true, 'message' => 'Ошибка: не настроен справочник типов компании');
-        }
-
-        $company_type_id = (int) ($data['company_type'] ?? 0);
-        if ($company_type_id <= 0) {
-            return array('error' => true, 'message' => 'Ошибка: не указан тип компании');
-        }
-
-        $organization_company_type_id = (int) ($company_type_config['organization']['id'] ?? 0);
-        $entrepreneur_company_type_id = (int) ($company_type_config['entrepreneur']['id'] ?? 0);
-        if (
-            !$organization_company_type_id ||
-            !$entrepreneur_company_type_id ||
-            ($company_type_id !== $organization_company_type_id && $company_type_id !== $entrepreneur_company_type_id)
-        ) {
+        $company_type = pb2bCompanyType::tryFrom((string) ($data['company_type'] ?? ''));
+        if (!$company_type) {
             return array('error' => true, 'message' => 'Ошибка: неверный тип компании');
-        }
-
-        $type_organization_config = pb2bWaproHelper::getConfigOption('type_organization');
-        if (empty($type_organization_config) || !is_array($type_organization_config)) {
-            $type_organization_config = array();
         }
 
         $inn = (string) ($data['inn'] ?? '');
         $kpp = (string) ($data['kpp'] ?? '');
         $ogrn = (string) ($data['ogrn'] ?? '');
-        $type_organization_id = (int) ($data['type_organization'] ?? 0);
+        $organization_type = pb2bOrganizationType::tryFrom((string) ($data['type_organization'] ?? ''));
 
-        if ($company_type_id === $organization_company_type_id) {
-            if ($type_organization_id <= 0) {
+        if ($company_type === pb2bCompanyType::ORGANIZATION) {
+            if (!$organization_type) {
                 return array('error' => true, 'message' => 'Ошибка: для организации нужно указать тип организации');
             }
-            if (empty($type_organization_config[$type_organization_id])) {
-                return array('error' => true, 'message' => 'Ошибка: неверный тип организации');
-            }
-
             if (strlen($inn) !== 10) {
                 return array('error' => true, 'message' => 'Ошибка: для организации ИНН должен содержать 10 цифр');
             }
@@ -135,8 +128,8 @@ class pb2bCompany extends pb2bWaproObject
             }
         }
 
-        if ($company_type_id === $entrepreneur_company_type_id) {
-            if ($type_organization_id > 0) {
+        if ($company_type === pb2bCompanyType::ENTREPRENEUR) {
+            if (!empty($data['type_organization'])) {
                 return array('error' => true, 'message' => 'Ошибка: для предпринимателя тип организации должен быть пустым');
             }
             if (strlen($inn) !== 12) {
@@ -186,9 +179,31 @@ class pb2bCompany extends pb2bWaproObject
                 $data[$field] = preg_replace('~\D+~', '', (string) $data[$field]);
             }
         }
-       
+
         $company_type_config = pb2bWaproHelper::getConfigOption('company_type', 'code');
-        if ((int) ($data['company_type'] ?? 0) === $company_type_config['entrepreneur']['id']) {
+        $organization_type_config = pb2bWaproHelper::getConfigOption('type_organization', 'code');
+        foreach (array('company_type' => $company_type_config, 'type_organization' => $organization_type_config) as $field => $options) {
+            if (!isset($data[$field]) || !is_array($options)) {
+                continue;
+            }
+            $value = trim((string) $data[$field]);
+            if ($value === '') {
+                $data[$field] = null;
+                continue;
+            }
+            if (isset($options[$value])) {
+                $data[$field] = (string) $options[$value]['code'];
+                continue;
+            }
+            foreach ($options as $option) {
+                if ((string) ($option['id'] ?? '') === $value) {
+                    $data[$field] = (string) $option['code'];
+                    break;
+                }
+            }
+        }
+
+        if (($data['company_type'] ?? null) === pb2bCompanyType::ENTREPRENEUR->value) {
             $data['type_organization'] = null;
             $data['kpp'] = null;
         }
@@ -642,8 +657,7 @@ class pb2bCompany extends pb2bWaproObject
             return array('error' => true, 'message' => 'Компания не является поставщиком');
         }
 
-        $provider_company_type_id = (int) ($provider['company_type'] ?? 0);
-        $for_provider_type = $provider_company_type_id > 0 ? $provider_company_type_id : null;
+        $for_provider_type = $this->companyTypeConfigId($provider['company_type'] ?? null);
         $template_items = $docflowTemplate->getRequestSourceItems($template_item_ids, $for_provider_type);
         if (empty($template_items)) {
             return array('error' => true, 'message' => 'В шаблоне нет элементов для этого типа компании поставщика');
@@ -761,8 +775,7 @@ class pb2bCompany extends pb2bWaproObject
         $template_process_type = (int) ($template_data['process_type'] ?? 0);
         if (!$template_process_type) return array('error' => true, 'message' => 'У шаблона не определён process_type');
 
-        $provider_company_type_id = (int) ($this->data['company_type'] ?? 0);
-        $for_provider_type = $provider_company_type_id > 0 ? $provider_company_type_id : null;
+        $for_provider_type = $this->companyTypeConfigId($this->data['company_type'] ?? null);
         $template_items = $docflowTemplate->getRequestSourceItems(array(), $for_provider_type);
         if (empty($template_items)) {
             return array('error' => true, 'message' => 'В шаблоне нет элементов для вашего типа компании');

@@ -13,41 +13,64 @@
             {foreach $criteria as $cr}
                 {assign var=cid value=$cr.id}
                 {assign var=ans value=$app_criteria[$cid]|default:null}
+                {assign var=answer_file_link_id value=$ans.file_link_id|default:0}
                 <div
                     class="supplier-participation-nonprice__row"
                     data-criterion-id="{$cid|escape}"
                     data-mandatory="{if $cr.is_mandatory|default:0}1{else}0{/if}"
+                    data-type="{$cr.type|default:'text'|escape}"
+                    data-file-link-id="{$answer_file_link_id|escape}"
                 >
                     <div class="supplier-participation-nonprice__label-row">
                         <label class="supplier-participation-nonprice__label" for="participation-criterion-{$cid|escape}">
                             {$cr.name|default:'Критерий'|escape}
                             {if $cr.is_mandatory|default:0}
-                                <span class="supplier-participation-nonprice__badge is-required">Обязательный</span>
+                                {include file="html/cabinet/partials/badge.html" badge_text="Обязательный" badge_size="small" badge_tone="error"}
                             {else}
-                                <span class="supplier-participation-nonprice__badge">Необязательный</span>
+                                {include file="html/cabinet/partials/badge.html" badge_text="Необязательный" badge_size="small"}
                             {/if}
                         </label>
                         {if $cr.description|default:''}
                             <p class="des supplier-participation-nonprice__desc">{$cr.description|escape}</p>
                         {/if}
                     </div>
-                    <input
-                        id="participation-criterion-{$cid|escape}"
-                        type="text"
-                        class="input js-participation-criterion-value"
-                        value="{$ans.value|default:''|escape}"
-                        placeholder="Ответ"
-                        {if !$can_edit}disabled{/if}
-                    >
-                    <label class="supplier-participation-nonprice__check">
-                        <input
-                            type="checkbox"
-                            class="js-participation-criterion-confirmed"
-                            {if $ans.confirmed|default:0}checked{/if}
-                            {if !$can_edit}disabled{/if}
-                        >
-                        Подтверждаю
-                    </label>
+                    {if $cr.type == 'date'}
+                        <input id="participation-criterion-{$cid|escape}" type="date"
+                            class="input js-participation-criterion-value"
+                            value="{$ans.value|default:''|escape}" {if !$can_edit}disabled{/if}>
+                    {elseif $cr.type == 'file'}
+                        <div class="supplier-participation-nonprice__file">
+                            {if $can_edit}
+                                <label class="button secondary">
+                                    Загрузить файл
+                                    <input id="participation-criterion-{$cid|escape}" type="file"
+                                        class="js-participation-criterion-file" accept=".pdf,.doc,.docx" hidden>
+                                </label>
+                            {/if}
+                            <span class="js-participation-criterion-file-name">
+                                {$ans.file_name|default:'Файл не загружен'|escape}
+                            </span>
+                            {if $can_edit}
+                                <button type="button" class="button outline js-participation-criterion-file-remove"
+                                    {if !$answer_file_link_id}hidden{/if}>Удалить</button>
+                            {/if}
+                            {if $answer_file_link_id && $application.id|default:0}
+                                <a class="js-participation-criterion-file-link"
+                                    href="/api/supplier/tender/{$tender_id|escape}/applications/{$application.id|escape}/criteria/{$cid|escape}/file/">Скачать</a>
+                            {/if}
+                        </div>
+                    {elseif $cr.type == 'confirmation'}
+                        <label class="supplier-participation-nonprice__check" for="participation-criterion-{$cid|escape}">
+                            <input id="participation-criterion-{$cid|escape}" type="checkbox"
+                                class="js-participation-criterion-confirmed"
+                                {if $ans.confirmed|default:0}checked{/if} {if !$can_edit}disabled{/if}>
+                            {$cr.confirmation_text|default:'Подтверждаю'|escape}
+                        </label>
+                    {else}
+                        <textarea id="participation-criterion-{$cid|escape}"
+                            class="input js-participation-criterion-value" rows="3"
+                            placeholder="Введите ответ" {if !$can_edit}disabled{/if}>{$ans.value|default:''|escape}</textarea>
+                    {/if}
                 </div>
             {/foreach}
         </div>

@@ -1,0 +1,43 @@
+<section class="document-files" hx-boost="false">
+    {capture assign='document_files_actions'}
+        {if $document_files}
+            <a class="button secondary" href="{$document_download_url|escape}">
+                <img src="{$wa_theme_url}img/icons/documents/download-all.svg" alt="">
+                Скачать все документы
+            </a>
+        {else}
+            <button class="button secondary" type="button" disabled>
+                <img src="{$wa_theme_url}img/icons/documents/download-all.svg" alt="">
+                Скачать все документы
+            </button>
+        {/if}
+    {/capture}
+    {include file="html/cabinet/partials/page-header.html"
+        page_header_title='Файлы технического задания'
+        page_header_level='h3'
+        page_header_size='h3'
+        page_header_title_class=''
+        page_header_back_url=''
+        page_header_actions=$document_files_actions
+    }
+    <div class="file-list">
+        {foreach $document_files as $document_file}
+            <div class="file-item">
+                <div class="file-left">
+                    <img src="{$wa_theme_url}img/icons/documents/document.svg" alt="">
+                    <div class="file-info">
+                        <a class="file-name" href="{$document_download_url|escape}?document_id={$document_file.id|intval}" title="{$document_file.file_name|escape}">{$document_file.file_name|escape}</a>
+                        {if $document_file.file_size !== null}
+                            <span class="file-size">{$document_file.file_size|wa_format_file_size:'%0.1f':'б,кб,мб,гб'|escape}</span>
+                        {/if}
+                    </div>
+                </div>
+                <a class="button ghost small icon-only" href="{$document_download_url|escape}?document_id={$document_file.id|intval}" aria-label="Скачать {$document_file.file_name|escape}">
+                    <img src="{$wa_theme_url}img/icons/documents/download.svg" alt="">
+                </a>
+            </div>
+        {foreachelse}
+            <p class="document-files__empty">Закупочная документация пока не добавлена.</p>
+        {/foreach}
+    </div>
+</section>

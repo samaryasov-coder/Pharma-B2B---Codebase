@@ -1,0 +1,25 @@
+{if $tabs|@count}
+    <ul class="tabs{if $tabs_size|default:''} {$tabs_size|escape}{/if} js-tab-menu" role="tablist" aria-label="{$tabs_aria|default:'Разделы'|escape}">
+        {foreach $tabs as $tab}
+            {assign var=_id value=$tab.id|default:''}
+            {assign var=_active value=$tab.active|default:false}
+            {assign var=_disabled value=$tab.disabled|default:false}
+            {assign var=_title value=$tab.title|default:''}
+            <li data-tab="{$_id|escape}" class="tab-btn{if $_active} selected{/if}{if $_disabled} is-disabled{/if}{if $tabs_item_class|default:''} {$tabs_item_class|escape}{/if}" role="presentation">
+                <a href="#{$_id|escape}" role="tab" aria-selected="{if $_active}true{else}false{/if}"{if $_disabled} aria-disabled="true" tabindex="-1"{/if}{if $_title} title="{$_title|escape}"{/if}>
+                    {$tab.label|default:''|escape}
+                    {if isset($tab.count) && $tab.count !== '' && $tab.count !== null}<span data-tab="{$_id|escape}" class="tabs-count{if $tabs_count_class|default:''} {$tabs_count_class|escape}{/if}">{$tab.count|escape}</span>{/if}
+                </a>
+            </li>
+        {/foreach}
+    </ul>
+    {if $tabs_with_panels|default:false}
+        <div class="tabs-content">
+            {foreach $tabs as $tab}
+                {assign var=_id value=$tab.id|default:''}
+                {assign var=_active value=$tab.active|default:false}
+                <div class="tab-content" data-tab="{$_id|escape}" role="tabpanel"{if !$_active} hidden{/if}></div>
+            {/foreach}
+        </div>
+    {/if}
+{/if}

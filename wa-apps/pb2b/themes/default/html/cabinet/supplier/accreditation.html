@@ -1,17 +1,15 @@
 <div class="cabinet-container js-cabinet-page" data-page="accreditation">
     <div class="title">Запросы на одобрение</div>
     <div class="grid gap24">
-        <ul class="tabs large js-tab-menu">
-            <li data-tab="request" class="tab-btn">
-                <a href="#request">Мои запросы</a>
-            </li>
-            <li data-tab="customer_requests" class="tab-btn">
-                <a href="#customer_requests">Запросы покупателей</a>
-            </li>
-            <li data-tab="documents" class="tab-btn">
-                <a href="#documents">Мои документы</a>
-            </li>
-        </ul>
+        {include file="html/cabinet/partials/tabs.html"
+            tabs=[
+                ['id' => 'request', 'label' => 'Мои запросы'],
+                ['id' => 'customer_requests', 'label' => 'Запросы покупателей'],
+                ['id' => 'documents', 'label' => 'Мои документы']
+            ]
+            tabs_aria="Разделы одобрения поставщиков"
+            tabs_size="large"
+            tabs_with_panels=false}
 
 
         <div class="tabs-content">

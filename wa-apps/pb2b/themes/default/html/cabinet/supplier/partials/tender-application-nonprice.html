@@ -1,0 +1,33 @@
+{if $non_price_criteria}
+    <section class="supplier-application__section supplier-application__list">
+        <h2 class="detail-section__title">Неценовые критерии</h2>
+        {foreach $non_price_criteria as $criterion}
+            <article class="supplier-application__list-item">
+                <h3 class="detail-field__label">{$criterion.name|default:'Критерий'|escape}</h3>
+                {if $criterion.description}
+                    <p class="detail-field__value">{$criterion.description|escape|nl2br}</p>
+                {/if}
+                <p class="detail-field__value">
+                    {if $criterion.is_mandatory}Обязательный{else}Необязательный{/if}
+                </p>
+                <div class="detail-field__value">
+                    {if $criterion.type == 'confirmation'}
+                        {if $criterion.confirmed}Подтверждено{else}Не подтверждено{/if}
+                    {elseif $criterion.type == 'file'}
+                        {if $criterion.file_link_id}
+                            <a href="/api/supplier/tender/{$card.id|escape}/applications/{$application.id|escape}/criteria/{$criterion.id|escape}/file/">
+                                {$criterion.file_name|default:'Скачать приложенный файл'|escape}
+                            </a>
+                        {else}
+                            Файл не приложен
+                        {/if}
+                    {else}
+                        {$criterion.value|default:'Ответ не заполнен'|escape|nl2br}
+                    {/if}
+                </div>
+            </article>
+        {/foreach}
+    </section>
+{else}
+    <p class="supplier-application-positions__empty">В тендере нет неценовых критериев.</p>
+{/if}

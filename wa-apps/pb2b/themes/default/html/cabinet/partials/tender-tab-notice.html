@@ -1,0 +1,172 @@
+{assign var=_notice_vat_mode value=$notice.vat_mode|default:''}
+{assign var=_notice_delivery_address value=$notice.delivery_terms|default:''}
+
+<div class="tender-notice">
+    {foreach $notice_sections|default:['parameters', 'delivery', 'additional', 'contacts'] as $_notice_section}
+        {if $_notice_section == 'parameters'}
+            <section class="detail-section">
+                <h3 class="detail-section__title">Параметры закупки</h3>
+                <div class="detail-fields">
+                    <div class="detail-row">
+                        <p class="detail-row__text">
+                            Попозиционная закупка:
+                            <strong class="detail-row__value">{if $notice.itemized_enabled}Разрешена{else}Не разрешена{/if}</strong>
+                        </p>
+                        <span class="detail-row__hint" aria-hidden="true"><img src="{$wa_theme_url}img/icons/details/help.png" alt=""></span>
+                    </div>
+                    <div class="detail-row">
+                        <p class="detail-row__text">
+                            Подача аналогов закупаемой позиции:
+                            <strong class="detail-row__value">{if $notice.allow_analogues}Разрешена{else}Запрещена{/if}</strong>
+                        </p>
+                        <span class="detail-row__hint" aria-hidden="true"><img src="{$wa_theme_url}img/icons/details/help.png" alt=""></span>
+                    </div>
+                    <div class="detail-row">
+                        <p class="detail-row__text">
+                            Ограничение предложений указанных в заявке стоимости:
+                            <strong class="detail-row__value">
+                                {if $notice.hide_initial_price || !isset($notice.budget) || $notice.budget <= 0}
+                                    Не указан
+                                {else}
+                                    Максимальная цена заявки {$notice.budget|number_format:0:',':' '|escape} ₽
+                                {/if}
+                            </strong>
+                        </p>
+                        <span class="detail-row__hint" aria-hidden="true"><img src="{$wa_theme_url}img/icons/details/help.png" alt=""></span>
+                    </div>
+                    <div class="detail-row">
+                        <p class="detail-row__text">
+                            При выборе победителя учитывается:
+                            <strong class="detail-row__value">{if $_notice_vat_mode == 'without_vat'}Без НДС{else}С НДС{/if}</strong>
+                        </p>
+                        <span class="detail-row__hint" aria-hidden="true"><img src="{$wa_theme_url}img/icons/details/help.png" alt=""></span>
+                    </div>
+                </div>
+            </section>
+        {elseif $_notice_section == 'delivery'}
+            <section class="detail-section">
+                <h3 class="detail-section__title">Оплата и доставка</h3>
+                <div class="detail-fields detail-fields--wide">
+                    <div class="detail-field">
+                        <div class="detail-field__label">Адрес поставки</div>
+                        <div class="detail-field__value">
+                            {if isset($notice_delivery_places)}
+                                {foreach $notice_delivery_places as $_notice_place}
+                                    {include file="html/cabinet/partials/detail-copy-value.html" detail_copy_value=$_notice_place detail_copy_label="Скопировать адрес поставки"}
+                                {foreachelse}—{/foreach}
+                            {elseif $_notice_delivery_address}
+                                {include file="html/cabinet/partials/detail-copy-value.html" detail_copy_value=$_notice_delivery_address detail_copy_label="Скопировать адрес поставки"}
+                            {else}—{/if}
+                        </div>
+                    </div>
+                    <div class="detail-field">
+                        <div class="detail-field__label">Условия оплаты</div>
+                        <div class="detail-field__value">
+                            {if $notice.payment_terms}{$notice.payment_terms|escape|nl2br}{else}—{/if}
+                        </div>
+                    </div>
+                    <div class="detail-field">
+                        <div class="detail-field__label">Дополнительные условия поставки</div>
+                        <div class="detail-field__value">
+                            {if $notice.additional_delivery_info}{$notice.additional_delivery_info|escape|nl2br}{else}—{/if}
+                        </div>
+                    </div>
+                </div>
+            </section>
+        {elseif $_notice_section == 'additional'}
+            <section class="detail-section">
+                <h3 class="detail-section__title">Дополнительная информация</h3>
+                <div class="detail-fields">
+                    <div class="detail-field">
+                        <div class="detail-field__label">Окончание приёма заявок</div>
+                        <div class="detail-tags">
+                            {if $notice.end_at}
+                                <span class="detail-tag">{$notice.end_at|date_format:"%d.%m.%Y"}г</span>
+                                <span class="detail-tag">{$notice.end_at|date_format:"%H:%M"}</span>
+                            {else}
+                                <span class="detail-tag">—</span>
+                            {/if}
+                        </div>
+                    </div>
+                    <div class="detail-field">
+                        <div class="detail-field__label">Плановое подведение итогов</div>
+                        <div class="detail-tags">
+                            {if $notice.opening_at}
+                                <span class="detail-tag">{$notice.opening_at|date_format:"%d.%m.%Y"}г</span>
+                                <span class="detail-tag">{$notice.opening_at|date_format:"%H:%M"}</span>
+                            {else}
+                                <span class="detail-tag">—</span>
+                            {/if}
+                        </div>
+                    </div>
+                    <div class="detail-field detail-field--compact">
+                        <div class="detail-field__label">Изменение стоимости</div>
+                        <div class="detail-field__value">
+                            {if $notice.only_price_reduction}
+                                Разрешено только снижение стоимости при изменении предложения
+                            {else}
+                                Ограничение только снижением стоимости не установлено
+                            {/if}
+                        </div>
+                    </div>
+                    <div class="detail-field detail-field--compact">
+                        <div class="detail-field__label">Приоритеты выбора поставщика</div>
+                        <div class="detail-field__value">
+                            {if $notice.additional_info}
+                                {$notice.additional_info|escape|nl2br}
+                            {else}
+                                Приоритет отдается выбору поставщика, предоставляющему минимальную цену.
+                            {/if}
+                        </div>
+                    </div>
+                </div>
+            </section>
+        {elseif $_notice_section == 'contacts'}
+            <section class="detail-section">
+                <h3 class="detail-section__title">Контактная информация</h3>
+                <div class="detail-fields">
+                    <div class="detail-field">
+                        <div class="detail-field__label">Организатор</div>
+                        <div class="detail-field__value">
+                            {if $organizer}
+                                {if $notice_company_details|default:false}
+                                    {include file="html/cabinet/partials/detail-copy-value.html" detail_copy_value=$organizer->getFullName() detail_copy_label="Скопировать организатора"}
+                                {else}{$organizer->getFullName()|escape}{/if}
+                            {else}—{/if}
+                        </div>
+                    </div>
+                    <div class="detail-field">
+                        <div class="detail-field__label">Контактное лицо</div>
+                        <div class="detail-field__value">
+                            {if $organizer}{$organizer.data.contact_person|default:'—'|escape}{else}—{/if}
+                        </div>
+                    </div>
+                    {if $notice_company_details|default:false}
+                        {foreach ['inn' => 'ИНН компании', 'kpp' => 'КПП', 'ogrn' => 'ОГРН'] as $_notice_company_field => $_notice_company_label}
+                            <div class="detail-field">
+                                <div class="detail-field__label">{$_notice_company_label|escape}</div>
+                                <div class="detail-field__value">
+                                    {if $organizer}
+                                        {include file="html/cabinet/partials/detail-copy-value.html" detail_copy_value=$organizer.data[$_notice_company_field]|default:'' detail_copy_label='Скопировать '|cat:$_notice_company_label}
+                                    {else}—{/if}
+                                </div>
+                            </div>
+                        {/foreach}
+                    {/if}
+                    <div class="detail-field">
+                        <div class="detail-field__label">E-mail</div>
+                        <div class="detail-field__value">
+                            {if $organizer}{$organizer.data.registry_email|default:'—'|escape}{else}—{/if}
+                        </div>
+                    </div>
+                    <div class="detail-field">
+                        <div class="detail-field__label">Номер телефона</div>
+                        <div class="detail-field__value">
+                            {if $organizer}{$organizer.data.phone|default:'—'|escape}{else}—{/if}
+                        </div>
+                    </div>
+                </div>
+            </section>
+        {/if}
+    {/foreach}
+</div>

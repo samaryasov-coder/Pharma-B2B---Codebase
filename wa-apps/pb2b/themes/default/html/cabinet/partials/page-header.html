@@ -1,0 +1,21 @@
+{assign var='_page_header_level' value=$page_header_level|default:'h1'}
+{if $_page_header_level != 'h1' && $_page_header_level != 'h2' && $_page_header_level != 'h3' && $_page_header_level != 'h4' && $_page_header_level != 'h5' && $_page_header_level != 'h6'}
+    {assign var='_page_header_level' value='h1'}
+{/if}
+{assign var='_page_header_size' value=$page_header_size|default:'h1'}
+{if $_page_header_size != 'h1' && $_page_header_size != 'h2' && $_page_header_size != 'h3' && $_page_header_size != 'h4' && $_page_header_size != 'h5' && $_page_header_size != 'h6'}
+    {assign var='_page_header_size' value='h1'}
+{/if}
+<header class="page-header">
+    <div class="page-header__main">
+        {if $page_header_back_url|default:''}
+            <a href="{$page_header_back_url|escape}" class="button secondary icon-only small" aria-label="{$page_header_back_label|default:'Назад'|escape}">
+                <svg aria-hidden="true"><use href="#icon-chevron-left"></use></svg>
+            </a>
+        {/if}
+        <{$_page_header_level} class="page-header__title page-header__title--{$_page_header_size}{if $page_header_title_class|default:''} {$page_header_title_class|escape}{/if}">{$page_header_title|escape}</{$_page_header_level}>
+    </div>
+    {if $page_header_actions|default:''}
+        <div class="page-header__actions">{$page_header_actions}</div>
+    {/if}
+</header>

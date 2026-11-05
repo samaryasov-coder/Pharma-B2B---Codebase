@@ -1,0 +1,8 @@
+{if $detail_copy_value !== '' && $detail_copy_value !== null}
+    <div class="detail-copy-value">
+        <span>{$detail_copy_value|escape|nl2br}</span>
+        <button type="button" class="button ghost icon-only detail-copy js-detail-copy" data-copy="{$detail_copy_value|escape}" aria-label="{$detail_copy_label|default:'Скопировать'|escape}" title="{$detail_copy_label|default:'Скопировать'|escape}">
+            <img src="{$wa_theme_url}img/icons/details/copy.svg" alt="" aria-hidden="true">
+        </button>
+    </div>
+{else}—{/if}

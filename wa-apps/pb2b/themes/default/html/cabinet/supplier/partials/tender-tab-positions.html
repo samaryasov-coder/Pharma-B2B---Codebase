@@ -1,0 +1,51 @@
+{if $items}
+    <div class="table-scroll" tabindex="0" role="region" aria-label="Позиции тендера">
+        <table class="base-table" aria-label="Позиции тендера">
+            <colgroup>
+                <col class="tender-positions__number">
+                <col class="tender-positions__name">
+                <col class="tender-positions__quantity">
+                <col class="tender-positions__unit">
+                <col class="tender-positions__vat">
+                <col class="tender-positions__price">
+                <col>
+                <col>
+                <col>
+            </colgroup>
+            <thead>
+                <tr>
+                    <th scope="col">Номер</th>
+                    <th scope="col">Наименование</th>
+                    <th scope="col">Количество</th>
+                    <th scope="col">Ед.</th>
+                    <th scope="col">НДС</th>
+                    <th scope="col">НМЦ позиции</th>
+                    <th scope="col">Место поставки</th>
+                    <th scope="col">Документ</th>
+                    <th scope="col">Комментарий</th>
+                </tr>
+            </thead>
+            <tbody>
+                {foreach $items as $item}
+                    <tr>
+                        <td>{$item@iteration}</td>
+                        <td><span class="base-table__value" title="{$item.name|escape}">{$item.name|default:'—'|escape}</span></td>
+                        <td>{if isset($item.qty)}{$item.qty|number_format:3:',':' '|regex_replace:'/,?0+$/':''|escape}{else}—{/if}</td>
+                        <td><span class="base-table__value" title="{$item.unit|escape}">{$item.unit|default:'—'|escape}</span></td>
+                        <td>{if isset($item.vat_rate) && $item.vat_rate !== ''}{$item.vat_rate|escape}{else}—{/if}</td>
+                        <td>{if isset($item.max_price_no_vat)}{$item.max_price_no_vat|number_format:2:',':' '|escape} ₽{else}—{/if}</td>
+                        <td><span class="base-table__value" title="{$item.delivery_place|escape}">{$item.delivery_place|default:'—'|escape}</span></td>
+                        <td>
+                            {if $item.file_link_id && $item.file_name}
+                                <a class="base-table__value" href="/api/supplier/tender/{$tender.id|intval}/documents/download/?scope=item&amp;item_id={$item.id|intval}" hx-boost="false" title="Скачать {$item.file_name|escape}">{$item.file_name|escape}</a>
+                            {else}—{/if}
+                        </td>
+                        <td><span class="base-table__value" title="{$item.comment|escape}">{$item.comment|default:'—'|escape}</span></td>
+                    </tr>
+                {/foreach}
+            </tbody>
+        </table>
+    </div>
+{else}
+    <p class="hint">Позиции тендера пока не добавлены.</p>
+{/if}

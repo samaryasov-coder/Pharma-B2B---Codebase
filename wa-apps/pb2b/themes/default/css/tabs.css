@@ -1,0 +1,105 @@
+ul.tabs {
+    position: relative;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content:not([hidden]) {
+    display: block;
+}
+
+ul.tabs.vertical {
+    display: flex;
+    flex-direction: column;
+    padding: 16px 12px;
+    border-right: 1px solid var(--gray-200);
+    width: 320px;
+}
+
+ul.tabs.vertical > li > a {
+    font: var(--text-font-l1);
+    font-weight: var(--font-weight-medium);
+    color: var(--gray-500);
+    border: 0;
+    border-radius: 6px;
+    padding: 12px;
+}
+
+ul.tabs.vertical > li:hover > a {
+    color: var(--black);
+}
+
+ul.tabs.vertical > li.selected > a {
+    background-color: var(--menu-selected-background-color);
+    color: var(--gray-900);
+}
+
+ul.tabs:not(.vertical) {
+    box-shadow: inset 0 -1px var(--gray-200);
+}
+
+ul.tabs li {
+    position: relative;
+    margin: 0 !important;
+}
+
+.tabs-content {
+    min-height: 0;
+}
+
+ul.tabs:not(.vertical) > li > a {
+    --tabs-padding-px: var(--tabs-padding-x-md);
+    --tabs-padding-py: var(--tabs-padding-y-md);
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: var(--tabs-padding-py) var(--tabs-padding-px);
+    border: 0;
+    box-shadow: inset 0 -1px transparent;
+    color: var(--gray-400);
+    font: var(--text-font-p3);
+    font-weight: var(--font-weight-regular);
+}
+
+ul.tabs:not(.vertical) > li > a:hover {
+    color: var(--gray-600);
+}
+
+ul.tabs:not(.vertical) > li:hover > a {
+    box-shadow: inset 0 -1px var(--gray-600);
+}
+
+ul.tabs:not(.vertical).large > li > a {
+    --tabs-padding-px: var(--tabs-padding-x-lg);
+    --tabs-padding-py: var(--tabs-padding-y-lg);
+    font: var(--text-font-p2);
+    font-weight: var(--font-weight-regular);
+}
+
+ul.tabs:not(.vertical).small > li > a {
+    --tabs-padding-px: var(--tabs-padding-x-sm);
+    --tabs-padding-py: var(--tabs-padding-y-sm);
+    font: var(--text-font-p4);
+    font-weight: var(--font-weight-regular);
+}
+
+ul.tabs:not(.vertical) > li.selected > a {
+    color: var(--gray-900);
+    font-weight: var(--font-weight-semibold);
+}
+
+ul.tabs:not(.vertical) > li.selected > a {
+    box-shadow: inset 0 -1px var(--gray-900);
+}
+
+.tabs-count {
+    font-size: 12px;
+    font-weight: var(--font-weight-medium);
+    line-height: 16px;
+}
+
+
+

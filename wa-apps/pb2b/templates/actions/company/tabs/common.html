@@ -16,7 +16,7 @@
                 <select name="data[company_type]" class="w100 js-company-type-select">
                     <option value="">Выберите тип</option>
                     {foreach $company_types|default:[] as $company_type}
-                        <option value="{$company_type.id|default:0|escape}" {if $company_type.id == $object.company_type|default:0}selected{/if}>
+                        <option value="{$company_type.code|default:''|escape}" {if $company_type.code == $object.company_type|default:''}selected{/if}>
                             {$company_type.name|default:''|escape}
                         </option>
                     {/foreach}
@@ -25,14 +25,14 @@
         </div>
     </div>
 
-    <div class="field js-type-organization-field"{if $object.company_type|default:0 != 1} style="display:none;"{/if}>
+    <div class="field js-type-organization-field"{if $object.company_type|default:'' != 'organization'} style="display:none;"{/if}>
         <div class="name">Тип организации</div>
         <div class="value">
             <div class="wa-select w100">
-                <select name="data[type_organization]" class="w100 js-type-organization-select"{if $object.company_type|default:0 != 1} disabled{/if}>
+                <select name="data[type_organization]" class="w100 js-type-organization-select"{if $object.company_type|default:'' != 'organization'} disabled{/if}>
                     <option value="">Выберите тип организации</option>
                     {foreach $types_organization|default:[] as $type_organization}
-                        <option value="{$type_organization.id|default:0|escape}" {if $type_organization.id == $object.type_organization|default:0}selected{/if}>
+                        <option value="{$type_organization.code|default:''|escape}" {if $type_organization.code == $object.type_organization|default:''}selected{/if}>
                             {$type_organization.name|default:''|escape}
                         </option>
                     {/foreach}

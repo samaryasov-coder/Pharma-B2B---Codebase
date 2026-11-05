@@ -1,0 +1,648 @@
+.tender-form-step {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    min-width: 0;
+    width: 100%;
+}
+
+.tender-form-step > .tender-form-card {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.tender-form-section,
+.tender-form-fields,
+.tender-form-field,
+.tender-form-panel {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.tender-form-section {
+    gap: 24px;
+}
+
+.tender-form-fields,
+.tender-form-panel {
+    gap: 16px;
+}
+
+.tender-form-field {
+    gap: 8px;
+}
+
+.tender-form-field .creation-card-results-tags:empty {
+    display: none;
+}
+
+.tender-form-options {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+}
+
+.tender-form-control {
+    position: relative;
+    width: 100%;
+    margin: 0;
+    cursor: pointer;
+    color: var(--gray-900);
+}
+
+.tender-form-control > input {
+    display: block;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    padding: 0;
+    opacity: 0;
+}
+
+.tender-form-control > input:focus-visible + .checkmark,
+.tender-form-control > input:focus-visible + .radiomark {
+    outline: 2px solid var(--primary-900);
+    outline-offset: 2px;
+}
+
+.tender-form-control__copy {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.tender-form-control .input-hint {
+    color: var(--gray-500);
+}
+
+.tender-form-control__label {
+    font: var(--text-font-p2);
+    font-weight: var(--font-weight-regular);
+    color: var(--gray-900);
+}
+
+.tender-form-section__title,
+.tender-form-field__label,
+.tender-form-field__help {
+    margin: 0;
+    font-weight: var(--font-weight-normal);
+}
+
+.tender-form-section__title {
+    font: var(--text-font-p2);
+    color: var(--gray-900);
+}
+
+.tender-form-field__label {
+    font: var(--text-font-p3);
+    color: var(--gray-500);
+}
+
+.tender-form-field__help {
+    font: var(--text-font-p4);
+    color: var(--gray-500);
+}
+
+.tender-form-option {
+    flex: 1;
+    min-width: 0;
+    padding: 12px;
+    border-radius: var(--input-radius-md);
+}
+
+.tender-form-option:hover,
+.tender-form-option:has(input:checked) {
+    background: var(--gray-50);
+}
+
+.tender-form-option .input-label {
+    font: var(--text-font-p3);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-p2);
+}
+
+.tender-form-panel {
+    box-sizing: border-box;
+    padding: 12px;
+    border-radius: var(--input-radius-md);
+    background: var(--gray-50);
+}
+
+.tender-form-field--participants .select2-container {
+    max-width: 500px;
+}
+
+.tender-form-search {
+    max-width: 544px;
+    box-sizing: border-box;
+}
+
+.tender-form-search input {
+    min-width: 0;
+}
+
+.tender-form-divider {
+    width: 100%;
+    height: 1px;
+    border: 0;
+    margin: 0;
+    background: var(--border-color-input);
+}
+
+.tender-form-period {
+    flex-direction: row;
+    gap: 12px;
+    margin-left: 30px;
+}
+
+.tender-form-period .date-picker {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.tender-form-period .date-picker svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    color: var(--gray-400);
+}
+
+.tender-form-reveal {
+    display: none;
+}
+
+.tender-form-reveal.visible {
+    display: flex;
+}
+
+.tender-form-reveal--indented {
+    gap: 12px;
+    padding: 8px 0 0 30px;
+}
+
+@container tender-wizard (max-width: 600px) {
+    .tender-form-options,
+    .tender-form-period {
+        flex-direction: column;
+    }
+
+    .tender-form-period .date-picker {
+        width: 100%;
+    }
+}
+.tender-form-alert {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 16px;
+    border: 1px solid var(--error-base, #d92d20);
+    border-radius: 12px;
+    background: var(--error-light, #fee4e2);
+    color: var(--error-base, #d92d20);
+}
+
+.tender-form-alert__icon {
+    flex-shrink: 0;
+}
+
+.tender-form-alert__text {
+    flex: 1;
+    font: var(--text-font-p3);
+    font-weight: var(--font-weight-semibold);
+}
+
+.tender-form-alert__close {
+    display: inline-flex;
+    flex-shrink: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+    opacity: 1;
+}
+
+.tender-form-alert__close:hover {
+    opacity: 0.7;
+}
+
+.tender-form-alert--step {
+    margin-top: -12px;
+    margin-bottom: 16px;
+}
+
+.tender-form-expand {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    border-radius: var(--input-radius-md);
+    transition: background-color 0.2s ease, padding 0.2s ease;
+}
+
+.tender-form-expand:has(.js-field-auto-extend-change:checked) {
+    padding: 16px;
+    background: var(--gray-50);
+}
+
+.tender-form-expand > .tender-form-panel {
+    width: 100%;
+    max-width: 530px;
+    margin-left: 30px;
+    padding: 0;
+    background: transparent;
+}
+
+.tender-form-select-field {
+    max-width: 500px;
+}
+
+.tender-form-select-field .select2-container {
+    width: 100% !important;
+    max-width: 100%;
+    margin: 0;
+}
+
+.tender-form-control--nested .input-label,
+.tender-form-reveal--indented .input-label,
+.tender-form-options--compact .input-label {
+    font: var(--text-font-p3);
+    font-weight: var(--font-weight-normal);
+}
+
+.tender-form-options--compact {
+    align-items: center;
+    gap: 24px;
+}
+
+.tender-form-options--compact .tender-form-control {
+    width: auto;
+}
+
+.tender-form-increment {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 4px;
+}
+
+.tender-form-increment__switch {
+    display: flex;
+    width: fit-content;
+    gap: 0;
+    margin: 0;
+    padding: 2px;
+    border: 0;
+    border-radius: var(--button-radius-sm);
+    background: var(--gray-100);
+}
+
+.tender-form-increment .increment-button {
+    appearance: none;
+    min-height: 0;
+    height: auto;
+    margin: 0;
+    padding: 6px 12px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    box-shadow: none;
+    color: var(--gray-500);
+    font: var(--text-font-p4);
+    font-weight: var(--font-weight-medium);
+    text-shadow: none;
+}
+
+.tender-form-increment .increment-button.active,
+.tender-form-increment .increment-button:hover {
+    top: 0;
+    background: var(--white);
+    color: var(--gray-900);
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.08);
+}
+
+.tender-form-increment .input-box {
+    width: 160px;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.tender-form-increment .input-box input {
+    flex: 1;
+    width: 0;
+    min-width: 0;
+}
+
+.tender-form-increment .input-box svg,
+.tender-form-increment .input-suffix {
+    flex-shrink: 0;
+}
+
+.tender-form-increment .input-box svg {
+    width: 20px;
+    height: 20px;
+}
+
+.tender-form-increment .input-suffix {
+    margin-right: 8px;
+    color: var(--gray-500);
+    font: var(--text-font-p2);
+}
+
+.tender-form-date-list,
+.tender-form-date-item,
+.tender-form-date-item__head,
+.tender-form-date-field {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.tender-form-date-list {
+    gap: 24px;
+}
+
+.tender-form-date-item,
+.tender-form-date-field {
+    gap: 8px;
+}
+
+.tender-form-date-item__head {
+    gap: 4px;
+}
+
+.tender-form-date-fields {
+    display: flex;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.tender-form-date-field {
+    width: 220px;
+    max-width: 100%;
+}
+
+.tender-form-date-field .date-picker {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    background: var(--white);
+    cursor: pointer;
+}
+
+.tender-form-date-field .date-picker input {
+    min-width: 0;
+    font: var(--text-font-p2);
+    font-weight: var(--font-weight-normal);
+}
+
+.tender-form-date-field .date-picker svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    color: var(--gray-400);
+}
+
+.tender-form-field--limited {
+    width: 100%;
+    max-width: 440px;
+}
+
+.tender-form-field--limited .input-box,
+.tender-form-field--limited .add-info-extra-row {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.tender-form-field--limited .input-box input {
+    flex: 1;
+    width: 0;
+    min-width: 0;
+    font: var(--text-font-p2);
+    font-weight: var(--font-weight-normal);
+}
+
+.tender-form-field--limited .input-box svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    color: var(--gray-500);
+}
+
+.tender-form-field--limited > .button,
+.tender-form-action {
+    align-self: flex-start;
+    width: fit-content;
+    max-width: 100%;
+    white-space: normal;
+    text-align: left;
+}
+
+.tender-form-card .npc-criteria-list {
+    width: 100%;
+}
+
+.tender-form-card .npc-criteria-list:empty,
+.tender-form-field .add-info-extra-list:empty {
+    display: none;
+}
+
+.tender-form-group,
+.tender-form-list {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    gap: 12px;
+}
+
+.tender-form-list__item {
+    width: 100%;
+    min-width: 0;
+}
+
+.tender-form-textarea {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--input-radius-md);
+    background: var(--white);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tender-form-textarea:hover:not(:focus-within) {
+    border-color: var(--gray-900);
+}
+
+.tender-form-textarea:focus-within {
+    border-color: var(--gray-900);
+    box-shadow: inset 0 0 0 0.5px var(--gray-900);
+}
+
+.tender-form-textarea textarea {
+    display: block;
+    width: 100% !important;
+    min-height: 80px;
+    height: auto;
+    margin: 0;
+    padding: 8px 12px 0;
+    border: 0;
+    border-radius: var(--input-radius-md) var(--input-radius-md) 0 0;
+    outline: 0;
+    resize: vertical;
+    box-sizing: border-box;
+    background: transparent;
+    color: var(--gray-900);
+    font: var(--text-font-p2);
+    font-weight: var(--font-weight-normal);
+}
+
+.tender-form-textarea textarea::placeholder {
+    color: var(--gray-400);
+    opacity: 1;
+}
+
+.tender-form-textarea__counter {
+    position: static;
+    display: flex;
+    align-self: stretch;
+    justify-content: flex-end;
+    width: 100%;
+    margin: 0;
+    padding: 0 12px 8px;
+    box-sizing: border-box;
+    background: transparent;
+    color: var(--gray-400);
+    font: var(--text-font-p4);
+    font-weight: var(--font-weight-normal);
+    pointer-events: none;
+}
+
+.tender-form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+}
+
+.tender-form-actions > .button {
+    width: fit-content;
+    max-width: 100%;
+    white-space: normal;
+    text-align: left;
+}
+
+.tender-form-select .select2-container {
+    width: 100% !important;
+    max-width: 100%;
+    margin: 0;
+}
+
+.tender-form-select .select2-container .select2-selection {
+    --slct-padding-px: 16px;
+    --slct-padding-py: 14px;
+    --slct-radius: var(--select-radius-md);
+    --slct-border-color: var(--gray-200);
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: 52px;
+    height: auto;
+    padding: 14px 16px;
+    border: 1px solid var(--slct-border-color);
+    border-radius: var(--select-radius-md) !important;
+    box-sizing: border-box;
+    background: var(--white);
+    font: var(--text-font-p2);
+    font-weight: var(--font-weight-normal);
+}
+
+.tender-form-select .select2-container--focus .select2-selection,
+.tender-form-select .select2-container--open .select2-selection {
+    --slct-border-color: var(--gray-900);
+    border-color: var(--gray-900);
+}
+
+.tender-form-select .select2-container .select2-selection::after {
+    right: 16px;
+    width: 20px;
+    height: 20px;
+    background-color: var(--gray-900);
+}
+
+.tender-form-select .select2-selection__clear,
+.tender-form-select .select2-container--default .select2-selection--single .select2-selection__arrow {
+    display: none !important;
+}
+
+.tender-form-select .select2-container--default .select2-selection--single .select2-selection__rendered {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0 28px 0 0;
+    overflow: hidden;
+    color: var(--gray-900);
+    font: var(--text-font-p2);
+    font-weight: var(--font-weight-normal);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tender-form-select .select2-container--default .select2-selection--single .select2-selection__placeholder {
+    color: var(--gray-400);
+}
+
+.tender-form-consent {
+    width: fit-content;
+    max-width: 100%;
+    margin-left: 4px;
+}
+
+.tender-form-consent .input-label {
+    font: var(--text-font-p3);
+    font-weight: var(--font-weight-normal);
+}
+
+@container tender-wizard (max-width: 600px) {
+    .tender-form-expand > .tender-form-panel {
+        margin-left: 0;
+    }
+
+    .tender-form-date-field {
+        width: 100%;
+    }
+
+    .tender-form-step > .creation-manage-buttons {
+        flex-wrap: wrap;
+    }
+
+    .tender-form-step > .creation-manage-buttons > .manage-buttons-right {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .tender-form-actions > .button {
+        width: 100%;
+        justify-content: flex-start;
+    }
+}
+

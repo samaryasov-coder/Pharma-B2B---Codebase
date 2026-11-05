@@ -1,0 +1,11 @@
+{assign var=_badge_size value=$badge_size|default:'medium'}
+{if !in_array($_badge_size, ['small','medium','large'])}{assign var=_badge_size value='medium'}{/if}
+{assign var=_badge_tone value=$badge_tone|default:'neutral'}
+{if !in_array($_badge_tone, ['neutral','disabled','success','brand','info','warning','error'])}{assign var=_badge_tone value='neutral'}{/if}
+{assign var=_badge_external value=($badge_leading|default:'' && $badge_leading_position|default:'inside' == 'outside')}
+{if $_badge_external}<span class="badge-group"><span class="badge-group__leading" aria-hidden="true">{$badge_leading}</span>{/if}
+<span class="badge badge--shared badge--{$_badge_size|escape} {$_badge_tone|escape}{if $badge_variant|default:'' == 'tag'} badge--tag{/if}{if $badge_outline|default:false} badge--outline{/if}{if $badge_class|default:''} {$badge_class|escape}{/if}">
+    {if $badge_leading|default:'' && !$_badge_external}<span class="badge__leading" aria-hidden="true">{$badge_leading}</span>{/if}
+    <span class="badge__text">{$badge_text|default:''|escape}</span>
+</span>
+{if $_badge_external}</span>{/if}

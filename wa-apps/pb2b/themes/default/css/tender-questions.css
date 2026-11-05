@@ -1,0 +1,22 @@
+.tender-questions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 538px;
+}
+
+.tender-questions .empty-container {
+    max-width: 501px;
+    margin: 0;
+}
+
+.tender-questions .title,
+.tender-questions .des {
+    margin: 0;
+}
+
+@media (max-width: 1100px) {
+    .tender-questions {
+        min-height: 320px;
+    }
+}

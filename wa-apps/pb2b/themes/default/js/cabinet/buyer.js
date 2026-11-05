@@ -61,7 +61,7 @@
                             dropdownParent: $container,
 
                             ajax: {
-                                url: '/api/common/company/select/',
+                                url: '/api/buyer/company/select/',
                                 dataType: 'json',
                                 delay: 250,
 
@@ -463,7 +463,7 @@
                         target: 1,
                         render: function (data, type, row, meta) {
                             if (!data) return '';
-                            return `<a href="/api/common/docflow/request/template/download?id=${row.id}" class="button link large">${data.name}</a>`;
+                            return `<a href="/api/buyer/docflow/request/template/download/?id=${row.id}" class="button link large">${data.name}</a>`;
                         }
                     },
                 ],
@@ -509,84 +509,47 @@
 
     $.Cabinet.registerPage('tenders', {
         root: null,
-        tenderId: 0,
-        stepIndex: 0,
-        selectedTypeId: 3,
-        selectedTypeCode: 'price_request',
-        steps: ['privacy', 'basic', 'purchase_params', 'payment_delivery', 'lots', 'invitation'],
         items: [],
-        techSpecFiles: [],
-        criteria: [],
-        extraInfoFields: [],
-        extraApprovers: [],
-        criteriaDrag: null,
-        _criteriaDnDBound: false,
         bucket: 'all',
         search: '',
         filterType: '',
         filterStatus: '',
-        categoryTreeRows: null,
-        categoryClassifierType: 4,
-        categoryTreePromise: null,
-        categoryExpandedIds: null,
-        _categorySyncing: false,
 
         init: function (root) {
             this.root = root;
-            this.tenderId = 0;
-            this.stepIndex = 0;
-            this.selectedTypeId = 3;
-            this.selectedTypeCode = 'price_request';
             this.items = [];
-            this.techSpecFiles = [];
-            this.criteria = [];
-            this.extraInfoFields = [];
-            this.extraApprovers = [];
-            this.criteriaDrag = null;
             this.bucket = 'all';
             this.search = '';
             this.filterType = '';
             this.filterStatus = '';
-            this.categoryTreeRows = null;
-            this.categoryClassifierType = 4;
-            this.categoryTreePromise = null;
-            this.categoryExpandedIds = null;
-            this.lotPositions = [];
-            this.lotDocuments = [];
-            this.selectedLotId = '';
-            this.selectedDocId = '';
-            this.lotsActiveTab = 'lots';
-            this.lotsPreviewMode = false;
-            this.lotNmc = '0';
-            this.lotVatRate = '20%';
-            this.lotIdSeq = 0;
-            this.budgetActionsHidden = false;
-
             this.bindEvents();
-            this.initInviteSelects();
-            this.initPurchaseParamsUi();
-            this.initPaymentDeliveryUi();
-            this.initLotsUi();
-            this.initInvitationUi();
-            this.loadCategoryTree();
             this.loadList();
         },
 
-        openEditFromQuery: function () {
-            let editId = 0;
-            try {
-                editId = parseInt(new URLSearchParams(window.location.search || '').get('edit') || '0', 10) || 0;
-            } catch (e) {
-                editId = 0;
+        navigateCabinet: function (url) {
+            if (typeof htmx !== 'undefined' && htmx.ajax) {
+                htmx.ajax('GET', url, {
+                    target: '.js-main-content',
+                    swap: 'innerHTML',
+                    push: url
+                });
+                return;
             }
-            if (editId > 0) {
-                this.openDraft(editId);
-            }
+            window.location.href = url;
         },
 
         bindEvents: function () {
             const self = this;
             const $root = $(this.root);
+
+            this.tabs = new TabsManager({
+                container: $root,
+                defaultTab: 'all',
+                onChange: function ({ tab }) {
+                    self.bucket = String(tab || 'all');
+                    self.applyFilters();
+                }
+            });
 
             $root.find('.js-tenders-reload').click(function () {
                 self.loadList();
@@ -602,18 +565,10 @@
                     return parseInt(row.id, 10) === id;
                 });
                 if (item && String(item.status_code || '') === 'draft') {
-                    self.openDraft(id);
+                    self.navigateCabinet('/cabinet/buyer/tender/' + id + '/edit/');
                     return;
                 }
                 window.location.href = '/cabinet/buyer/tender/' + id + '/';
-            });
-
-            $root.find('.js-tenders-tabs').on('click', 'a', function (e) {
-                e.preventDefault();
-                const $li = $(this).closest('li');
-                $li.addClass('selected').siblings().removeClass('selected');
-                self.bucket = String($li.data('bucket') || 'all');
-                self.applyFilters();
             });
 
             let searchTimer = null;
@@ -688,24 +643,407 @@
                         $continue.on('click', function () {
                             const $selected = $radios.filter(':checked');
                             if (!$selected.length) return;
-                            if (String($selected.data('available')) !== '1') {
-                                $.AlertManager.showError('Этот тип процедуры пока недоступен');
-                                return;
-                            }
-                            self.openCreate({
-                                id: parseInt($selected.data('id'), 10) || 0,
-                                code: String($selected.data('code') || ''),
-                                label: String($selected.data('label') || ''),
-                                title: String($selected.data('title') || 'Создание процедуры')
-                            });
+                            const code = String($selected.data('code') || '');
                             dialog.close();
+                            self.navigateCabinet(
+                                code === 'prequalification'
+                                    ? '/cabinet/buyer/prequal/create/'
+                                    : '/cabinet/buyer/tenders/create/?type=' + encodeURIComponent(code)
+                            );
                         });
                     }
                 });
             });
+        },
 
-            $root.find('.js-tender-create-back, .js-tender-create-cancel').click(function () {
-                self.closeCreate();
+        loadList: function () {
+            const self = this;
+            const $root = $(this.root);
+            $root.find('.js-tenders-error').hide();
+
+            return $.fRequest({
+                url: '/api/buyer/tender/list/',
+                method: 'GET',
+                showMessages: false,
+                onSuccess: function (reply) {
+                    self.items = reply.items || [];
+                    self.fillStatusFilter();
+                    self.applyFilters();
+                },
+                onError: function (reply) {
+                    $root.find('.js-tenders-list').hide().empty();
+                    $root.find('.js-tenders-empty').hide();
+                    $root.find('.js-tenders-error').show();
+                    $root.find('.js-tenders-error-text').text(reply.message || 'Ошибка загрузки');
+                }
+            });
+        },
+
+        fillStatusFilter: function () {
+            const $select = $(this.root).find('.js-tenders-filter-status');
+            const current = this.filterStatus;
+            const names = {};
+            this.items.forEach(function (item) {
+                const name = String(item.status_name || '').trim();
+                if (name) names[name] = true;
+            });
+            $select.find('option:not(:first)').remove();
+            Object.keys(names).sort(function (a, b) {
+                return a.localeCompare(b, 'ru');
+            }).forEach(function (name) {
+                $select.append($('<option>').val(name).text(name));
+            });
+            $select.val(current);
+        },
+
+        resolveBucket: function (statusCode) {
+            if (statusCode === 'draft') return 'draft';
+            if (statusCode === 'suspended') return 'on_hold';
+            if (statusCode === 'archived' || statusCode === 'cancelled' || statusCode === 'unsuccessful') {
+                return 'archived';
+            }
+            return 'active';
+        },
+
+        formatDate: function (value) {
+            const raw = String(value || '').trim();
+            if (!raw || raw.indexOf('0000-00-00') === 0) return '';
+            const d = new Date(raw.replace(' ', 'T'));
+            if (isNaN(d.getTime())) return '';
+            const dd = String(d.getDate()).padStart(2, '0');
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const yyyy = d.getFullYear();
+            return dd + '.' + mm + '.' + yyyy;
+        },
+
+        formatDeadline: function (value) {
+            const raw = String(value || '').trim();
+            if (!raw || raw.indexOf('0000-00-00') === 0) return '—';
+            const d = new Date(raw.replace(' ', 'T'));
+            if (isNaN(d.getTime())) return '—';
+            const dd = String(d.getDate()).padStart(2, '0');
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const yyyy = d.getFullYear();
+            const hh = String(d.getHours()).padStart(2, '0');
+            const mi = String(d.getMinutes()).padStart(2, '0');
+            return dd + '.' + mm + '.' + yyyy + ' в ' + hh + ':' + mi;
+        },
+
+        calcDaysLeft: function (value) {
+            const raw = String(value || '').trim();
+            if (!raw || raw.indexOf('0000-00-00') === 0) return null;
+            const d = new Date(raw.replace(' ', 'T'));
+            if (isNaN(d.getTime())) return null;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            return Math.floor((d.getTime() - today.getTime()) / 86400000);
+        },
+
+        formatDaysLeft: function (daysLeft) {
+            if (daysLeft === null || daysLeft === undefined) return '';
+            if (daysLeft < 0) return 'Приём завершён';
+            const n = daysLeft;
+            const mod10 = n % 10;
+            const mod100 = n % 100;
+            let word = 'дней';
+            if (mod100 < 11 || mod100 > 14) {
+                if (mod10 === 1) word = 'день';
+                else if (mod10 >= 2 && mod10 <= 4) word = 'дня';
+            }
+            return 'Осталось ' + n + ' ' + word;
+        },
+
+        applyFilters: function () {
+            const self = this;
+            const query = String(this.search || '').trim().toLowerCase();
+            const filtered = this.items.filter(function (item) {
+                const bucket = self.resolveBucket(item.status_code);
+                if (self.bucket !== 'all' && bucket !== self.bucket) return false;
+                if (self.filterType && String(item.type_code || '') !== self.filterType) return false;
+                if (self.filterStatus && String(item.status_name || '') !== self.filterStatus) return false;
+                if (!query) return true;
+                const hay = [
+                    item.title,
+                    item.number,
+                    item.type_name,
+                    item.status_name
+                ].join(' ').toLowerCase();
+                return hay.indexOf(query) !== -1;
+            });
+            this.renderList(filtered);
+        },
+
+        renderList: function (items) {
+            const $root = $(this.root);
+            const $list = $root.find('.js-tenders-list');
+            const $empty = $root.find('.js-tenders-empty');
+            const hasFilters = !!(this.search || this.filterType || this.filterStatus || this.bucket !== 'all');
+            $list.empty();
+
+            if (!items.length) {
+                $list.hide();
+                $empty.show();
+                $root.find('.js-tenders-empty-title').text(hasFilters ? 'Ничего не найдено' : 'Нет тендеров');
+                $root.find('.js-tenders-empty-des').text(
+                    hasFilters
+                        ? 'Измените поиск или сбросьте фильтры.'
+                        : 'Здесь отображаются все процедуры вашей компании. Создайте тендер, чтобы начать закупку.'
+                );
+                $root.find('.js-tenders-empty-create').toggle(!hasFilters);
+                $root.find('.js-tenders-empty-clear').toggle(!!hasFilters);
+                return;
+            }
+
+            $empty.hide();
+            $list.show();
+
+            const self = this;
+            items.forEach(function (item) {
+                const created = self.formatDate(item.create_datetime) || '—';
+                const deadline = self.formatDeadline(item.end_at);
+                const daysLeft = self.calcDaysLeft(item.end_at);
+                const daysLabel = self.formatDaysLeft(daysLeft);
+                const expired = daysLeft !== null && daysLeft < 0;
+                const access = item.is_private == 1 || item.is_private === true ? 'Закрытый' : 'Открытый';
+                const tone = item.status_tone || 'info';
+                const methodLine = (item.type_name || 'Тендер') + (item.number ? ' №' + item.number : '');
+
+                const $card = $(`
+                    <article class="buyer-tender-card" data-id="${item.id}">
+                        <div class="buyer-tender-card__main">
+                            <div class="buyer-tender-card__title-row">
+                                <h3 class="buyer-tender-card__title"></h3>
+                                <span class="badge badge--shared badge--medium ${tone} js-buyer-tender-status"></span>
+                            </div>
+                            <div class="buyer-tender-card__meta">
+                                <span>Дата создания: ${created}</span>
+                                <span class="buyer-tender-card__dot" aria-hidden="true"></span>
+                                <span class="buyer-tender-card__method"></span>
+                                <span class="buyer-tender-card__dot" aria-hidden="true"></span>
+                                <span>${access}</span>
+                            </div>
+                        </div>
+                        <div class="buyer-tender-card__metric">
+                            <span class="buyer-tender-card__metric-label">Приглашено</span>
+                            <span class="buyer-tender-card__metric-value">${parseInt(item.invited_count, 10) || 0}</span>
+                        </div>
+                        <div class="buyer-tender-card__metric">
+                            <span class="buyer-tender-card__metric-label">Участники</span>
+                            <span class="buyer-tender-card__metric-value">${parseInt(item.participants_count, 10) || 0}</span>
+                        </div>
+                        <div class="buyer-tender-card__metric">
+                            <span class="buyer-tender-card__metric-label">Предложения</span>
+                            <span class="buyer-tender-card__metric-value">${parseInt(item.proposals_count, 10) || 0}</span>
+                        </div>
+                        <div class="buyer-tender-card__deadline">
+                            <span class="buyer-tender-card__metric-label">Окончание приёма заявок</span>
+                            <div class="buyer-tender-card__deadline-row">
+                                <span class="buyer-tender-card__metric-value${expired ? ' is-expired' : ''}">${deadline}</span>
+                                ${daysLabel ? `<span class="badge badge--shared badge--small badge--tag badge--outline ${expired ? 'disabled' : 'neutral'}">${daysLabel}</span>` : ''}
+                            </div>
+                        </div>
+                        <button type="button" class="buyer-tender-card__more" aria-label="Действия" disabled>⋮</button>
+                    </article>`);
+                $card.find('.buyer-tender-card__title').text(item.title || 'Без названия');
+                $card.find('.js-buyer-tender-status').text(item.status_name || '—');
+                $card.find('.buyer-tender-card__method').text(methodLine);
+                $list.append($card);
+            });
+        },
+
+    });
+
+    $.Cabinet.registerPage('tender-form', {
+        root: null,
+        tenderId: 0,
+        stepIndex: 0,
+        highestStepReached: 0,
+        selectedTypeId: 3,
+        selectedTypeCode: 'price_request',
+        editingPublishedTender: false,
+        steps: ['privacy', 'basic', 'purchase_params', 'payment_delivery', 'lots', 'invitation'],
+        /** @type {Object.<string, string>} step -> message после неудачного publish */
+        publishIssuesByStep: null,
+        items: [],
+        techSpecFiles: [],
+        criteria: [],
+        extraInfoFields: [],
+        extraApprovers: [],
+        criteriaDrag: null,
+        _criteriaDnDBound: false,
+        bucket: 'all',
+        search: '',
+        filterType: '',
+        filterStatus: '',
+        categoryTreeRows: null,
+        categoryClassifierType: 4,
+        categoryTreePromise: null,
+        categoryExpandedIds: null,
+        classifierTabs: null,
+        _categorySyncing: false,
+
+        init: function (root) {
+            this.root = root;
+            const $root = $(root);
+            const el = root;
+
+            this.formMode = String(el.dataset.mode || 'create');
+            this.selectedTypeCode = String(el.dataset.type || 'price_request');
+            this.selectedTypeId = parseInt(el.dataset.typeId || '3', 10) || 3;
+            this.tenderId = parseInt(el.dataset.tenderId || '0', 10) || 0;
+            this.editingPublishedTender = this.formMode === 'edit'
+                && String(el.dataset.statusCode || '') !== 'draft'
+                && String(el.dataset.statusCode || '') !== '';
+
+            let steps = [];
+            try {
+                steps = JSON.parse(el.dataset.steps || '[]');
+            } catch (e) {
+                steps = [];
+            }
+            if (!Array.isArray(steps) || !steps.length) {
+                steps = ['privacy', 'basic', 'purchase_params', 'payment_delivery', 'lots', 'invitation'];
+            }
+            this.steps = steps;
+            this.stepIndex = 0;
+            this.highestStepReached = 0;
+            this.publishIssuesByStep = null;
+
+            this.items = [];
+            this.techSpecFiles = [];
+            this.criteria = [];
+            this.extraInfoFields = [];
+            this.extraApprovers = [];
+            this.criteriaDrag = null;
+            this._criteriaDnDBound = false;
+            this.categoryTreeRows = null;
+            this.categoryClassifierType = 4;
+            this.categoryTreePromise = null;
+            this.categoryExpandedIds = null;
+            this.classifierTabs = new TabsManager({
+                container: $root.find('.js-classifier-tabs'),
+                defaultTab: 'common',
+                hashSync: false,
+                onChange: function ({ tab }) {
+                    $root.find('.creation-card-categories-results').removeClass('active');
+                    $root.find('.creation-card-categories-results[data-tab="' + tab + '"]').addClass('active');
+                }
+            });
+            this._categorySyncing = false;
+            this.lotPositions = [];
+            this.lotDocuments = [];
+            this.selectedLotId = '';
+            this.selectedDocId = '';
+            this.lotsActiveTab = 'lots';
+            this.lotsPreviewMode = false;
+            this.lotNmc = '0';
+            this.lotVatRate = '20%';
+            this.lotIdSeq = 0;
+            this.budgetActionsHidden = false;
+            this.invitationSelected = [];
+
+            $root.find('.js-tender-id').val(String(this.tenderId));
+            $root.find('.js-tender-type').val(String(this.selectedTypeId));
+            $root.find('.js-price-request-only').toggle(this.selectedTypeCode === 'price_request');
+            $root.find('.js-prequal-only').toggle(this.selectedTypeCode === 'prequalification');
+
+            this.bindFormEvents();
+            const self = this;
+            $root.off('input.creationProgress change.creationProgress')
+                .on('input.creationProgress change.creationProgress', 'input, select, textarea', function () {
+                    Promise.resolve().then(function () { self.syncCreationSteps(); });
+                });
+            this.initInviteSelects();
+            this.initPurchaseParamsUi();
+            this.initPaymentDeliveryUi();
+            this.initLotsUi();
+            this.initInvitationUi();
+            this.loadCategoryTree();
+
+            let detail = null;
+            const $detail = $root.find('.js-tender-form-detail');
+            if ($detail.length) {
+                try {
+                    detail = JSON.parse($detail.text() || 'null');
+                } catch (e) {
+                    detail = null;
+                }
+            }
+
+            if (detail && detail.tender) {
+                this.applyDraftDetail(detail);
+                const self = this;
+                this.loadCategoryTree().then(function () {
+                    if (detail.classifiers && detail.classifiers.length) {
+                        const type = parseInt(self.categoryClassifierType, 10) || 4;
+                        const ids = detail.classifiers.map(function (row) {
+                            if (parseInt(row.classifier_type, 10) !== type) return 0;
+                            return parseInt(row.classifier_id, 10) || 0;
+                        }).filter(Boolean);
+                        self.setSelectedCategoryIds(ids);
+                    } else {
+                        self.setSelectedCategoryIds([]);
+                    }
+                });
+            } else {
+                const self = this;
+                this.resetPaymentDeliveryUi();
+                this.resetLotsUi();
+                this.renderCriteria();
+                this.syncMinStepUi();
+                this.syncBasicContinue();
+                this.loadCategoryTree().then(function () {
+                    self.setSelectedCategoryIds([]);
+                });
+            }
+
+            $root.addClass('tender-create');
+            this.goStep(0);
+        },
+
+        navigateCabinet: function (url) {
+            if (typeof htmx !== 'undefined' && htmx.ajax) {
+                htmx.ajax('GET', url, {
+                    target: '.js-main-content',
+                    swap: 'innerHTML',
+                    push: url
+                });
+                return;
+            }
+            window.location.href = url;
+        },
+
+        /** После первого create: URL → /edit/, title «Редактирование…». */
+        syncEditUrlAfterCreate: function () {
+            if (this.formMode !== 'create' || this.tenderId <= 0) return;
+            const url = '/cabinet/buyer/tender/' + this.tenderId + '/edit/';
+            try {
+                if (window.history && window.history.replaceState) {
+                    window.history.replaceState({}, '', url);
+                }
+            } catch (e) { /* ignore */ }
+            this.formMode = 'edit';
+            const el = this.root;
+            if (el && el.dataset) {
+                el.dataset.mode = 'edit';
+                el.dataset.tenderId = String(this.tenderId);
+            }
+            const $title = $(this.root).find('.js-creation-title');
+            const current = $.trim($title.text() || '');
+            if (current.indexOf('Создание') === 0) {
+                $title.text('Редактирование' + current.slice('Создание'.length));
+            } else if (current && current.indexOf('Редактирование') !== 0) {
+                $title.text('Редактирование: ' + current);
+            }
+        },
+
+        bindFormEvents: function () {
+            const self = this;
+            const $root = $(this.root);
+
+            $root.find('.js-tender-create-back, .js-tender-create-cancel').on('click', function (e) {
+                e.preventDefault();
+                self.leaveForm();
             });
 
             $root.find('.js-tender-apply-template').click(function () {
@@ -742,16 +1080,25 @@
                 $root.find('.js-hide-prices-options').toggleClass('visible', $(this).is(':checked'));
             });
 
-            $root.find('.js-classifier-tab').click(function () {
-                const tab = String($(this).data('tab') || 'common');
-                $root.find('.js-classifier-tab').removeClass('active');
-                $(this).addClass('active');
-                $root.find('.creation-card-categories-results').removeClass('active');
-                $root.find('.creation-card-categories-results[data-tab="' + tab + '"]').addClass('active');
-            });
+            $root.off('click.stepValidationDismiss', '.js-step-validation-dismiss')
+                .on('click.stepValidationDismiss', '.js-step-validation-dismiss', function () {
+                    $(this).closest('.js-step-validation-banner').hide();
+                });
 
             $root.find('.js-field-title').on('input', function () {
-                self.syncBasicContinue();
+                if (self.publishIssuesByStep && self.publishIssuesByStep.basic) {
+                    self.refreshPublishIssueForStep('basic');
+                }
+            });
+            $root.find('.js-field-end-date, .js-field-end-time').on('change input', function () {
+                if (self.publishIssuesByStep && self.publishIssuesByStep.purchase_params) {
+                    self.refreshPublishIssueForStep('purchase_params');
+                }
+            });
+            $root.find('input[name="is_private"], .js-invite-select').on('change', function () {
+                if (self.publishIssuesByStep && self.publishIssuesByStep.privacy) {
+                    self.refreshPublishIssueForStep('privacy');
+                }
             });
 
             $root.off('change.tenderClassifier').on('change.tenderClassifier', '.js-classifier-check', function () {
@@ -907,16 +1254,17 @@
             });
 
             $root.find('.js-tender-step-next').click(function () {
-                const step = self.steps[self.stepIndex];
-                if (step === 'lots' && !self.hasReadyLotPositions()) {
-                    self.showLotsError('Заполните хотя бы одну позицию, чтобы продолжить');
-                    return;
-                }
                 self.goStep(self.stepIndex + 1);
             });
 
             $root.find('.js-tender-step-prev').click(function () {
                 self.goStep(self.stepIndex - 1);
+            });
+
+            $root.find('.js-tender-steps').on('click', '.creation-step', function () {
+                const index = self.steps.indexOf(String($(this).data('step') || ''));
+                if (!self.canJumpToStep(index)) return;
+                self.goStep(index);
             });
 
             $root.find('.js-tender-save-draft').click(function () {
@@ -938,12 +1286,12 @@
             }
 
             if (utils && typeof utils.initDatePicker === 'function') {
-                $root.find('.js-field-end-date, .js-field-docs-date, .js-field-result-date').each(function () {
+                $root.find('.js-field-end-date, .js-field-docs-date, .js-field-result-date, .js-field-approval-date').each(function () {
                     utils.initDatePicker($(this), { dateFormat: 'd.m.Y', allowInput: false });
                 });
             }
             if (utils && typeof utils.initTimePicker === 'function') {
-                $root.find('.js-field-end-time, .js-field-docs-time').each(function () {
+                $root.find('.js-field-end-time, .js-field-docs-time, .js-field-approval-time').each(function () {
                     utils.initTimePicker($(this), {});
                 });
             }
@@ -959,15 +1307,15 @@
             const syncCharCounter = function ($textarea) {
                 const max = parseInt($textarea.attr('maxlength'), 10) || 0;
                 const len = String($textarea.val() || '').length;
-                $textarea.closest('.zc-textarea').find('.char-counter').text(len + '/' + max);
+                $textarea.closest('.tender-form-textarea').find('.char-counter').text(len + '/' + max);
             };
 
-            $root.find('.zc-step-payment textarea[maxlength]').each(function () {
+            $root.find('.js-payment-delivery-step textarea[maxlength]').each(function () {
                 syncCharCounter($(this));
             });
 
-            $root.off('input.paymentChars', '.zc-step-payment textarea[maxlength]')
-                .on('input.paymentChars', '.zc-step-payment textarea[maxlength]', function () {
+            $root.off('input.paymentChars', '.js-payment-delivery-step textarea[maxlength]')
+                .on('input.paymentChars', '.js-payment-delivery-step textarea[maxlength]', function () {
                     syncCharCounter($(this));
                 });
 
@@ -994,10 +1342,10 @@
                 .on('click.addDeliveryAddress', '.js-add-delivery-address', function () {
                     const $list = $root.find('.js-delivery-address-list');
                     const $item = $(`
-                        <div class="zc-payment-list__item">
-                            <div class="zc-textarea">
+                        <div class="tender-form-list__item js-payment-list-item">
+                            <div class="tender-form-textarea">
                                 <textarea class="js-delivery-address" name="delivery_addresses[]" maxlength="500" rows="3" placeholder="Индекс, Страна Область, населенный пункт, Улица, дом, Строение/корпус, квартира/офис"></textarea>
-                                <div class="zc-textarea__counter char-counter">0/500</div>
+                                <div class="tender-form-textarea__counter char-counter">0/500</div>
                             </div>
                         </div>
                     `);
@@ -1009,7 +1357,7 @@
                 .on('click.addTenderContact', '.js-add-tender-contact', function () {
                     const $list = $root.find('.js-contact-list');
                     const $item = $(`
-                        <div class="zc-payment-list__item">
+                        <div class="tender-form-list__item js-payment-list-item">
                             <select class="select2 filter-select js-tender-contact" name="tender_contacts[]" data-placeholder="Выберите контакт из списка организации">
                                 <option value=""></option>
                             </select>
@@ -1037,16 +1385,16 @@
             $root.find('.js-field-info-consent').prop('checked', false);
 
             const $addrList = $root.find('.js-delivery-address-list');
-            $addrList.find('.zc-payment-list__item').slice(1).remove();
+            $addrList.find('.js-payment-list-item').slice(1).remove();
             $addrList.find('.js-delivery-address').val('');
             $addrList.find('.char-counter').text('0/500');
-            $root.find('.js-field-additional-delivery').closest('.zc-textarea').find('.char-counter').text('0/200');
+            $root.find('.js-field-additional-delivery').closest('.tender-form-textarea').find('.char-counter').text('0/200');
 
             const $payment = $root.find('.js-field-payment');
             $payment.val(null).trigger('change');
 
             const $contactList = $root.find('.js-contact-list');
-            $contactList.find('.zc-payment-list__item').slice(1).each(function () {
+            $contactList.find('.js-payment-list-item').slice(1).each(function () {
                 const $select = $(this).find('select');
                 if ($select.hasClass('select2-hidden-accessible')) {
                     $select.select2('destroy');
@@ -1062,22 +1410,29 @@
         initInvitationUi: function () {
             const self = this;
             const $root = $(this.root);
-            const $step = $root.find('.zc-step-invitation');
+            const $step = $root.find('.tender-form-step--invitation');
             if (!$step.length) return;
 
             self._invActiveTab = 'all';
             self._invSuppliers = [];
             self._invSearchTimer = null;
             self.invitationSelected = [];
+            let initialInvitationTab = true;
 
-            $root.off('click.invTab', '.zc-inv-tab')
-                .on('click.invTab', '.zc-inv-tab', function () {
-                    self._invActiveTab = $(this).data('tab');
-                    $step.find('.zc-inv-tab').removeClass('active');
-                    $(this).addClass('active');
+            this.invitationTabs = new TabsManager({
+                container: $step.find('.js-inv-tabs'),
+                defaultTab: 'all',
+                hashSync: false,
+                onChange: function ({ tab }) {
+                    self._invActiveTab = String(tab || 'all');
+                    if (initialInvitationTab) {
+                        initialInvitationTab = false;
+                        return;
+                    }
                     $step.find('.js-inv-search').val('');
                     self.loadInvSuppliers();
-                });
+                }
+            });
 
             $root.off('input.invSearch', '.js-inv-search')
                 .on('input.invSearch', '.js-inv-search', function () {
@@ -1087,8 +1442,8 @@
                     }, 250);
                 });
 
-            $root.off('click.invItem', '.zc-inv-list__item')
-                .on('click.invItem', '.zc-inv-list__item', function () {
+            $root.off('click.invItem', '.tender-invitation-list__item')
+                .on('click.invItem', '.tender-invitation-list__item', function () {
                     var id = String($(this).data('id') || '');
                     var name = String($(this).data('name') || '');
                     if (!id) return;
@@ -1156,6 +1511,7 @@
             $root.off('change.invSendType', '.js-inv-send-type-radio')
                 .on('change.invSendType', '.js-inv-send-type-radio', function () {
                     self.syncInvPublishBtn();
+                    if (this.value === 'auto') self.loadInvSuppliers();
                 });
 
             $root.off('click.invPublish', '.js-tender-publish')
@@ -1180,8 +1536,8 @@
                     $dd.toggle(!isOpen);
                     $combo.toggleClass('is-open', !isOpen);
                 });
-            $root.off('click.invTemplate', '.zc-inv-upload-dropdown__item')
-                .on('click.invTemplate', '.zc-inv-upload-dropdown__item', function (e) {
+            $root.off('click.invTemplate', '.tender-invitation-upload-dropdown__item')
+                .on('click.invTemplate', '.tender-invitation-upload-dropdown__item', function (e) {
                     e.preventDefault();
                 });
             $(document).off('click.invDropdown').on('click.invDropdown', function () {
@@ -1241,6 +1597,7 @@
         loadInvSuppliers: function () {
             const self = this;
             const $root = $(this.root);
+            if ($root.find('input[name="inv_send_type"]:checked').val() !== 'auto') return Promise.resolve([]);
             const $list = $root.find('.js-inv-supplier-list');
             if (!$list.length) return Promise.resolve([]);
 
@@ -1253,7 +1610,7 @@
 
             const q = $.trim($root.find('.js-inv-search').val() || '');
             return $.ajax({
-                url: '/api/common/company/select/',
+                url: '/api/buyer/company/select/',
                 method: 'GET',
                 dataType: 'json',
                 data: {
@@ -1304,7 +1661,7 @@
             var suppliers = self._invSuppliers || [];
 
             var $empty = $list.find('.js-inv-list-empty');
-            $list.find('.zc-inv-list__item').remove();
+            $list.find('.tender-invitation-list__item').remove();
 
             if (!suppliers.length) {
                 $empty.show();
@@ -1316,12 +1673,12 @@
             suppliers.forEach(function (s) {
                 var sid = String(s.id);
                 var isChecked = self.invitationSelected.some(function (sel) { return String(sel.id) === sid; });
-                var $item = $('<button type="button" class="zc-inv-list__item' + (isChecked ? ' is-checked' : '') + '">'
-                    + '<span class="zc-inv-list__checkbox">' + (isChecked ? checkSvg : '') + '</span>'
-                    + '<span class="zc-inv-list__name"></span>'
+                var $item = $('<button type="button" class="tender-invitation-list__item' + (isChecked ? ' is-checked' : '') + '">'
+                    + '<span class="tender-invitation-list__checkbox">' + (isChecked ? checkSvg : '') + '</span>'
+                    + '<span class="tender-invitation-list__name"></span>'
                     + '</button>');
                 $item.data('id', sid).data('name', s.name);
-                $item.find('.zc-inv-list__name').text(s.name);
+                $item.find('.tender-invitation-list__name').text(s.name);
                 $list.append($item);
             });
         },
@@ -1349,13 +1706,13 @@
                 $panel.show();
                 $items.empty();
                 systemSelected.forEach(function (s) {
-                    var $item = $('<div class="zc-inv-selected__item">'
-                        + '<span class="zc-inv-selected__item-name"></span>'
-                        + '<button type="button" class="zc-inv-selected__item-remove js-inv-remove" title="Убрать">'
+                    var $item = $('<div class="tender-invitation-selected__item">'
+                        + '<span class="tender-invitation-selected__item-name"></span>'
+                        + '<button type="button" class="tender-invitation-selected__item-remove js-inv-remove" title="Убрать">'
                         + '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>'
                         + '</button>'
                         + '</div>');
-                    $item.find('.zc-inv-selected__item-name').text(s.name);
+                    $item.find('.tender-invitation-selected__item-name').text(s.name);
                     $item.find('.js-inv-remove').data('id', s.id);
                     $items.append($item);
                 });
@@ -1365,13 +1722,13 @@
             $emailTags.empty();
             if (emailSelected.length) {
                 emailSelected.forEach(function (s) {
-                    var $tag = $('<span class="zc-inv-email-tag">'
-                        + '<span class="zc-inv-email-tag__text"></span>'
-                        + '<button type="button" class="zc-inv-email-tag__remove js-inv-remove">'
+                    var $tag = $('<span class="tender-invitation-email-tag">'
+                        + '<span class="tender-invitation-email-tag__text"></span>'
+                        + '<button type="button" class="tender-invitation-email-tag__remove js-inv-remove">'
                         + '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>'
                         + '</button>'
                         + '</span>');
-                    $tag.find('.zc-inv-email-tag__text').text(s.name);
+                    $tag.find('.tender-invitation-email-tag__text').text(s.name);
                     $tag.find('.js-inv-remove').data('id', s.id);
                     $emailTags.append($tag);
                 });
@@ -1385,27 +1742,33 @@
             var $root = $(this.root);
             var $btn = $root.find('.js-tender-publish');
             var sendType = $root.find('input[name="inv_send_type"]:checked').val() || 'manual';
+            $root.find('.js-inv-auto-content').toggle(sendType === 'auto');
             var isPrivate = $root.find('input[name="is_private"]:checked').val() === '1';
             var companyCount = this.getInvitationCompanyIds().length;
             var selectedCount = (this.invitationSelected || []).length;
             /* Вручную — публиковать можно; авто — нужны получатели; закрытая — company id */
             var hasRecipients = isPrivate ? companyCount > 0 : selectedCount > 0;
-            var enabled = sendType === 'manual' || hasRecipients;
+            var enabled = this.editingPublishedTender || sendType === 'manual' || hasRecipients;
             $btn.prop('disabled', !enabled);
-            $btn.text(sendType === 'auto' ? 'Опубликовать' : 'Опубликовать без рассылки');
+            $btn.text(this.editingPublishedTender ? 'Сохранить' : (sendType === 'auto' ? 'Опубликовать' : 'Опубликовать без рассылки'));
+            this.syncCreationSteps();
         },
 
         initLotsUi: function () {
             const self = this;
             const $root = $(this.root);
-            const $step = $root.find('.zc-step-lots');
+            const $step = $root.find('.tender-form-step--lots');
             if (!$step.length) return;
 
-            $root.off('click.lotsTab', '.js-lots-tab')
-                .on('click.lotsTab', '.js-lots-tab', function () {
-                    self.lotsActiveTab = String($(this).data('tab') || 'lots');
+            this.lotsTabs = new TabsManager({
+                container: $root.find('.js-lots-tabs'),
+                hashSync: false,
+                defaultTab: this.lotsActiveTab || 'lots',
+                onChange: function ({ tab }) {
+                    self.lotsActiveTab = tab;
                     self.syncLotsTabUi();
-                });
+                }
+            });
 
             $root.off('click.lotsAdd', '.js-lots-add')
                 .on('click.lotsAdd', '.js-lots-add', function () {
@@ -1503,7 +1866,7 @@
 
             $root.off('click.lotsUpload', '.js-lots-upload-zone')
                 .on('click.lotsUpload', '.js-lots-upload-zone', function () {
-                    $(this).closest('.zc-lots-upload').find('.js-lots-file-input').trigger('click');
+                    $(this).closest('.tender-lots-upload').find('.js-lots-file-input').trigger('click');
                 });
 
             $root.off('change.lotsFile', '.js-lots-file-input')
@@ -1604,7 +1967,7 @@
             $root.find('.js-lots-edit').show();
             $root.find('.js-lots-preview-view').hide();
             $root.find('.js-lots-error-banner').hide();
-            $root.find('.js-lots-docs-tab-label').text(
+            $root.find('.js-lots-tabs .tab-btn[data-tab="documents"] > a').text(
                 this.isLotsPrequal() ? 'Запрашиваемые документы' : 'Документы'
             );
             this.syncLotsTabUi();
@@ -1652,8 +2015,10 @@
         syncLotsTabUi: function () {
             const $root = $(this.root);
             const isDocs = this.lotsActiveTab === 'documents';
-            $root.find('.js-lots-tab').removeClass('active')
-                .filter('[data-tab="' + this.lotsActiveTab + '"]').addClass('active');
+            const $tabs = $root.find('.js-lots-tabs .tab-btn');
+            $tabs.removeClass('selected').find('[role="tab"]').attr('aria-selected', 'false');
+            $tabs.filter('[data-tab="' + this.lotsActiveTab + '"]').addClass('selected')
+                .find('[role="tab"]').attr('aria-selected', 'true');
             $root.find('.js-lots-list').toggle(!isDocs);
             $root.find('.js-docs-list').toggle(isDocs);
             $root.find('.js-lot-editor-wrap').toggle(!isDocs);
@@ -1769,12 +2134,13 @@
                     this.renderDocEditorHead();
                 }
                 if (field === 'description') {
-                    $el.closest('.zc-lots-textarea').find('.js-lots-char-counter')
+                    $el.closest('.tender-lots-textarea').find('.js-lots-char-counter')
                         .text(String(value || '').length + '/200');
                 }
             } else {
                 this.updateSelectedLot(field, value);
                 if (field === 'name' || field === 'quantity' || field === 'unit'
+                    || field === 'deliveryPlace'
                     || field === 'maxPriceNoVat' || field === 'vatRate') {
                     this.renderLotsList();
                 }
@@ -1782,12 +2148,15 @@
                     this.renderLotEditorHead();
                 }
                 if (field === 'comment') {
-                    $el.closest('.zc-lots-textarea').find('.js-lots-char-counter')
+                    $el.closest('.tender-lots-textarea').find('.js-lots-char-counter')
                         .text(String(value || '').length + '/200');
                 }
                 if (field === 'maxPriceNoVat' || field === 'quantity' || field === 'vatRate') {
                     if (this.budgetActionsHidden) this.budgetActionsHidden = false;
                     this.renderLotsBudget();
+                }
+                if (this.publishIssuesByStep && this.publishIssuesByStep.lots) {
+                    this.refreshPublishIssueForStep('lots');
                 }
             }
         },
@@ -1823,6 +2192,7 @@
             const newId = this.nextLotId('pos_');
             this.lotPositions.push(Object.assign({}, src, {
                 id: newId,
+                dbId: 0,
                 name: (src.name || '') + ' (Копия)'
             }));
             this.selectedLotId = newId;
@@ -1873,16 +2243,16 @@
 
         lotStatusIconHtml: function (status) {
             if (status === 'valid') {
-                return '<div class="zc-lot-item__status" title="Заполнено">'
+                return '<div class="tender-lots-item__status" title="Заполнено">'
                     + '<svg viewBox="0 0 19.5 19.5" fill="none"><path d="M9.75 0C15.1348 0 19.5 4.36522 19.5 9.75C19.5 15.1348 15.1348 19.5 9.75 19.5C4.36522 19.5 0 15.1348 0 9.75C0 4.36522 4.36522 0 9.75 0ZM13.1855 6.88965C12.8485 6.64913 12.3803 6.72749 12.1396 7.06445L8.9043 11.5938L7.28027 9.96973C6.98738 9.67683 6.51262 9.67683 6.21973 9.96973C5.92683 10.2626 5.92683 10.7374 6.21973 11.0303L8.46973 13.2803C8.62555 13.4361 8.84191 13.5152 9.06152 13.4971C9.28124 13.4789 9.48221 13.3649 9.61035 13.1855L13.3604 7.93555C13.6009 7.59851 13.5225 7.13034 13.1855 6.88965Z" fill="var(--success-dark)"/></svg>'
                     + '</div>';
             }
             if (status === 'incomplete') {
-                return '<div class="zc-lot-item__status" title="Не заполнено">'
+                return '<div class="tender-lots-item__status" title="Не заполнено">'
                     + '<svg viewBox="0 0 19.5 19.5" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M0 9.75C0 4.36522 4.36522 0 9.75 0C15.1348 0 19.5 4.36522 19.5 9.75C19.5 15.1348 15.1348 19.5 9.75 19.5C4.36522 19.5 0 15.1348 0 9.75ZM9.75 6C10.1642 6 10.5 6.33579 10.5 6.75V10.5C10.5 10.9142 10.1642 11.25 9.75 11.25C9.33579 11.25 9 10.9142 9 10.5V6.75C9 6.33579 9.33579 6 9.75 6ZM9.75 14.25C10.1642 14.25 10.5 13.9142 10.5 13.5C10.5 13.0858 10.1642 12.75 9.75 12.75C9.33579 12.75 9 13.0858 9 13.5C9 13.9142 9.33579 14.25 9.75 14.25Z" fill="var(--orange-600)"/></svg>'
                     + '</div>';
             }
-            return '<div class="zc-lot-item__status zc-lot-item__status--draft" title="Черновик"></div>';
+            return '<div class="tender-lots-item__status tender-lots-item__status--draft" title="Черновик"></div>';
         },
 
         formatLotParams: function (pos) {
@@ -1899,8 +2269,8 @@
             }
             if (!parts.length) return '';
             return parts.map(function (part, i) {
-                return (i ? '<span class="zc-lot-item__dot"></span>' : '')
-                    + '<span class="zc-lot-item__param">' + $('<div>').text(part).html() + '</span>';
+                return (i ? '<span class="tender-lots-item__dot"></span>' : '')
+                    + '<span class="tender-lots-item__param">' + $('<div>').text(part).html() + '</span>';
             }).join('');
         },
 
@@ -1915,27 +2285,27 @@
                 const title = pos.name || (isPrequal ? ('Позиция №' + (idx + 1)) : ('Позиция ' + (idx + 1)));
                 const params = self.formatLotParams(pos);
                 const $item = $(
-                    '<div class="zc-lot-item js-lot-item' + (selected ? ' is-selected' : '') + '" data-id="' + pos.id + '">'
-                    + '<div class="zc-lot-item__border" aria-hidden="true"></div>'
-                    + '<div class="zc-lot-item__row">'
-                    + '<div class="zc-lot-item__num">' + (idx + 1) + '</div>'
-                    + '<div class="zc-lot-item__main">'
-                    + '<div class="zc-lot-item__title"></div>'
-                    + (params ? '<div class="zc-lot-item__params">' + params + '</div>' : '')
+                    '<div class="tender-lots-item js-lot-item' + (selected ? ' is-selected' : '') + '" data-id="' + pos.id + '">'
+                    + '<div class="tender-lots-item__border" aria-hidden="true"></div>'
+                    + '<div class="tender-lots-item__row">'
+                    + '<div class="tender-lots-item__num">' + (idx + 1) + '</div>'
+                    + '<div class="tender-lots-item__main">'
+                    + '<div class="tender-lots-item__title"></div>'
+                    + (params ? '<div class="tender-lots-item__params">' + params + '</div>' : '')
                     + '</div>'
-                    + '<div class="zc-lot-item__right">'
-                    + '<div class="zc-lot-item__actions">'
-                    + '<button type="button" class="zc-lot-item__action js-lot-dup" title="Дублировать">'
+                    + '<div class="tender-lots-item__right">'
+                    + '<div class="tender-lots-item__actions">'
+                    + '<button type="button" class="button secondary small icon-only js-lot-dup" title="Дублировать" aria-label="Дублировать позицию">'
                     + '<svg viewBox="0 0 20 20" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M0 3C0 1.34315 1.34315 0 3 0H11.25C12.9069 0 14.25 1.34315 14.25 3V4.5H15C16.6569 4.5 18 5.84315 18 7.5V15C18 16.6569 16.6569 18 15 18H7.5C5.84315 18 4.5 16.6569 4.5 15V14.25H3C1.34315 14.25 0 12.9069 0 11.25V3ZM4.5 12.75V7.5C4.5 5.84315 5.84315 4.5 7.5 4.5H12.75V3C12.75 2.17157 12.0784 1.5 11.25 1.5H3C2.17157 1.5 1.5 2.17157 1.5 3V11.25C1.5 12.0784 2.17157 12.75 3 12.75H4.5ZM7.5 6C6.67157 6 6 6.67157 6 7.5V15C6 15.8284 6.67157 16.5 7.5 16.5H15C15.8284 16.5 16.5 15.8284 16.5 15V7.5C16.5 6.67157 15.8284 6 15 6H7.5Z" fill="currentColor"/></svg>'
                     + '</button>'
-                    + '<button type="button" class="zc-lot-item__action js-lot-del" title="Удалить">'
+                    + '<button type="button" class="button secondary small icon-only js-lot-del" title="Удалить" aria-label="Удалить позицию">'
                     + '<svg><use href="#icon-trash"></use></svg>'
                     + '</button>'
                     + '</div>'
                     + self.lotStatusIconHtml(status)
                     + '</div></div></div>'
                 );
-                $item.find('.zc-lot-item__title').text(title);
+                $item.find('.tender-lots-item__title').text(title);
                 $list.append($item);
             });
         },
@@ -1951,28 +2321,28 @@
                 const title = doc.name || (isPrequal ? ('Документ №' + (idx + 1)) : ('Документ ' + (idx + 1)));
                 let statusHtml = '';
                 if (status === 'valid') {
-                    statusHtml = '<div class="zc-doc-status zc-doc-status--valid"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6.2 4.8 8.5 9.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>';
+                    statusHtml = '<div class="tender-lots-doc-status tender-lots-doc-status--valid"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6.2 4.8 8.5 9.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>';
                 } else if (status === 'incomplete') {
-                    statusHtml = '<div class="zc-doc-status zc-doc-status--incomplete"><span class="zc-doc-status__dot"></span></div>';
+                    statusHtml = '<div class="tender-lots-doc-status tender-lots-doc-status--incomplete"><span class="tender-lots-doc-status__dot"></span></div>';
                 }
                 const $item = $(
-                    '<div class="zc-lot-item zc-lot-item--doc js-lot-item js-doc-item' + (selected ? ' is-selected' : '') + '" data-id="' + doc.id + '">'
-                    + '<div class="zc-lot-item__border" aria-hidden="true"></div>'
-                    + '<div class="zc-lot-item__row">'
-                    + '<div class="zc-lot-item__num">' + (idx + 1) + '</div>'
-                    + '<div class="zc-lot-item__main">'
+                    '<div class="tender-lots-item tender-lots-item--doc js-lot-item js-doc-item' + (selected ? ' is-selected' : '') + '" data-id="' + doc.id + '">'
+                    + '<div class="tender-lots-item__border" aria-hidden="true"></div>'
+                    + '<div class="tender-lots-item__row">'
+                    + '<div class="tender-lots-item__num">' + (idx + 1) + '</div>'
+                    + '<div class="tender-lots-item__main">'
                     + '<div class="flex-row" style="display:flex;align-items:center;gap:8px;min-width:0;width:100%;">'
-                    + '<div class="zc-lot-item__title"></div>'
-                    + (doc.isRequired ? '<span class="zc-lot-item__badge">Обяз.</span>' : '')
+                    + '<div class="tender-lots-item__title"></div>'
+                    + (doc.isRequired ? '<span class="badge badge--shared badge--small error">Обяз.</span>' : '')
                     + '</div>'
-                    + (doc.description ? '<div class="zc-lot-item__desc"></div>' : '')
+                    + (doc.description ? '<div class="tender-lots-item__desc"></div>' : '')
                     + '</div>'
                     + statusHtml
-                    + '<button type="button" class="zc-lot-item__icon-btn js-doc-del" title="Удалить"><svg><use href="#icon-trash"></use></svg></button>'
+                    + '<button type="button" class="button secondary small icon-only js-doc-del" title="Удалить" aria-label="Удалить документ"><svg><use href="#icon-trash"></use></svg></button>'
                     + '</div></div>'
                 );
-                $item.find('.zc-lot-item__title').text(title);
-                if (doc.description) $item.find('.zc-lot-item__desc').text(doc.description);
+                $item.find('.tender-lots-item__title').text(title);
+                if (doc.description) $item.find('.tender-lots-item__desc').text(doc.description);
                 $list.append($item);
             });
         },
@@ -1998,12 +2368,12 @@
 
         lotsInputHtml: function (opts) {
             opts = opts || {};
-            return '<div class="zc-lots-input' + (opts.error ? ' is-error' : '') + '">'
-                + '<div class="zc-lots-input__border" aria-hidden="true"></div>'
-                + '<div class="zc-lots-input__inner">'
+            return '<div class="tender-lots-input' + (opts.error ? ' is-error' : '') + '">'
+                + '<div class="tender-lots-input__border" aria-hidden="true"></div>'
+                + '<div class="tender-lots-input__inner">'
                 + (opts.select
                     ? '<select class="js-lot-field" data-field="' + opts.field + '">' + opts.options + '</select>'
-                      + '<svg class="zc-lots-input__chevron" viewBox="0 0 20 20" fill="none"><path d="M5.75 8.25L10 12.5L14.25 8.25" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></svg>'
+                      + '<svg class="tender-lots-input__chevron" viewBox="0 0 20 20" fill="none"><path d="M5.75 8.25L10 12.5L14.25 8.25" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></svg>'
                     : '<input type="text" class="' + (opts.doc ? 'js-doc-field' : 'js-lot-field') + '" data-field="' + opts.field + '" value="" placeholder="' + (opts.placeholder || '') + '">'
                       + (opts.endIcon || ''))
                 + '</div></div>';
@@ -2014,21 +2384,21 @@
             if (fileName) {
                 const ext = (String(fileName).split('.').pop() || 'FILE').toUpperCase();
                 const kb = Math.round((fileSize || 0) / 1024);
-                fileHtml = '<div class="zc-lots-upload__file">'
-                    + '<div class="zc-lots-upload__file-main">'
-                    + '<div class="zc-lots-upload__ext">' + $('<div>').text(ext).html() + '</div>'
-                    + '<div><div class="zc-lots-upload__name"></div><div class="zc-lots-upload__size">' + kb + ' KB</div></div>'
+                fileHtml = '<div class="tender-lots-upload__file">'
+                    + '<div class="tender-lots-upload__file-main">'
+                    + '<div class="tender-lots-upload__ext">' + $('<div>').text(ext).html() + '</div>'
+                    + '<div><div class="tender-lots-upload__name"></div><div class="tender-lots-upload__size">' + kb + ' KB</div></div>'
                     + '</div>'
-                    + '<button type="button" class="zc-lots-upload__remove js-lots-file-remove" data-kind="' + kind + '" aria-label="Удалить">'
+                    + '<button type="button" class="tender-lots-upload__remove js-lots-file-remove" data-kind="' + kind + '" aria-label="Удалить">'
                     + '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
                     + '</button></div>';
             }
-            return '<div class="zc-lots-upload">'
-                + '<div class="zc-lots-upload__zone js-lots-upload-zone">'
-                + '<div class="zc-lots-upload__inner">'
-                + '<div class="zc-lots-upload__icon"><svg><use href="#icon-file-upload"></use></svg></div>'
-                + '<div class="zc-lots-upload__text"><span class="zc-lots-upload__link">Нажмите сюда</span> или перетащите файл для загрузки файлов</div>'
-                + '<div class="zc-lots-upload__hints"><span>Поддерживаемый формат: .word, PDF </span><span>Макс. размер файлов: 10 MB</span></div>'
+            return '<div class="tender-lots-upload">'
+                + '<div class="tender-lots-upload__zone js-lots-upload-zone">'
+                + '<div class="tender-lots-upload__inner">'
+                + '<div class="tender-lots-upload__icon"><svg><use href="#icon-file-upload"></use></svg></div>'
+                + '<div class="tender-lots-upload__text"><span class="tender-lots-upload__link">Нажмите сюда</span> или перетащите файл для загрузки файлов</div>'
+                + '<div class="tender-lots-upload__hints"><span>Поддерживаемый формат: .word, PDF </span><span>Макс. размер файлов: 10 MB</span></div>'
                 + '</div></div>'
                 + fileHtml
                 + '<input type="file" class="js-lots-file-input" data-kind="' + kind + '" accept=".doc,.docx,.pdf">'
@@ -2054,48 +2424,48 @@
                 return '<option value="' + v + '"' + (pos.vatRate === v ? ' selected' : '') + '>' + v + '</option>';
             }).join('');
 
-            const searchIcon = '<div class="zc-lots-input__icon"><svg><use href="#icon-search"></use></svg></div>';
+            const searchIcon = '<div class="tender-lots-input__icon"><svg><use href="#icon-search"></use></svg></div>';
             let priceRow = '';
             if (!isPrequal) {
-                priceRow = '<div class="zc-lots-field zc-lots-field--price"><div class="zc-lots-field__label">Макс. цена без НДС</div>'
+                priceRow = '<div class="tender-lots-field tender-lots-field--price"><div class="tender-lots-field__label">Макс. цена без НДС</div>'
                     + this.lotsInputHtml({ field: 'maxPriceNoVat', placeholder: '0' }) + '</div>'
-                    + '<div class="zc-lots-field zc-lots-field--vat"><div class="zc-lots-field__label">НДС</div>'
+                    + '<div class="tender-lots-field tender-lots-field--vat"><div class="tender-lots-field__label">НДС</div>'
                     + this.lotsInputHtml({ field: 'vatRate', select: true, options: vatOpts }) + '</div>';
             }
 
-            const html = '<div class="zc-lots-editor">'
-                + '<div class="zc-lots-editor__head"><div class="zc-lots-editor__head-inner">'
-                + '<div class="zc-lots-editor__title js-lot-editor-title"></div>'
-                + '<div class="zc-lots-editor__actions">'
-                + '<button type="button" class="zc-lot-item__icon-btn js-lot-dup" title="Дублировать" data-id="' + pos.id + '">'
+            const html = '<div class="tender-lots-editor">'
+                + '<div class="tender-lots-editor__head"><div class="tender-lots-editor__head-inner">'
+                + '<div class="tender-lots-editor__title js-lot-editor-title"></div>'
+                + '<div class="tender-lots-editor__actions">'
+                + '<button type="button" class="button secondary small icon-only js-lot-dup" title="Дублировать" aria-label="Дублировать позицию" data-id="' + pos.id + '">'
                 + '<svg viewBox="0 0 20 20" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M0 2.5C0 1.11929 1.11929 0 2.5 0H9.375C10.7557 0 11.875 1.11929 11.875 2.5V3.75H12.5C13.8807 3.75 15 4.86929 15 6.25V12.5C15 13.8807 13.8807 15 12.5 15H6.25C4.86929 15 3.75 13.8807 3.75 12.5V11.875H2.5C1.11929 11.875 0 10.7557 0 9.375V2.5ZM3.75 10.625V6.25C3.75 4.86929 4.86929 3.75 6.25 3.75H10.625V2.5C10.625 1.80964 10.0654 1.25 9.375 1.25H2.5C1.80964 1.25 1.25 1.80964 1.25 2.5V9.375C1.25 10.0654 1.80964 10.625 2.5 10.625H3.75ZM6.25 5C5.55964 5 5 5.55964 5 6.25V12.5C5 13.1904 5.55964 13.75 6.25 13.75H12.5C13.1904 13.75 13.75 13.1904 13.75 12.5V6.25C13.75 5.55964 13.1904 5 12.5 5H6.25Z" fill="currentColor"/></svg>'
                 + '</button>'
-                + '<button type="button" class="zc-lot-item__icon-btn js-lot-del" title="Удалить" data-id="' + pos.id + '"><svg><use href="#icon-trash"></use></svg></button>'
+                + '<button type="button" class="button secondary small icon-only js-lot-del" title="Удалить" aria-label="Удалить позицию" data-id="' + pos.id + '"><svg><use href="#icon-trash"></use></svg></button>'
                 + '</div></div></div>'
-                + '<div class="zc-lots-editor__body"><div class="zc-lots-editor__body-inner">'
-                + '<div class="zc-lots-field"><div class="zc-lots-field__label">Наименование позиции</div>'
+                + '<div class="tender-lots-editor__body"><div class="tender-lots-editor__body-inner">'
+                + '<div class="tender-lots-field"><div class="tender-lots-field__label">Наименование позиции</div>'
                 + this.lotsInputHtml({ field: 'name', placeholder: 'Введите наименование позиции' }) + '</div>'
-                + '<div class="zc-lots-field-row">'
-                + '<div class="zc-lots-field"><div class="zc-lots-field__label">Количество</div>'
+                + '<div class="tender-lots-field-row">'
+                + '<div class="tender-lots-field"><div class="tender-lots-field__label">Количество</div>'
                 + this.lotsInputHtml({ field: 'quantity', placeholder: isPrequal ? '0' : '1' }) + '</div>'
-                + '<div class="zc-lots-field"><div class="zc-lots-field__label">Ед. измерения</div>'
+                + '<div class="tender-lots-field"><div class="tender-lots-field__label">Ед. измерения</div>'
                 + this.lotsInputHtml({ field: 'unit', select: true, options: unitOpts }) + '</div>'
                 + priceRow
                 + '</div>'
                 + (isPrequal ? '' : (
-                    '<div class="zc-lots-field"><div class="zc-lots-field__label">Место поставки</div>'
+                    '<div class="tender-lots-field"><div class="tender-lots-field__label">Место поставки</div>'
                     + this.lotsInputHtml({ field: 'deliveryPlace', placeholder: 'Введите или выберите из списка', endIcon: searchIcon }) + '</div>'
-                    + '<button type="button" class="zc-lots-add-field js-lots-add-field">'
+                    + '<button type="button" class="button outline small js-lots-add-field">'
                     + '<svg viewBox="0 0 20 20" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M10 3.125C10.3452 3.125 10.625 3.40482 10.625 3.75V9.375H16.25C16.5952 9.375 16.875 9.65482 16.875 10C16.875 10.3452 16.5952 10.625 16.25 10.625H10.625V16.25C10.625 16.5952 10.3452 16.875 10 16.875C9.65482 16.875 9.375 16.5952 9.375 16.25V10.625H3.75C3.40482 10.625 3.125 10.3452 3.125 10C3.125 9.65482 3.40482 9.375 3.75 9.375H9.375V3.75C9.375 3.40482 9.65482 3.125 10 3.125Z" fill="currentColor"/></svg>'
                     + '<span>Добавить поле</span></button>'
                 ))
-                + '<div class="zc-lots-field"><div class="zc-lots-field__section">Добавить закупочную документацию</div>'
+                + '<div class="tender-lots-field"><div class="tender-lots-field__section">Добавить закупочную документацию</div>'
                 + this.lotsUploadHtml('lot', pos.fileName, pos.fileSize) + '</div>'
-                + '<div class="zc-lots-field"><div class="zc-lots-field__section">Комментарий</div>'
-                + '<div class="zc-lots-textarea"><div class="zc-lots-textarea__border" aria-hidden="true"></div>'
-                + '<div class="zc-lots-textarea__inner">'
+                + '<div class="tender-lots-field"><div class="tender-lots-field__section">Комментарий</div>'
+                + '<div class="tender-lots-textarea"><div class="tender-lots-textarea__border" aria-hidden="true"></div>'
+                + '<div class="tender-lots-textarea__inner">'
                 + '<textarea class="js-lot-field" data-field="comment" maxlength="200" placeholder="Введите"></textarea>'
-                + '<div class="zc-lots-textarea__counter js-lots-char-counter">' + String(pos.comment || '').length + '/200</div>'
+                + '<div class="tender-lots-textarea__counter js-lots-char-counter">' + String(pos.comment || '').length + '/200</div>'
                 + '</div></div></div>'
                 + '</div></div></div>';
 
@@ -2106,7 +2476,7 @@
             $wrap.find('[data-field="maxPriceNoVat"]').val(pos.maxPriceNoVat === '0' ? '' : (pos.maxPriceNoVat || ''));
             $wrap.find('[data-field="deliveryPlace"]').val(pos.deliveryPlace || '');
             $wrap.find('[data-field="comment"]').val(pos.comment || '');
-            if (pos.fileName) $wrap.find('.zc-lots-upload__name').text(pos.fileName);
+            if (pos.fileName) $wrap.find('.tender-lots-upload__name').text(pos.fileName);
         },
 
         renderDocEditor: function () {
@@ -2123,31 +2493,31 @@
                 ? doc.name
                 : (isPrequal ? ('Документ №' + (idx + 1)) : 'Документ');
 
-            const html = '<div class="zc-lots-editor">'
-                + '<div class="zc-lots-editor__head"><div class="zc-lots-editor__head-inner">'
-                + '<div class="zc-lots-editor__title js-doc-editor-title"></div>'
-                + '<div class="zc-lots-editor__actions">'
-                + '<button type="button" class="zc-lot-item__icon-btn js-doc-del" title="Удалить"><svg><use href="#icon-trash"></use></svg></button>'
+            const html = '<div class="tender-lots-editor">'
+                + '<div class="tender-lots-editor__head"><div class="tender-lots-editor__head-inner">'
+                + '<div class="tender-lots-editor__title js-doc-editor-title"></div>'
+                + '<div class="tender-lots-editor__actions">'
+                + '<button type="button" class="button secondary small icon-only js-doc-del" title="Удалить" aria-label="Удалить документ"><svg><use href="#icon-trash"></use></svg></button>'
                 + '</div></div></div>'
-                + '<div class="zc-lots-editor__body"><div class="zc-lots-editor__body-inner zc-lots-editor__body-inner--doc">'
-                + '<div class="zc-lots-field"><div class="zc-lots-field__label">Название документа'
-                + (isPrequal ? '<span class="zc-lots-field__req">*</span>' : '') + '</div>'
+                + '<div class="tender-lots-editor__body"><div class="tender-lots-editor__body-inner tender-lots-editor__body-inner--doc">'
+                + '<div class="tender-lots-field"><div class="tender-lots-field__label">Название документа'
+                + (isPrequal ? '<span class="tender-lots-field__req">*</span>' : '') + '</div>'
                 + this.lotsInputHtml({ field: 'name', placeholder: isPrequal ? 'Введите название документа' : 'Введите название', doc: true }) + '</div>'
-                + '<div class="zc-lots-field"><div class="zc-lots-field__section">Описание</div>'
-                + '<div class="zc-lots-textarea"><div class="zc-lots-textarea__border" aria-hidden="true"></div>'
-                + '<div class="zc-lots-textarea__inner">'
+                + '<div class="tender-lots-field"><div class="tender-lots-field__section">Описание</div>'
+                + '<div class="tender-lots-textarea"><div class="tender-lots-textarea__border" aria-hidden="true"></div>'
+                + '<div class="tender-lots-textarea__inner">'
                 + '<textarea class="js-doc-field" data-field="description" maxlength="200" placeholder="Введите"></textarea>'
-                + '<div class="zc-lots-textarea__counter js-lots-char-counter">' + String(doc.description || '').length + '/200</div>'
+                + '<div class="tender-lots-textarea__counter js-lots-char-counter">' + String(doc.description || '').length + '/200</div>'
                 + '</div></div></div>'
-                + (isPrequal ? '' : '<div class="zc-lots-editor-divider" aria-hidden="true"></div>')
-                + '<div class="zc-lots-field"><div class="zc-lots-field__section">'
+                + (isPrequal ? '' : '<div class="tender-lots-editor-divider" aria-hidden="true"></div>')
+                + '<div class="tender-lots-field"><div class="tender-lots-field__section">'
                 + (isPrequal ? 'Добавить закупочную документацию' : 'Загрузить шаблон документа') + '</div>'
                 + this.lotsUploadHtml('doc', doc.fileName, doc.fileSize) + '</div>'
-                + '<div class="zc-lots-check js-doc-required' + (doc.isRequired ? ' is-checked' : '') + '">'
-                + '<div class="zc-lots-check__box">'
+                + '<div class="tender-lots-check js-doc-required' + (doc.isRequired ? ' is-checked' : '') + '">'
+                + '<div class="tender-lots-check__box">'
                 + (doc.isRequired ? '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2.5 7.2 5.2 9.9 11.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '')
                 + '</div>'
-                + '<span class="zc-lots-check__label">'
+                + '<span class="tender-lots-check__label">'
                 + (isPrequal ? 'Отметить обязательным' : 'Отметить загрузку обязательным')
                 + '</span></div>'
                 + '</div></div></div>';
@@ -2156,7 +2526,7 @@
             $wrap.find('.js-doc-editor-title').text(title);
             $wrap.find('[data-field="name"]').val(doc.name || '');
             $wrap.find('[data-field="description"]').val(doc.description || '');
-            if (doc.fileName) $wrap.find('.zc-lots-upload__name').text(doc.fileName);
+            if (doc.fileName) $wrap.find('.tender-lots-upload__name').text(doc.fileName);
         },
 
         parseVatPercent: function (vatRate) {
@@ -2249,9 +2619,9 @@
             const $pos = $root.find('.js-preview-pos-table');
             if (!this.lotPositions.length) {
                 $pos.html(
-                    '<div class="zc-lots-preview-empty">'
-                    + '<div class="zc-lots-preview-empty__icon"><svg width="24" height="24"><use href="#icon-document-text"></use></svg></div>'
-                    + '<div class="zc-lots-preview-empty__text">Нет добавленных позиций</div></div>'
+                    '<div class="tender-lots-preview-empty">'
+                    + '<div class="tender-lots-preview-empty__icon"><svg width="24" height="24"><use href="#icon-document-text"></use></svg></div>'
+                    + '<div class="tender-lots-preview-empty__text">Нет добавленных позиций</div></div>'
                 );
             } else {
                 let rows = '';
@@ -2272,11 +2642,11 @@
                         + '<td class="is-center">' + (pos.fileName
                             ? '<span class="is-medium" style="color:var(--primary-900)">1</span>'
                             : '<span class="is-muted">—</span>') + '</td>'
-                        + '<td class="is-center"><button type="button" class="zc-lots-preview-edit-btn" title="Редактировать"><svg width="16" height="16"><use href="#icon-pencil"></use></svg></button></td>'
+                        + '<td class="is-center"><button type="button" class="tender-lots-preview-edit-btn" title="Редактировать"><svg width="16" height="16"><use href="#icon-pencil"></use></svg></button></td>'
                         + '</tr>';
                 });
                 $pos.html(
-                    '<div class="zc-lots-preview-table-wrap"><table class="zc-lots-preview-table' + (isPrequal ? ' is-prequal' : '') + '">'
+                    '<div class="tender-lots-preview-table-wrap"><table class="tender-lots-preview-table' + (isPrequal ? ' is-prequal' : '') + '">'
                     + '<thead><tr>'
                     + '<th class="is-center">№</th><th>Наименование</th><th class="is-center">Количество</th><th class="is-center">Ед.</th>'
                     + (isPrequal
@@ -2290,9 +2660,9 @@
             const $docs = $root.find('.js-preview-doc-table');
             if (!this.lotDocuments.length) {
                 $docs.html(
-                    '<div class="zc-lots-preview-empty">'
-                    + '<div class="zc-lots-preview-empty__icon"><svg width="24" height="24"><use href="#icon-document-text"></use></svg></div>'
-                    + '<div class="zc-lots-preview-empty__text">Документы не требуются</div></div>'
+                    '<div class="tender-lots-preview-empty">'
+                    + '<div class="tender-lots-preview-empty__icon"><svg width="24" height="24"><use href="#icon-document-text"></use></svg></div>'
+                    + '<div class="tender-lots-preview-empty__text">Документы не требуются</div></div>'
                 );
             } else {
                 let docRows = '';
@@ -2305,12 +2675,12 @@
                             ? '<span class="is-medium" style="color:var(--success-dark)">Прикреплён</span>'
                             : '<span class="is-muted">Нет</span>') + '</td>'
                         + '<td class="is-center">' + (doc.isRequired
-                            ? '<span class="zc-lot-item__badge">Да</span>'
+                            ? '<span class="badge badge--shared badge--small error">Да</span>'
                             : '<span class="is-muted">Нет</span>') + '</td>'
                         + '</tr>';
                 });
                 $docs.html(
-                    '<div class="zc-lots-preview-table-wrap"><table class="zc-lots-preview-table" style="min-width:640px">'
+                    '<div class="tender-lots-preview-table-wrap"><table class="tender-lots-preview-table" style="min-width:640px">'
                     + '<thead><tr>'
                     + '<th class="is-center">№</th><th>Наименование документа</th><th>Описание</th>'
                     + '<th class="is-center">' + (isPrequal ? 'Файл' : 'Шаблон') + '</th>'
@@ -2552,7 +2922,7 @@
                 const $nameRow = $row.find('.criteria-name-row');
                 $nameRow.find('.criteria-name').text(item.name || '');
                 if (item.required) {
-                    $nameRow.append($('<span class="criteria-badge">').text('Обязательное'));
+                    $nameRow.append($('<span class="badge badge--shared badge--small error">').text('Обязательное'));
                 }
                 const meta = self.criterionTypeLabel(item.type) + (item.description ? (' · ' + item.description) : '');
                 $row.find('.criteria-meta').text(meta);
@@ -2743,6 +3113,7 @@
                         const state = self.updateNpcModalState($container);
                         const next = {
                             id: editing && editing.id ? editing.id : ('npc_' + Date.now()),
+                            serverId: editing && editing.serverId ? editing.serverId : 0,
                             name: state.name,
                             description: state.description,
                             type: state.type,
@@ -2775,7 +3146,7 @@
                     allowClear: true,
                     multiple: true,
                     ajax: {
-                        url: '/api/common/company/select/',
+                        url: '/api/buyer/company/select/',
                         dataType: 'json',
                         delay: 250,
                         data: function (params) {
@@ -2795,9 +3166,8 @@
         },
 
         syncBasicContinue: function () {
-            const $root = $(this.root);
-            $root.find('[data-step="basic"] .js-tender-step-next')
-                .prop('disabled', $.trim($root.find('.js-field-title').val() || '') === '');
+            /* Навигация свободная: «Продолжить» на basic не блокируем. */
+            $(this.root).find('[data-step="basic"] .js-tender-step-next').prop('disabled', false);
         },
 
         $categoryTree: function () {
@@ -3060,29 +3430,6 @@
             this.renderClassifierSelected($panel);
         },
 
-        saveClassifiers: function () {
-            const self = this;
-            if (!this.tenderId) return Promise.resolve(false);
-            const type = parseInt(this.categoryClassifierType, 10) || 4;
-            return $.fRequest({
-                url: '/api/buyer/tender/' + this.tenderId + '/classifier/save/',
-                method: 'POST',
-                showMessages: false,
-                data: {
-                    classifiers: this.getSelectedCategoryIds().map(function (id) {
-                        return { classifier_type: type, classifier_id: id };
-                    })
-                },
-                onSuccess: function () { return false; }
-            }).then(function (reply) {
-                if (reply.error) {
-                    $.AlertManager.showError(reply.message || 'Не удалось сохранить категории');
-                    return false;
-                }
-                return true;
-            });
-        },
-
         renderClassifierSelected: function ($panel) {
             const $tags = $panel.find('.js-classifier-selected');
             const $empty = $panel.find('.js-classifier-empty');
@@ -3303,8 +3650,9 @@
                 const qtyRaw = String(pos.quantity || '').replace(',', '.');
                 const qty = parseFloat(qtyRaw);
                 return {
+                    id: parseInt(pos.dbId, 10) || 0,
                     name: $.trim(pos.name || ''),
-                    qty: !isNaN(qty) && qty > 0 ? qty : 1,
+                    qty: !isNaN(qty) ? qty : 0,
                     unit: pos.unit || 'шт.',
                     max_price_no_vat: pos.maxPriceNoVat,
                     vat_rate: pos.vatRate || '',
@@ -3321,6 +3669,7 @@
             (this.techSpecFiles || []).forEach(function (file, index) {
                 if (!(parseInt(file.file_link_id, 10) > 0)) return;
                 documents.push({
+                    id: parseInt(file.dbId, 10) || 0,
                     kind: 'tech_spec',
                     name: file.name || 'Техническое задание',
                     description: '',
@@ -3333,6 +3682,7 @@
                 const name = $.trim(doc.name || '');
                 if (!name && !(parseInt(doc.file_link_id, 10) > 0)) return;
                 documents.push({
+                    id: parseInt(doc.dbId, 10) || 0,
                     kind: 'requirement',
                     name: name || ('Документ ' + (index + 1)),
                     description: doc.description || '',
@@ -3358,7 +3708,6 @@
                     self.items = reply.items || [];
                     self.fillStatusFilter();
                     self.applyFilters();
-                    self.openEditFromQuery();
                 },
                 onError: function (reply) {
                     $root.find('.js-tenders-list').hide().empty();
@@ -3388,8 +3737,8 @@
 
         resolveBucket: function (statusCode) {
             if (statusCode === 'draft') return 'draft';
-            if (statusCode === 'priostanovlen') return 'on_hold';
-            if (statusCode === 'arkhiv' || statusCode === 'otmenen' || statusCode === 'nesostoyalsya') {
+            if (statusCode === 'suspended') return 'on_hold';
+            if (statusCode === 'archived' || statusCode === 'cancelled' || statusCode === 'unsuccessful') {
                 return 'archived';
             }
             return 'active';
@@ -3441,15 +3790,6 @@
                 else if (mod10 >= 2 && mod10 <= 4) word = 'дня';
             }
             return 'Осталось ' + n + ' ' + word;
-        },
-
-        statusTone: function (statusName) {
-            const name = String(statusName || '');
-            if (name.indexOf('Предквалификация') !== -1) return 'success';
-            if (name.indexOf('Отмен') !== -1) return 'error';
-            if (name.indexOf('Переторж') !== -1 || name.indexOf('Ожидает') !== -1) return 'warning';
-            if (name === 'Черновик' || name.indexOf('Заверш') !== -1) return 'neutral';
-            return 'info';
         },
 
         applyFilters: function () {
@@ -3504,7 +3844,7 @@
                 const daysLabel = self.formatDaysLeft(daysLeft);
                 const expired = daysLeft !== null && daysLeft < 0;
                 const access = item.is_private == 1 || item.is_private === true ? 'Закрытый' : 'Открытый';
-                const tone = self.statusTone(item.status_name);
+                const tone = item.status_tone || 'info';
                 const methodLine = (item.type_name || 'Тендер') + (item.number ? ' №' + item.number : '');
 
                 const $card = $(`
@@ -3512,7 +3852,7 @@
                         <div class="buyer-tender-card__main">
                             <div class="buyer-tender-card__title-row">
                                 <h3 class="buyer-tender-card__title"></h3>
-                                <span class="buyer-tender-card__status buyer-tender-card__status--${tone}"></span>
+                                <span class="badge badge--shared badge--medium ${tone} js-buyer-tender-status"></span>
                             </div>
                             <div class="buyer-tender-card__meta">
                                 <span>Дата создания: ${created}</span>
@@ -3538,13 +3878,13 @@
                             <span class="buyer-tender-card__metric-label">Окончание приёма заявок</span>
                             <div class="buyer-tender-card__deadline-row">
                                 <span class="buyer-tender-card__metric-value${expired ? ' is-expired' : ''}">${deadline}</span>
-                                ${daysLabel ? `<span class="buyer-tender-card__days${expired ? ' is-expired' : ''}">${daysLabel}</span>` : ''}
+                                ${daysLabel ? `<span class="badge badge--shared badge--small badge--tag badge--outline ${expired ? 'disabled' : 'neutral'}">${daysLabel}</span>` : ''}
                             </div>
                         </div>
                         <button type="button" class="buyer-tender-card__more" aria-label="Действия" disabled>⋮</button>
                     </article>`);
                 $card.find('.buyer-tender-card__title').text(item.title || 'Без названия');
-                $card.find('.buyer-tender-card__status').text(item.status_name || '—');
+                $card.find('.js-buyer-tender-status').text(item.status_name || '—');
                 $card.find('.buyer-tender-card__method').text(methodLine);
                 $list.append($card);
             });
@@ -3559,6 +3899,10 @@
             }).then(function (reply) {
                 if (!reply || reply.error || !reply.tender) {
                     $.AlertManager.showError((reply && reply.message) || 'Не удалось открыть черновик');
+                    return false;
+                }
+                if (!parseInt(reply.can_edit, 10)) {
+                    $.AlertManager.showError('Редактирование недоступно: по тендеру уже подана заявка или статус не позволяет правку.');
                     return false;
                 }
                 const type = reply.tender.type || {};
@@ -3620,6 +3964,7 @@
                     if (fileLinkId > 0) {
                         self.techSpecFiles.push({
                             id: self.nextLotId('ts_'),
+                            dbId: parseInt(doc.id, 10) || 0,
                             name: doc.file_name || doc.name || 'Техническое задание',
                             file_link_id: fileLinkId
                         });
@@ -3628,6 +3973,7 @@
                 }
                 self.lotDocuments.push({
                     id: self.nextLotId('doc_'),
+                    dbId: parseInt(doc.id, 10) || 0,
                     name: doc.name || '',
                     description: doc.description || '',
                     fileName: doc.file_name || '',
@@ -3645,6 +3991,11 @@
         applyDraftDetail: function (detail) {
             const $root = $(this.root);
             const tender = (detail && detail.tender) || {};
+            const statusCode = String((tender.status && tender.status.code) || $root.attr('data-status-code') || '');
+            this.editingPublishedTender = statusCode !== '' && statusCode !== 'draft';
+            $root.find('.js-tender-save-draft').text(this.editingPublishedTender ? 'Сохранить изменения' : 'Сохранить в черновик');
+            $root.find('.js-tender-publish').show();
+            $root.find('.js-tender-apply-template').prop('disabled', this.editingPublishedTender);
             const flagOn = function (value) {
                 return value === true || value === 1 || value === '1';
             };
@@ -3656,8 +4007,31 @@
             $root.find('input[name="is_private"][value="' + (flagOn(tender.is_private) ? '1' : '0') + '"]')
                 .prop('checked', true);
             $root.find('.js-private-invites').toggleClass('visible', flagOn(tender.is_private));
+
+            const pastPrequalId = parseInt(tender.past_prequal_tender_id, 10) || 0;
+            const showPastPrequal = flagOn(tender.is_private) && this.selectedTypeCode === 'price_request';
+            $root.find('.js-past-prequal-wrap').toggle(showPastPrequal);
+            $root.find('.js-field-past-prequal').prop('checked', pastPrequalId > 0);
+            $root.find('.js-past-prequal-block').toggleClass('visible', pastPrequalId > 0);
+            if (pastPrequalId > 0) {
+                $root.find('.js-field-past-prequal-query').val(String(pastPrequalId));
+            } else {
+                $root.find('.js-field-past-prequal-query').val('');
+            }
+
             $root.find('.js-field-approval-required').prop('checked', flagOn(tender.approval_required));
             $root.find('.js-approval-period-wrap').toggleClass('visible', flagOn(tender.approval_required));
+            const docsParts = this.splitDatetime(tender.docs_end_at);
+            const hasApprovalPeriod = flagOn(tender.approval_required) && !!(docsParts.date || docsParts.time);
+            $root.find('.js-field-approval-period').prop('checked', hasApprovalPeriod);
+            $root.find('.js-approval-period-fields').toggleClass('visible', hasApprovalPeriod);
+            if (hasApprovalPeriod) {
+                $root.find('.js-field-approval-date').val(docsParts.date);
+                $root.find('.js-field-approval-time').val(docsParts.time);
+            } else {
+                $root.find('.js-field-approval-date, .js-field-approval-time').val('');
+            }
+
             $root.find('.js-field-hide-initial-price').prop('checked', flagOn(tender.hide_initial_price));
             $root.find('.js-field-hide-participants').prop('checked', flagOn(tender.hide_participants_count));
             $root.find('.js-field-hide-prices').prop('checked', flagOn(tender.hide_participant_prices));
@@ -3679,6 +4053,21 @@
                 $root.find('.js-field-renewal-period').val(String(tender.auto_extend_period_min)).trigger('change');
             }
             $root.find('.js-field-min-step').prop('checked', flagOn(tender.min_step_enabled));
+            if (tender.min_step_base === 'best' || tender.min_step_base === 'own') {
+                $root.find('.js-field-min-step-base[value="' + tender.min_step_base + '"]').prop('checked', true);
+            }
+            const minStepType = String(tender.min_step_type || 'amount') === 'percent' ? 'percent' : 'amount';
+            $root.find('.js-min-step-type').removeClass('active')
+                .filter('[data-type="' + minStepType + '"]').addClass('active');
+            $root.find('.js-min-step-amount').toggle(minStepType === 'amount');
+            $root.find('.js-min-step-percent').toggle(minStepType === 'percent');
+            if (tender.min_step_value != null && tender.min_step_value !== '') {
+                if (minStepType === 'percent') {
+                    $root.find('.js-field-min-step-percent').val(String(tender.min_step_value));
+                } else {
+                    $root.find('.js-field-min-step-value').val(String(tender.min_step_value));
+                }
+            }
             if (tender.vat_mode) {
                 $root.find('input.js-field-vat[value="' + tender.vat_mode + '"]').prop('checked', true);
             }
@@ -3700,7 +4089,6 @@
             const endParts = this.splitDatetime(tender.end_at);
             $root.find('.js-field-end-date').val(endParts.date);
             $root.find('.js-field-end-time').val(endParts.time);
-            const docsParts = this.splitDatetime(tender.docs_end_at);
             $root.find('.js-field-docs-date').val(docsParts.date);
             $root.find('.js-field-docs-time').val(docsParts.time);
             const openParts = this.splitDatetime(tender.opening_at);
@@ -3709,10 +4097,12 @@
             this.criteria = (detail.criteria || []).map(function (row, index) {
                 return {
                     id: row.id ? ('crit_' + row.id) : ('npc_' + Date.now() + '_' + index),
+                    serverId: parseInt(row.id, 10) || 0,
                     name: row.name || '',
                     description: row.description || '',
-                    type: row.type || 'non_price',
-                    required: !!parseInt(row.is_mandatory, 10)
+                    type: row.type === 'non_price' ? 'text' : (row.type || 'text'),
+                    required: !!parseInt(row.is_mandatory, 10),
+                    confirmationText: row.confirmation_text || ''
                 };
             });
             this.renderCriteria();
@@ -3730,6 +4120,8 @@
             this.applyLotsFromDetail(detail.items, detail.documents);
             this.syncMinStepUi();
             this.syncBasicContinue();
+            // Редактирование: все шаги уже заполнены, открыты для перехода.
+            this.highestStepReached = this.steps.length - 1;
         },
 
         openCreate: function (method, detail) {
@@ -3738,6 +4130,11 @@
             method = method || {};
             this.tenderId = 0;
             this.stepIndex = 0;
+            this.highestStepReached = 0;
+            this.editingPublishedTender = false;
+            $root.find('.js-tender-save-draft').text('Сохранить в черновик');
+            $root.find('.js-tender-publish').show();
+            $root.find('.js-tender-apply-template').prop('disabled', false);
             this.selectedTypeId = parseInt(method.id, 10) || 3;
             this.selectedTypeCode = method.code || 'price_request';
 
@@ -3768,8 +4165,9 @@
             $root.find('.js-price-request-only').toggle(this.selectedTypeCode === 'price_request');
             $root.find('.js-prequal-only').toggle(this.selectedTypeCode === 'prequalification');
             $root.find('.js-past-prequal-wrap').hide();
-            $root.find('.js-classifier-tab').removeClass('active').filter('[data-tab="common"]').addClass('active');
-            $root.find('.creation-card-categories-results').removeClass('active').filter('[data-tab="common"]').addClass('active');
+            if (this.classifierTabs) {
+                this.classifierTabs.showTab('common');
+            }
             $root.find('.js-classifier-search').val('');
             $root.find('.js-field-tags-search').val('');
             $root.find('.js-tags-selected').empty();
@@ -3809,34 +4207,39 @@
             this.goStep(0);
         },
 
+        leaveForm: function () {
+            this.navigateCabinet('/cabinet/buyer/tenders/');
+        },
+
         closeCreate: function () {
-            const $root = $(this.root);
-            $root.removeClass('tender-create');
-            $root.find('.js-tender-create-body').removeClass('is-wide');
-            $root.find('.js-tender-create-view').hide();
-            $root.find('.js-tenders-list-view').show();
-            this.loadList();
+            this.leaveForm();
+        },
+
+        canJumpToStep: function (index) {
+            if (index < 0 || index >= this.steps.length) return false;
+            const key = this.steps[index];
+            if (this.publishIssuesByStep && this.publishIssuesByStep[key]) return true;
+            return index <= this.highestStepReached;
         },
 
         goStep: function (index) {
             if (index < 0 || index >= this.steps.length) return;
             this.stepIndex = index;
+            this.highestStepReached = Math.max(this.highestStepReached, index);
             const step = this.steps[index];
             const self = this;
             const $root = $(this.root);
             const isWide = step === 'lots' || step === 'invitation';
 
+            $root.toggleClass('is-wide', isWide);
             $root.find('.js-tender-create-body').toggleClass('is-wide', isWide);
 
             $root.find('.js-tender-step-panel').hide();
             $root.find('.js-tender-step-panel[data-step="' + step + '"]').show();
 
-            $root.find('.js-tender-steps .creation-step').each(function (i) {
-                const $el = $(this);
-                $el.removeClass('next completed');
-                if (i < self.stepIndex) $el.addClass('completed');
-                else if (i > self.stepIndex) $el.addClass('next');
-            });
+            this.syncCreationSteps();
+
+            this.syncStepValidationBanners();
 
             if (step === 'basic') this.syncBasicContinue();
             if (step === 'invitation') {
@@ -3848,6 +4251,139 @@
             if (step === 'lots') {
                 this.syncLotsStepUi();
             }
+        },
+
+        syncCreationSteps: function () {
+            const self = this;
+            const $root = $(this.root);
+            $root.find('.js-tender-steps .creation-step').each(function (i) {
+                const $el = $(this);
+                const key = self.steps[i];
+                const current = i === self.stepIndex;
+                const completed = i <= self.highestStepReached;
+                $el.toggleClass('is-current', current)
+                    .toggleClass('completed', completed)
+                    .toggleClass('next', i > self.highestStepReached)
+                    .toggleClass('is-invalid', !!(self.publishIssuesByStep && self.publishIssuesByStep[key]))
+                    .toggleClass('is-clickable', self.canJumpToStep(i) && !current);
+                if (current) $el.attr('aria-current', 'step');
+                else $el.removeAttr('aria-current');
+            });
+        },
+
+        getPublishIssues: function () {
+            const $root = $(this.root);
+            const issues = [];
+            const title = $.trim($root.find('.js-field-title').val() || '');
+            if (!title) {
+                issues.push({
+                    step: 'basic',
+                    field: 'title',
+                    message: 'Укажите наименование извещения'
+                });
+            }
+
+            const endAt = this.composeDatetime(
+                $root.find('.js-field-end-date').val(),
+                $root.find('.js-field-end-time').val()
+            );
+            if (!endAt) {
+                issues.push({
+                    step: 'purchase_params',
+                    field: 'end_at',
+                    message: 'Укажите конечный срок подачи заявок'
+                });
+            } else {
+                const endTimestamp = Date.parse(endAt.replace(' ', 'T') + '+03:00');
+                if (!Number.isNaN(endTimestamp) && endTimestamp <= Date.now()) {
+                    issues.push({
+                        step: 'purchase_params',
+                        field: 'end_at',
+                        message: 'Конечный срок подачи заявок должен быть позже текущего времени'
+                    });
+                }
+            }
+
+            if (!this.hasReadyLotPositions()) {
+                issues.push({
+                    step: 'lots',
+                    field: 'items',
+                    message: 'Заполните хотя бы одну позицию, чтобы продолжить'
+                });
+            }
+
+            const isPrivate = $root.find('input[name="is_private"]:checked').val() === '1';
+            if (isPrivate) {
+                const inviteCount = this.getInvitationCompanyIds
+                    ? this.getInvitationCompanyIds().length
+                    : (($root.find('.js-invite-select').val() || []).length);
+                if (inviteCount < 1) {
+                    issues.push({
+                        step: 'privacy',
+                        field: 'invitations',
+                        message: 'Добавьте хотя бы одного приглашённого поставщика'
+                    });
+                }
+            }
+
+            return issues;
+        },
+
+        applyPublishIssues: function (issues) {
+            const map = {};
+            (issues || []).forEach(function (row) {
+                const step = String(row.step || '');
+                if (!step || map[step]) return;
+                map[step] = String(row.message || 'Заполните обязательные поля');
+            });
+            this.publishIssuesByStep = Object.keys(map).length ? map : null;
+            this.syncStepValidationBanners();
+            this.goStep(this.stepIndex);
+        },
+
+        clearPublishIssues: function () {
+            this.publishIssuesByStep = null;
+            $(this.root).find('.js-step-validation-banner').hide();
+            this.goStep(this.stepIndex);
+        },
+
+        syncStepValidationBanners: function () {
+            const self = this;
+            const $root = $(this.root);
+            $root.find('.js-step-validation-banner').each(function () {
+                const $banner = $(this);
+                const step = String($banner.data('step') || '');
+                const msg = self.publishIssuesByStep && self.publishIssuesByStep[step];
+                if (msg) {
+                    $banner.find('.js-step-validation-text').text(msg);
+                    $banner.show();
+                } else {
+                    $banner.hide();
+                }
+            });
+        },
+
+        refreshPublishIssueForStep: function (step) {
+            if (!this.publishIssuesByStep || !this.publishIssuesByStep[step]) return;
+            const still = this.getPublishIssues().some(function (row) {
+                return String(row.step) === step;
+            });
+            if (!still) {
+                delete this.publishIssuesByStep[step];
+                if (!Object.keys(this.publishIssuesByStep).length) {
+                    this.publishIssuesByStep = null;
+                }
+                this.syncStepValidationBanners();
+                this.goStep(this.stepIndex);
+            }
+        },
+
+        jumpToFirstPublishIssue: function (issues) {
+            const list = issues || [];
+            if (!list.length) return;
+            const step = String(list[0].step || '');
+            const index = this.steps.indexOf(step);
+            if (index >= 0) this.goStep(index);
         },
 
         collectStepData: function (step) {
@@ -3862,9 +4398,7 @@
                     const inviteIds = ($root.find('.js-invite-select').val() || []).filter(function (id) {
                         return /^\d+$/.test(String(id));
                     });
-                    if (inviteIds.length) {
-                        data.invitations = inviteIds;
-                    }
+                    data.invitations = inviteIds.length ? inviteIds : '';
                 }
                 if (data.approval_required && $root.find('.js-field-approval-period').is(':checked')) {
                     const approvalEnd = this.composeDatetime(
@@ -3874,6 +4408,15 @@
                     if (approvalEnd) data.docs_end_at = approvalEnd;
                 }
                 if (isPriceRequest) {
+                    if (data.is_private && $root.find('.js-field-past-prequal').is(':checked')) {
+                        const rawPrequal = $.trim($root.find('.js-field-past-prequal-query').val() || '');
+                        const prequalId = parseInt(rawPrequal, 10) || 0;
+                        data.past_prequal_tender_id = (prequalId > 0 && String(prequalId) === rawPrequal)
+                            ? prequalId
+                            : 0;
+                    } else {
+                        data.past_prequal_tender_id = 0;
+                    }
                     data.hide_initial_price = $root.find('.js-field-hide-initial-price').is(':checked') ? 1 : 0;
                     data.hide_participants_count = $root.find('.js-field-hide-participants').is(':checked') ? 1 : 0;
                     data.hide_participant_prices = $root.find('.js-field-hide-prices').is(':checked') ? 1 : 0;
@@ -3959,30 +4502,36 @@
         /** Все поля мастера одним объектом (для save draft / publish). */
         collectAllFormData: function () {
             const self = this;
-            const data = { type: this.selectedTypeId };
+            const classifiers = this.getSelectedCategoryIds().map(function (id) {
+                return { classifier_type: parseInt(self.categoryClassifierType, 10) || 4, classifier_id: id };
+            });
+            const data = { type: this.selectedTypeId, classifiers: classifiers.length ? classifiers : '' };
             this.steps.forEach(function (step) {
                 if (step === 'lots') return;
                 Object.assign(data, self.collectStepData(step));
             });
             if (this.selectedTypeCode === 'price_request' || this.selectedTypeCode === 'proposal_request') {
-                data.criteria = (this.criteria || []).map(function (item) {
+                data.criteria = (this.criteria || []).map(function (item, index) {
                     return {
+                        id: item.serverId || 0,
                         name: item.name || '',
-                        type: item.type || 'non_price',
+                        type: item.type || 'text',
                         is_mandatory: item.required ? 1 : 0,
-                        description: item.description || ''
+                        description: item.description || '',
+                        confirmation_text: item.type === 'confirmation' ? (item.confirmationText || '') : '',
+                        sort: index
                     };
                 }).filter(function (row) {
                     return $.trim(row.name) !== '';
                 });
+                if (!data.criteria.length) data.criteria = '';
             }
-            if (this.lotPositions && this.lotPositions.length) {
-                Object.assign(data, this.collectLotsPayload());
-            } else if (this.techSpecFiles && this.techSpecFiles.length) {
+            if (this.steps.indexOf('lots') !== -1 || this.lotPositions.length || this.techSpecFiles.length || this.lotDocuments.length) {
                 const lots = this.collectLotsPayload();
-                if (lots.documents && lots.documents.length) {
-                    data.documents = lots.documents;
+                if (this.steps.indexOf('lots') !== -1 || this.lotPositions.length) {
+                    data.items = lots.items.length ? lots.items : '';
                 }
+                data.documents = lots.documents.length ? lots.documents : '';
             }
             return data;
         },
@@ -3992,38 +4541,15 @@
             const opts = options || {};
             let data = this.collectAllFormData();
 
-            if (!data.title) {
-                $.AlertManager.showError('Укажите наименование');
-                const basicIndex = this.steps.indexOf('basic');
-                if (basicIndex >= 0) this.goStep(basicIndex);
-                return Promise.resolve(false);
-            }
-
-            if (opts.publish
-                && (this.selectedTypeCode === 'price_request' || this.selectedTypeCode === 'proposal_request')
-                && !(data.criteria && data.criteria.length)
-            ) {
-                $.AlertManager.showError('Добавьте хотя бы один критерий оценки для запроса цен');
-                const paramsIndex = this.steps.indexOf('purchase_params');
-                if (paramsIndex >= 0) this.goStep(paramsIndex);
-                return Promise.resolve(false);
-            }
-
-            if (opts.publish && !this.hasReadyLotPositions()) {
-                $.AlertManager.showError('Заполните хотя бы одну позицию на шаге «Лоты»');
-                const lotsIndex = this.steps.indexOf('lots');
-                if (lotsIndex >= 0) this.goStep(lotsIndex);
-                return Promise.resolve(false);
-            }
-
-            if (opts.publish
-                && this.selectedTypeCode === 'price_request'
-                && !(data.items && data.items.length)
-            ) {
-                $.AlertManager.showError('Добавьте хотя бы одну позицию на шаге «Лоты»');
-                const lotsIndex = this.steps.indexOf('lots');
-                if (lotsIndex >= 0) this.goStep(lotsIndex);
-                return Promise.resolve(false);
+            if (opts.publish) {
+                const issues = this.getPublishIssues();
+                if (issues.length) {
+                    this.applyPublishIssues(issues);
+                    this.jumpToFirstPublishIssue(issues);
+                    $.AlertManager.showError('Заполните обязательные поля перед публикацией');
+                    return Promise.resolve(false);
+                }
+                this.clearPublishIssues();
             }
 
             return this.ensureDraft(data).then(function (ok) {
@@ -4032,10 +4558,7 @@
             }).then(function (ok) {
                 if (!ok) return false;
                 data = self.collectAllFormData();
-                return self.postSave(data, { silent: false });
-            }).then(function (ok) {
-                if (!ok) return false;
-                return self.saveClassifiers();
+                return self.postSave(data, { silent: !!opts.publish });
             }).then(function (ok) {
                 if (!ok) return false;
                 return opts.publish ? self.requestPublish() : true;
@@ -4047,17 +4570,21 @@
             if (this.tenderId > 0) return Promise.resolve(true);
 
             const form = data || this.collectAllFormData();
+            const title = $.trim(form.title || '');
             return $.fRequest({
                 url: '/api/buyer/tender/create/',
                 method: 'POST',
                 showMessages: false,
                 data: {
                     type: form.type || this.selectedTypeId,
-                    title: form.title
+                    title: title,
+                    classifiers: form.classifiers
                 },
                 onSuccess: function (reply) {
                     self.tenderId = parseInt(reply.tender_id || 0, 10) || self.tenderId;
                     $(self.root).find('.js-tender-id').val(String(self.tenderId));
+                    $(self.root).find('.js-field-title').val(title);
+                    self.syncEditUrlAfterCreate();
                 }
             }).then(function (reply) {
                 return !reply.error && self.tenderId > 0;
@@ -4072,6 +4599,24 @@
             const payload = Object.assign({ id: this.tenderId }, data || {});
             delete payload.type;
             delete payload.number;
+            if (payload.title != null) {
+                payload.title = $.trim(payload.title);
+            }
+
+            const savedPositionIds = Array.isArray(payload.items)
+                ? (this.lotPositions || []).filter(function (pos) {
+                    return self.getLotStatus(pos) !== 'draft' && $.trim(pos.name || '') !== '';
+                }).map(function (pos) { return pos.id; })
+                : [];
+
+            const savedDocumentIds = Array.isArray(payload.documents) ? {
+                tech_spec: (this.techSpecFiles || []).filter(function (file) {
+                    return parseInt(file.file_link_id, 10) > 0;
+                }).map(function (file) { return file.id; }),
+                requirement: (this.lotDocuments || []).filter(function (doc) {
+                    return $.trim(doc.name || '') !== '' || parseInt(doc.file_link_id, 10) > 0;
+                }).map(function (doc) { return doc.id; })
+            } : {};
 
             return $.fRequest({
                 url: '/api/buyer/tender/save/',
@@ -4081,6 +4626,35 @@
                 onSuccess: function (reply) {
                     self.tenderId = parseInt(reply.tender_id || 0, 10) || self.tenderId;
                     $(self.root).find('.js-tender-id').val(String(self.tenderId));
+                    if (Array.isArray(reply.items)) {
+                        reply.items.forEach(function (row, index) {
+                            const position = (self.lotPositions || []).find(function (pos) {
+                                return pos.id === savedPositionIds[index];
+                            });
+                            if (position) {
+                                position.dbId = parseInt(row.id, 10) || 0;
+                            }
+                        });
+                    }
+                    if (Array.isArray(reply.documents)) {
+                        const offsets = { tech_spec: 0, requirement: 0 };
+                        reply.documents.forEach(function (row) {
+                            const kind = row.kind;
+                            const ids = savedDocumentIds[kind];
+                            if (!ids) return;
+                            const localId = ids[offsets[kind]++];
+                            const source = kind === 'tech_spec' ? self.techSpecFiles : self.lotDocuments;
+                            const document = (source || []).find(function (entry) {
+                                return entry.id === localId;
+                            });
+                            if (document) document.dbId = parseInt(row.id, 10) || 0;
+                        });
+                    }
+                    if (Array.isArray(reply.criteria)) {
+                        reply.criteria.forEach(function (row, index) {
+                            if (self.criteria[index]) self.criteria[index].serverId = parseInt(row.id, 10) || 0;
+                        });
+                    }
                     return opts.silent ? false : (reply.message || 'Сохранено');
                 }
             }).then(function (reply) {
@@ -4089,14 +4663,29 @@
         },
 
         requestPublish: function () {
+            if (this.editingPublishedTender) return Promise.resolve(false);
             const self = this;
             return $.fRequest({
                 url: '/api/buyer/tender/publish/',
                 method: 'POST',
+                showMessages: false,
                 data: { id: self.tenderId },
                 onSuccess: function (reply) {
+                    self.clearPublishIssues();
                     self.closeCreate();
-                    return reply.message || 'Опубликовано';
+                    $.AlertManager.showSuccess(reply.message || 'Опубликовано');
+                    return false;
+                },
+                onError: function (reply) {
+                    const issues = Array.isArray(reply.issues) ? reply.issues : null;
+                    if (issues && issues.length) {
+                        self.applyPublishIssues(issues);
+                        self.jumpToFirstPublishIssue(issues);
+                    }
+                    $.AlertManager.showError(
+                        reply.message || 'Заполните обязательные поля перед публикацией'
+                    );
+                    return false;
                 }
             }).then(function (reply) {
                 return !reply.error;
@@ -4104,13 +4693,14 @@
         },
 
         publish: function () {
-            this.saveDraft({ publish: true });
+            return this.saveDraft({ publish: !this.editingPublishedTender });
         }
     });
 
-    // Карточка тендера buyer: вкладки Обзор / Участники (6.3).
     $.Cabinet.registerPage('tender', {
         root: null,
+        tabs: null,
+        applicationTabs: null,
         tenderId: 0,
         activeTab: 'overview',
         listLoaded: false,
@@ -4119,6 +4709,19 @@
         busy: false,
         currentApplicationId: 0,
         detailSubtab: 'lots',
+        canStartReview: 0,
+        reviewStarted: 0,
+        rankingLoaded: false,
+        ranking: null,
+        participantsSearch: '',
+        canSelectWinner: 0,
+        winnerSelectionCompleted: 0,
+        itemizedEnabled: 0,
+        winnerLoaded: false,
+        winnerState: null,
+        winnerBusy: false,
+        resultsUiMode: 'all',
+        positionalDraft: {},
 
         init: function (root) {
             this.root = root;
@@ -4130,16 +4733,64 @@
             this.busy = false;
             this.currentApplicationId = 0;
             this.detailSubtab = 'lots';
+            this.canStartReview = parseInt(root.getAttribute('data-can-start-review') || '0', 10) || 0;
+            this.reviewStarted = parseInt(root.getAttribute('data-review-started') || '0', 10) || 0;
+            this.rankingLoaded = false;
+            this.ranking = null;
+            this.evaluationSort = 'rank';
+            this.evaluationCollapsed = {};
+            this.evaluationOrder = [];
+            this.evaluationDragging = 0;
+            this.evaluationTemplates = null;
+            this.evaluationTemplateBusy = false;
+            this.participantsSearch = '';
+            this.canSelectWinner = parseInt(root.getAttribute('data-can-select-winner') || '0', 10) || 0;
+            this.winnerSelectionCompleted = parseInt(root.getAttribute('data-winner-selection-completed') || '0', 10) || 0;
+            this.itemizedEnabled = parseInt(root.getAttribute('data-itemized-enabled') || '0', 10) || 0;
+            this.winnerLoaded = false;
+            this.winnerState = null;
+            this.winnerBusy = false;
+            this.resultsUiMode = 'all';
+            this.positionalDraft = {};
             this.bindEvents();
+            this.syncEvaluationChrome();
+            this.syncResultsChrome();
             this.openFromQuery();
         },
 
         bindEvents: function () {
             const self = this;
             const $root = $(this.root);
+            let legacyTab = '';
+            try {
+                legacyTab = String(new URLSearchParams(window.location.search || '').get('tab') || '');
+            } catch (e) {
+                legacyTab = '';
+            }
 
-            $root.on('ds-tabs:change', '.js-ds-tabs', function (event, tabId) {
-                self.onTabChange(String(tabId || ''));
+            this.tabs = new TabsManager({
+                container: $root.find('.js-tender-tabs'),
+                defaultTab: this.isAllowedTab(legacyTab) ? legacyTab : 'overview',
+                hashSync: true,
+                classes: {
+                    btn: '.tender-page__tabs .tab-btn',
+                    content: '.tab-content',
+                    active: 'selected'
+                },
+                contentScope: '.tabs-content',
+                onChange: function ({ tab }) {
+                    self.onTabChange(String(tab || 'overview'));
+                }
+            });
+
+            this.applicationTabs = new TabsManager({
+                container: $root.find('.js-tender-application-main'),
+                contentScope: '.tender-application__panels',
+                defaultTab: 'lots',
+                hashSync: false,
+                onChange: function ({ tab }) {
+                    self.detailSubtab = String(tab || 'lots');
+                }
             });
 
             $root.on('click', '.js-buyer-copy-address', function () {
@@ -4149,40 +4800,26 @@
                 self.copyToClipboard(text, button);
             });
 
-            $root.on('click', '.js-notice-copy-address', function (event) {
-                event.preventDefault();
-                const button = this;
-                const text = String(button.getAttribute('data-copy') || '').trim();
-                self.copyToClipboard(text, button);
-            });
 
-            $root.on('click', '.js-buyer-participant-card', function () {
+
+
+            $root.on('click', '.js-tender-participant-card', function () {
                 const id = parseInt(this.getAttribute('data-id') || '0', 10) || 0;
                 if (id > 0) {
                     self.openApplication(id);
                 }
             });
 
-            $root.on('click', '.js-buyer-participants-back', function () {
+            $root.on('click', '.js-tender-participant-chat', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            });
+
+            $root.on('click', '.js-tender-participants-back', function () {
                 self.showListView();
             });
 
-            $root.on('click', '.js-buyer-application-subtab', function () {
-                const id = String(this.getAttribute('data-subtab') || '');
-                if (!id) {
-                    return;
-                }
-                self.detailSubtab = id;
-                $root.find('.js-buyer-application-subtab').each(function () {
-                    const isActive = this.getAttribute('data-subtab') === id;
-                    $(this).toggleClass('is-active', isActive).attr('aria-selected', isActive ? 'true' : 'false');
-                });
-                $root.find('.js-buyer-application-panel').each(function () {
-                    $(this).prop('hidden', this.getAttribute('data-subtab-panel') !== id);
-                });
-            });
-
-            $root.on('click', '.js-buyer-gate-approve', function () {
+            $root.on('click', '.js-tender-application-decision-approve', function () {
                 const gate = String(this.getAttribute('data-gate') || '');
                 const code = String(this.getAttribute('data-code') || '');
                 if (gate && code) {
@@ -4190,34 +4827,162 @@
                 }
             });
 
-            $root.on('click', '.js-buyer-gate-reject-open', function () {
-                const $card = $(this).closest('.js-buyer-gate-card');
-                $card.find('.js-buyer-gate-reject-form').prop('hidden', false);
-                $card.find('.js-buyer-gate-reject-comment').trigger('focus');
+            $root.on('click', '.js-tender-application-decision-reject-open', function () {
+                const $card = $(this).closest('.js-tender-application-decision-card');
+                $card.find('.js-tender-application-decision-reject-form').prop('hidden', false);
+                $card.find('.js-tender-application-decision-reject-comment').trigger('focus');
             });
 
-            $root.on('click', '.js-buyer-gate-reject-cancel', function () {
-                const $form = $(this).closest('.js-buyer-gate-reject-form');
+            $root.on('click', '.js-tender-application-decision-reject-cancel', function () {
+                const $form = $(this).closest('.js-tender-application-decision-reject-form');
                 $form.prop('hidden', true);
-                $form.find('.js-buyer-gate-reject-comment').val('');
+                $form.find('.js-tender-application-decision-reject-comment').val('');
             });
 
-            $root.on('click', '.js-buyer-gate-reject-confirm', function () {
-                const $card = $(this).closest('.js-buyer-gate-card');
+            $root.on('click', '.js-tender-application-decision-reject-confirm', function () {
+                const $card = $(this).closest('.js-tender-application-decision-card');
                 const gate = String($card.attr('data-gate') || '');
                 const code = String(this.getAttribute('data-code') || '');
-                const comment = String($card.find('.js-buyer-gate-reject-comment').val() || '').trim();
+                const comment = String($card.find('.js-tender-application-decision-reject-comment').val() || '').trim();
                 if (!gate || !code) {
                     return;
                 }
                 if (!comment) {
-                    $card.find('.js-buyer-gate-decision-error')
+                    $card.find('.js-tender-application-decision-error')
                         .text('Укажите причину отклонения')
                         .prop('hidden', false);
                     return;
                 }
                 self.submitDecision(gate, code, comment);
             });
+
+            $root.on('click', '.js-buyer-start-review', function () {
+                self.startReview();
+            });
+
+            $root.off('.tenderEvaluation');
+            $root.on('click.tenderEvaluation', '.js-tender-evaluation-proposal', function () {
+                const id = parseInt(this.getAttribute('data-id') || '0', 10);
+                if (id > 0) self.openApplication(id);
+            });
+
+            $root.on('click.tenderEvaluation', '.js-tender-evaluation-template-settings', function () {
+                self.openEvaluationTemplateDialog(false);
+            });
+            $root.on('click.tenderEvaluation', '.js-tender-evaluation-template-delete', function () {
+                self.openEvaluationTemplateDialog(true);
+            });
+            $root.on('click.tenderEvaluation', '.js-tender-evaluation-template-retry', function () {
+                self.loadEvaluationTemplates();
+            });
+            $root.on('change.tenderEvaluation', '.js-tender-evaluation-template', function () {
+                self.changeEvaluationTemplate('select', {id: this.value});
+            });
+            $root.on('click.tenderEvaluation', '.js-tender-evaluation-move', function () {
+                const from = Number(this.getAttribute('data-id'));
+                const index = self.evaluationOrder.indexOf(from);
+                const target = self.evaluationOrder[index + Number(this.getAttribute('data-direction'))];
+                self.moveEvaluationSupplier(from, target);
+                const $buttons = $(self.root).find('.js-tender-evaluation-move[data-id="' + from + '"]');
+                const $sameDirection = $buttons.filter('[data-direction="' + this.getAttribute('data-direction') + '"]:enabled');
+                ($sameDirection.length ? $sameDirection : $buttons.filter(':enabled').first()).trigger('focus');
+            });
+            $root.on('dragstart.tenderEvaluation', '.js-tender-evaluation-drag', function (event) {
+                self.evaluationDragging = Number(this.getAttribute('data-id'));
+                event.originalEvent.dataTransfer.setData('text/plain', String(self.evaluationDragging));
+                event.originalEvent.dataTransfer.effectAllowed = 'move';
+            });
+            $root.on('dragover.tenderEvaluation', '.js-tender-evaluation-column', function (event) {
+                if (!self.evaluationDragging) return;
+                event.preventDefault();
+                event.originalEvent.dataTransfer.dropEffect = 'move';
+                $(self.root).find('.is-evaluation-drop-target').removeClass('is-evaluation-drop-target');
+                $(this).addClass('is-evaluation-drop-target');
+            });
+            $root.on('drop.tenderEvaluation', '.js-tender-evaluation-column', function (event) {
+                if (!self.evaluationDragging) return;
+                event.preventDefault();
+                self.moveEvaluationSupplier(self.evaluationDragging, Number(this.getAttribute('data-id')));
+                self.evaluationDragging = 0;
+                $(self.root).find('.is-evaluation-drop-target').removeClass('is-evaluation-drop-target');
+            });
+            $root.on('dragend.tenderEvaluation', '.js-tender-evaluation-drag', function () {
+                self.evaluationDragging = 0;
+                $(self.root).find('.is-evaluation-drop-target').removeClass('is-evaluation-drop-target');
+            });
+
+            $root.on('change.tenderEvaluation', '.js-tender-evaluation-sort', function () {
+                self.evaluationSort = this.value;
+                self.renderRanking(self.ranking);
+            });
+
+            $root.on('click.tenderEvaluation', '.js-tender-evaluation-toggle', function () {
+                const key = this.getAttribute('data-group');
+                self.evaluationCollapsed[key] = !self.evaluationCollapsed[key];
+                const open = !self.evaluationCollapsed[key];
+                $(this).attr('aria-expanded', String(open));
+                $(self.root).find('[data-evaluation-group="' + key + '"]').prop('hidden', !open);
+            });
+
+            $root.on('input', '.js-tender-participants-search', function () {
+                self.participantsSearch = String($(this).val() || '');
+                self.renderApplicationsList();
+            });
+
+            $root.on('click', '.js-buyer-results-mode-btn', function () {
+                const mode = String(this.getAttribute('data-mode') || 'all');
+                self.setResultsUiMode(mode);
+            });
+
+            $root.on('click', '.js-buyer-results-col-select', function (event) {
+                event.preventDefault();
+                const id = parseInt(this.getAttribute('data-id') || '0', 10) || 0;
+                if (id > 0) {
+                    self.selectWinnerAll(id);
+                }
+            });
+
+            $root.on('keydown', '.js-buyer-results-col-select', function (event) {
+                if (event.key !== 'Enter' && event.key !== ' ') {
+                    return;
+                }
+                event.preventDefault();
+                const id = parseInt(this.getAttribute('data-id') || '0', 10) || 0;
+                if (id > 0) {
+                    self.selectWinnerAll(id);
+                }
+            });
+
+            $root.on('click', '.js-buyer-results-cell', function (event) {
+                event.preventDefault();
+                self.pickPositionalCell(this);
+            });
+
+            $root.on('keydown', '.js-buyer-results-cell', function (event) {
+                if (event.key !== 'Enter' && event.key !== ' ') {
+                    return;
+                }
+                event.preventDefault();
+                self.pickPositionalCell(this);
+            });
+
+            $root.on('click', '.js-buyer-winner-complete', function () {
+                self.openCompleteDialog();
+            });
+
+            $root.on('click', '.js-buyer-winner-finish-wo', function () {
+                self.openFinishWithoutDialog();
+            });
+        },
+
+        isAllowedTab: function (tab) {
+            if (tab === 'overview' || tab === 'participants' || tab === 'evaluation') {
+                return true;
+            }
+            if (tab === 'results') {
+                return !!(this.reviewStarted || this.winnerSelectionCompleted);
+            }
+            return false;
         },
 
         copyToClipboard: function (text, button) {
@@ -4246,42 +5011,49 @@
         },
 
         openFromQuery: function () {
-            let tab = 'overview';
             let applicationId = 0;
             try {
                 const params = new URLSearchParams(window.location.search || '');
-                tab = String(params.get('tab') || 'overview');
                 applicationId = parseInt(params.get('application') || '0', 10) || 0;
             } catch (e) {
-                tab = 'overview';
+                applicationId = 0;
             }
-            if (tab === 'participants') {
+            if (applicationId > 0) {
                 this.showTab('participants');
-                if (applicationId > 0) {
-                    this.openApplication(applicationId);
-                }
+                this.openApplication(applicationId);
             }
         },
 
         showTab: function (tab) {
-            const allowed = tab === 'participants' ? 'participants' : 'overview';
-            const $tabs = $(this.root).find('.js-ds-tabs').first();
-            if (window.Pb2bCabinetTabs && typeof window.Pb2bCabinetTabs.activate === 'function') {
-                window.Pb2bCabinetTabs.activate($tabs, allowed);
+            const allowed = this.isAllowedTab(tab) ? tab : 'overview';
+            if (this.tabs) {
+                this.tabs.showTab(allowed);
             } else {
                 this.onTabChange(allowed);
             }
         },
 
         onTabChange: function (tab) {
-            const allowed = tab === 'participants' ? 'participants' : (tab === 'overview' ? 'overview' : tab);
-            if (allowed !== 'overview' && allowed !== 'participants') {
+            if (!this.isAllowedTab(tab)) {
                 return;
             }
-            this.activeTab = allowed;
-            this.replaceQuery({ tab: allowed === 'overview' ? null : allowed });
-            if (allowed === 'participants' && !this.listLoaded) {
+            this.activeTab = tab;
+            this.replaceQuery({
+                tab: null,
+                application: tab === 'participants' ? (this.currentApplicationId || null) : null
+            });
+            if (tab === 'participants' && !this.listLoaded) {
                 this.loadApplications();
+            }
+            if (tab === 'evaluation') {
+                if (!this.evaluationTemplates && !this.evaluationTemplateBusy) this.loadEvaluationTemplates();
+                this.syncEvaluationChrome();
+                if (this.reviewStarted && !this.rankingLoaded) {
+                    this.loadRanking();
+                }
+            }
+            if (tab === 'results') {
+                this.loadWinnerState();
             }
         },
 
@@ -4304,18 +5076,1437 @@
             }
         },
 
+        syncEvaluationChrome: function () {
+            const $root = $(this.root);
+            const started = !!this.reviewStarted;
+            const canStart = !!this.canStartReview && !started;
+            const $cta = $root.find('.js-buyer-start-review');
+            const $started = $root.find('.js-buyer-evaluation-started');
+            const $empty = $root.find('.js-buyer-evaluation-empty');
+            const $ranking = $root.find('.js-buyer-evaluation-ranking');
+            const $hint = $root.find('.js-buyer-evaluation-hint');
+
+            $cta.prop('hidden', started);
+            $cta.prop('disabled', !canStart);
+            if (canStart) {
+                $cta.removeAttr('title');
+            } else if (!started) {
+                $cta.attr('title', 'Доступно после окончания срока приёма заявок');
+            }
+            $started.prop('hidden', !started);
+            $empty.prop('hidden', started);
+            $ranking.prop('hidden', !(started && this.rankingLoaded && this.ranking));
+            if (started) {
+                $hint.text('Цены вскрыты. Клик по поставщику открывает карточку заявки на вкладке «Участники».');
+            } else {
+                $hint.text('После окончания приёма нажмите «Начать рассмотрение заявок», чтобы вскрыть цены и сравнить предложения.');
+            }
+        },
+
+        applyReviewState: function (review) {
+            if (!review || typeof review !== 'object') {
+                return;
+            }
+            if (review.can_start !== undefined) {
+                this.canStartReview = review.can_start ? 1 : 0;
+                this.root.setAttribute('data-can-start-review', String(this.canStartReview));
+            }
+            if (review.is_started !== undefined) {
+                this.reviewStarted = review.is_started ? 1 : 0;
+                this.root.setAttribute('data-review-started', String(this.reviewStarted));
+            }
+            this.syncEvaluationChrome();
+            this.syncResultsTabEnabled();
+            this.syncResultsChrome();
+        },
+
+        syncResultsTabEnabled: function () {
+            const enabled = !!(this.reviewStarted || this.winnerSelectionCompleted);
+            const $tab = $(this.root).find('.js-tender-tabs .tab-btn[data-tab="results"]');
+            const $link = $tab.find('[role="tab"], a');
+            if (!$tab.length) {
+                return;
+            }
+            $tab.toggleClass('is-disabled', !enabled);
+            if (enabled) {
+                $link.removeAttr('aria-disabled').removeAttr('title').removeAttr('tabindex');
+            } else {
+                $link.attr('aria-disabled', 'true')
+                    .attr('title', 'Доступно после начала рассмотрения заявок')
+                    .attr('tabindex', '-1');
+            }
+        },
+
+        canEditWinner: function () {
+            const state = this.winnerState;
+            if (!state) {
+                return !!this.canSelectWinner;
+            }
+            return !!(parseInt(state.can_edit, 10) || 0);
+        },
+
+        syncResultsChrome: function () {
+            const $root = $(this.root);
+            const started = !!(this.reviewStarted || this.winnerSelectionCompleted);
+            const loaded = !!this.winnerLoaded && !!this.winnerState;
+            const completed = !!this.winnerSelectionCompleted;
+            const state = this.winnerState || {};
+            const canEdit = this.canEditWinner() && !completed;
+            const canComplete = !!(parseInt(state.can_complete, 10) || 0);
+            const uiMode = this.resultsUiMode === 'positional' ? 'positional' : 'all';
+            const itemized = !!this.itemizedEnabled;
+
+            $root.find('.js-buyer-results-empty').prop('hidden', started);
+            $root.find('.js-buyer-results-body').prop('hidden', !(started && loaded));
+
+            $root.find('.js-buyer-winner-finish-wo').prop('hidden', !canEdit);
+            $root.find('.js-buyer-winner-complete')
+                .prop('hidden', !canEdit)
+                .prop('disabled', !(canEdit && canComplete));
+
+            $root.find('.js-buyer-results-method').prop('hidden', !(canEdit && itemized));
+            $root.find('.js-buyer-results-mode-btn').removeClass('is-active');
+            $root.find('.js-buyer-results-mode-btn[data-mode="' + uiMode + '"]').addClass('is-active');
+        },
+
+        ensureRankingLoaded: function () {
+            const self = this;
+            if (this.rankingLoaded && this.ranking) {
+                return Promise.resolve(this.ranking);
+            }
+            return new Promise(function (resolve, reject) {
+                $.fRequest({
+                    url: '/api/buyer/tender/' + self.tenderId + '/ranking/',
+                    method: 'GET',
+                    showMessages: false,
+                    onSuccess: function (reply) {
+                        self.rankingLoaded = true;
+                        self.ranking = reply;
+                        self.renderRanking(reply);
+                        self.syncEvaluationChrome();
+                        resolve(reply);
+                    },
+                    onError: function (reply) {
+                        reject(reply || {});
+                    }
+                }).catch(function (err) {
+                    reject(err || {});
+                });
+            });
+        },
+
+        loadWinnerState: function () {
+            const self = this;
+            const $root = $(this.root);
+            if (this.tenderId <= 0) {
+                return;
+            }
+            if (!this.reviewStarted && !this.winnerSelectionCompleted) {
+                this.syncResultsChrome();
+                return;
+            }
+
+            $root.find('.js-buyer-results-error').prop('hidden', true).text('');
+            $root.find('.js-buyer-results-loading').prop('hidden', false);
+            $root.find('.js-buyer-results-body').prop('hidden', true);
+            $root.find('.js-buyer-results-empty').prop('hidden', true);
+
+            this.ensureRankingLoaded()
+                .then(function () {
+                    return new Promise(function (resolve, reject) {
+                        $.fRequest({
+                            url: '/api/buyer/tender/' + self.tenderId + '/winner/',
+                            method: 'GET',
+                            showMessages: false,
+                            onSuccess: function (reply) {
+                                resolve(reply);
+                            },
+                            onError: function (reply) {
+                                reject(reply || {});
+                            }
+                        }).catch(function (err) {
+                            reject(err || {});
+                        });
+                    });
+                })
+                .then(function (state) {
+                    $root.find('.js-buyer-results-loading').prop('hidden', true);
+                    self.applyWinnerState(state);
+                    self.renderResults();
+                    self.syncResultsChrome();
+                })
+                .catch(function (reply) {
+                    $root.find('.js-buyer-results-loading').prop('hidden', true);
+                    $root.find('.js-buyer-results-error')
+                        .text((reply && reply.message) || 'Не удалось загрузить результаты')
+                        .prop('hidden', false);
+                });
+        },
+
+        applyWinnerState: function (state) {
+            if (!state || typeof state !== 'object') {
+                return;
+            }
+            const self = this;
+            this.winnerLoaded = true;
+            this.winnerState = state;
+
+            if (state.itemized_enabled !== undefined) {
+                this.itemizedEnabled = parseInt(state.itemized_enabled, 10) || 0;
+                this.root.setAttribute('data-itemized-enabled', String(this.itemizedEnabled));
+            }
+            if (state.winner_selection_completed !== undefined) {
+                this.winnerSelectionCompleted = parseInt(state.winner_selection_completed, 10) || 0;
+                this.root.setAttribute(
+                    'data-winner-selection-completed',
+                    String(this.winnerSelectionCompleted)
+                );
+            }
+
+            const canEdit = !!(parseInt(state.can_edit, 10) || 0);
+            this.canSelectWinner = canEdit ? 1 : 0;
+            this.root.setAttribute('data-can-select-winner', String(this.canSelectWinner));
+
+            const mode = String(state.winner_selection_mode || 'none');
+            if (mode === 'positional') {
+                this.resultsUiMode = 'positional';
+            } else if (mode === 'all') {
+                this.resultsUiMode = 'all';
+            } else if (this.resultsUiMode !== 'positional' && this.resultsUiMode !== 'all') {
+                this.resultsUiMode = 'all';
+            }
+
+            this.positionalDraft = {};
+            if (mode === 'positional' && state.awards && Array.isArray(state.awards.items)) {
+                state.awards.items.forEach(function (row) {
+                    if (!row) {
+                        return;
+                    }
+                    const tid = parseInt(row.tender_item_id, 10) || 0;
+                    const aid = parseInt(row.application_id, 10) || 0;
+                    if (tid > 0 && aid > 0) {
+                        self.positionalDraft[tid] = aid;
+                    }
+                });
+            }
+
+            this.syncResultsTabEnabled();
+        },
+
+        applyWinnerReply: function (reply) {
+            const $root = $(this.root);
+            let state = reply;
+            if (reply && reply.winner && typeof reply.winner === 'object') {
+                state = reply.winner;
+            }
+            this.applyWinnerState(state);
+
+            if (reply && reply.tender && reply.tender.status && reply.tender.status.name) {
+                $root.find('.js-buyer-tender-status').first()
+                    .attr('class', 'badge badge--shared badge--medium js-buyer-tender-status ' + (reply.tender.status.tone || 'info'))
+                    .text(String(reply.tender.status.name));
+            }
+
+            this.renderResults();
+            this.syncResultsChrome();
+        },
+
+        setResultsUiMode: function (mode) {
+            const self = this;
+            if (mode !== 'all' && mode !== 'positional') {
+                return;
+            }
+            if (mode === 'positional' && !this.itemizedEnabled) {
+                return;
+            }
+            if (!this.canEditWinner()) {
+                return;
+            }
+
+            const serverMode = String(
+                (this.winnerState && this.winnerState.winner_selection_mode) || 'none'
+            );
+            if (serverMode !== 'none' && serverMode !== mode) {
+                this.clearWinnerDraft(function () {
+                    self.resultsUiMode = mode;
+                    self.renderResults();
+                    self.syncResultsChrome();
+                });
+                return;
+            }
+
+            this.resultsUiMode = mode;
+            this.renderResults();
+            this.syncResultsChrome();
+        },
+
+        winnerSummaryForDialog: function () {
+            const self = this;
+            const state = this.winnerState || {};
+            const rows = this.mergeResultsRows();
+            const awards = state.awards || {};
+            const mode = String(state.winner_selection_mode || 'none');
+            const currency = (this.ranking && this.ranking.currency)
+                ? String(this.ranking.currency)
+                : 'RUB';
+            const supplierName = function (applicationId) {
+                let name = 'Заявка #' + applicationId;
+                rows.forEach(function (row) {
+                    if (parseInt(row.application_id, 10) === applicationId) {
+                        const supplier = row.supplier || {};
+                        name = String(supplier.fullname || supplier.name || name);
+                    }
+                });
+                return name;
+            };
+
+            const info = {
+                mode: mode,
+                method: mode === 'positional' ? 'Попозиционный выбор' : 'Единый поставщик',
+                proposals: rows.length,
+                winnerName: '',
+                winnerTotal: '',
+                lines: []
+            };
+
+            if (mode === 'positional') {
+                const positions = this.collectNoticePositions();
+                const byTid = {};
+                (Array.isArray(awards.items) ? awards.items : []).forEach(function (item) {
+                    const tid = parseInt(item && item.tender_item_id, 10) || 0;
+                    const aid = parseInt(item && item.application_id, 10) || 0;
+                    if (tid > 0 && aid > 0) {
+                        byTid[tid] = aid;
+                    }
+                });
+                positions.forEach(function (pos) {
+                    const aid = byTid[pos.tender_item_id] || 0;
+                    if (aid > 0) {
+                        info.lines.push({
+                            name: pos.name,
+                            value: supplierName(aid)
+                        });
+                    }
+                });
+                return info;
+            }
+
+            const winnerId = parseInt(awards.application_id, 10) || 0;
+            if (winnerId > 0) {
+                info.winnerName = supplierName(winnerId);
+                rows.forEach(function (row) {
+                    if (parseInt(row.application_id, 10) === winnerId && row.total !== null && row.total !== undefined) {
+                        info.winnerTotal = self.formatMoney(row.total, currency);
+                    }
+                });
+            }
+            return info;
+        },
+
+        openCompleteDialog: function () {
+            const self = this;
+            const state = this.winnerState || {};
+            if (!this.canEditWinner() || !(parseInt(state.can_complete, 10) || 0)) {
+                return;
+            }
+            if (!$.DialogManager) {
+                this.completeWinnerSelection();
+                return;
+            }
+
+            const info = this.winnerSummaryForDialog();
+            let rowsHtml = '<div class="buyer-winner-dialog__row">'
+                + '<span class="buyer-winner-dialog__label">Метод выбора</span>'
+                + '<span class="buyer-winner-dialog__value">' + this.escapeHtml(info.method) + '</span>'
+                + '</div>';
+            if (info.winnerName) {
+                rowsHtml += '<div class="buyer-winner-dialog__row">'
+                    + '<span class="buyer-winner-dialog__label">Победитель</span>'
+                    + '<span class="buyer-winner-dialog__value">' + this.escapeHtml(info.winnerName)
+                    + (info.winnerTotal ? ' — ' + this.escapeHtml(info.winnerTotal) : '')
+                    + '</span></div>';
+            }
+            if (info.lines.length) {
+                let itemsHtml = '';
+                info.lines.forEach(function (line) {
+                    itemsHtml += '<li class="buyer-winner-dialog__item">'
+                        + '<span class="buyer-winner-dialog__item-name">' + self.escapeHtml(line.name) + '</span>'
+                        + '<span class="buyer-winner-dialog__item-value">' + self.escapeHtml(line.value) + '</span>'
+                        + '</li>';
+                });
+                rowsHtml += '<div class="buyer-winner-dialog__row buyer-winner-dialog__row--stacked">'
+                    + '<span class="buyer-winner-dialog__label">Победители по позициям</span>'
+                    + '<ul class="buyer-winner-dialog__items">' + itemsHtml + '</ul>'
+                    + '</div>';
+            }
+            rowsHtml += '<div class="buyer-winner-dialog__row">'
+                + '<span class="buyer-winner-dialog__label">Рассмотрено предложений</span>'
+                + '<span class="buyer-winner-dialog__value">' + String(info.proposals) + '</span>'
+                + '</div>';
+
+            const dialog = new $.DialogManager({
+                title: 'Завершить выбор победителя?',
+                width: '560px',
+                showConfirmButton: false,
+                showCancelButton: false,
+                content: '<div class="buyer-winner-dialog">'
+                    + '<p class="buyer-winner-dialog__text">'
+                    + 'После завершения итоги станут доступны поставщикам, изменить выбор будет нельзя.'
+                    + '</p>'
+                    + '<div class="buyer-winner-dialog__summary">' + rowsHtml + '</div>'
+                    + '</div>'
+                    + '<div class="buyer-winner-dialog__footer">'
+                    + '<button type="button" class="button secondary large modal-cancel">Отмена</button>'
+                    + '<button type="button" class="button primary large js-buyer-winner-complete-confirm">Подтвердить</button>'
+                    + '</div>',
+                onOpen: function ($container) {
+                    $container.find('.js-buyer-winner-complete-confirm').on('click', function () {
+                        dialog.close();
+                        self.completeWinnerSelection();
+                    });
+                }
+            });
+        },
+
+        openFinishWithoutDialog: function () {
+            const self = this;
+            if (!this.canEditWinner()) {
+                return;
+            }
+            if (!$.DialogManager) {
+                return;
+            }
+
+            const dialog = new $.DialogManager({
+                title: 'Завершить без победителя?',
+                width: '560px',
+                showConfirmButton: false,
+                showCancelButton: false,
+                content: '<div class="buyer-winner-dialog">'
+                    + '<p class="buyer-winner-dialog__warning">'
+                    + 'Процедура будет закрыта без победителя. Действие необратимо,'
+                    + ' поставщики увидят, что закупка завершена без выбора.'
+                    + '</p>'
+                    + '<label class="buyer-winner-dialog__label" for="buyer-finish-wo-reason">'
+                    + 'Причина завершения без победителя'
+                    + '</label>'
+                    + '<textarea id="buyer-finish-wo-reason" rows="4"'
+                    + ' class="input buyer-winner-dialog__input js-buyer-finish-wo-reason"'
+                    + ' placeholder="Например: все предложения превысили начальную цену"></textarea>'
+                    + '<p class="buyer-winner-dialog__error js-buyer-finish-wo-error" hidden></p>'
+                    + '</div>'
+                    + '<div class="buyer-winner-dialog__footer">'
+                    + '<button type="button" class="button secondary large modal-cancel">Отмена</button>'
+                    + '<button type="button" class="button destruct large js-buyer-finish-wo-confirm">Завершить</button>'
+                    + '</div>',
+                onOpen: function ($container) {
+                    $container.find('.js-buyer-finish-wo-reason').trigger('focus');
+                    $container.find('.js-buyer-finish-wo-confirm').on('click', function () {
+                        const reason = String($container.find('.js-buyer-finish-wo-reason').val() || '').trim();
+                        if (!reason) {
+                            $container.find('.js-buyer-finish-wo-error')
+                                .text('Укажите причину завершения без победителя')
+                                .prop('hidden', false);
+                            return;
+                        }
+                        dialog.close();
+                        self.finishWithoutWinner(reason);
+                    });
+                }
+            });
+        },
+
+        winnerRequest: function (path, data, okMessage) {
+            const self = this;
+            const $root = $(this.root);
+            if (this.tenderId <= 0 || this.winnerBusy) {
+                return;
+            }
+            this.winnerBusy = true;
+            $root.find('.js-buyer-results-error').prop('hidden', true).text('');
+
+            $.fRequest({
+                url: '/api/buyer/tender/' + this.tenderId + '/winner/' + path,
+                method: 'POST',
+                showMessages: true,
+                data: data || {},
+                onSuccess: function (reply) {
+                    self.winnerBusy = false;
+                    self.applyWinnerReply(reply);
+                },
+                onError: function (reply) {
+                    self.winnerBusy = false;
+                    $root.find('.js-buyer-results-error')
+                        .text((reply && reply.message) || okMessage || 'Не удалось выполнить действие')
+                        .prop('hidden', false);
+                    self.syncResultsChrome();
+                }
+            }).catch(function () {
+                self.winnerBusy = false;
+                $root.find('.js-buyer-results-error')
+                    .text(okMessage || 'Не удалось выполнить действие')
+                    .prop('hidden', false);
+                self.syncResultsChrome();
+            });
+        },
+
+        selectWinnerAll: function (applicationId) {
+            const id = parseInt(applicationId, 10) || 0;
+            if (id <= 0 || !this.canEditWinner()) {
+                return;
+            }
+            this.winnerRequest('select/', {
+                mode: 'all',
+                application_id: id
+            }, 'Не удалось выбрать победителя');
+        },
+
+        pickPositionalCell: function (cell) {
+            if (!cell || !this.canEditWinner() || this.resultsUiMode !== 'positional') {
+                return;
+            }
+            const tid = parseInt(cell.getAttribute('data-tender-item-id') || '0', 10) || 0;
+            const aid = parseInt(cell.getAttribute('data-id') || '0', 10) || 0;
+            if (tid <= 0 || aid <= 0) {
+                return;
+            }
+            if ((parseInt(this.positionalDraft[tid], 10) || 0) === aid) {
+                delete this.positionalDraft[tid];
+            } else {
+                this.positionalDraft[tid] = aid;
+            }
+            this.renderResults();
+            this.syncResultsChrome();
+            this.applyPositionalSelection();
+        },
+
+        applyPositionalSelection: function () {
+            if (!this.canEditWinner() || this.resultsUiMode !== 'positional') {
+                return;
+            }
+            const items = [];
+            const draft = this.positionalDraft || {};
+            Object.keys(draft).forEach(function (tidKey) {
+                const tid = parseInt(tidKey, 10) || 0;
+                const aid = parseInt(draft[tidKey], 10) || 0;
+                if (tid > 0 && aid > 0) {
+                    items.push({
+                        tender_item_id: tid,
+                        application_id: aid
+                    });
+                }
+            });
+            this.winnerRequest('select/', {
+                mode: 'positional',
+                items: items
+            }, 'Не удалось сохранить попозиционный выбор');
+        },
+
+        clearWinnerDraft: function (onDone) {
+            const self = this;
+            const $root = $(this.root);
+            if (this.tenderId <= 0 || this.winnerBusy || !this.canEditWinner()) {
+                return;
+            }
+            this.winnerBusy = true;
+            $root.find('.js-buyer-results-error').prop('hidden', true).text('');
+
+            $.fRequest({
+                url: '/api/buyer/tender/' + this.tenderId + '/winner/clear/',
+                method: 'POST',
+                showMessages: true,
+                data: {},
+                onSuccess: function (reply) {
+                    self.winnerBusy = false;
+                    self.applyWinnerReply(reply);
+                    if (typeof onDone === 'function') {
+                        onDone();
+                    }
+                },
+                onError: function (reply) {
+                    self.winnerBusy = false;
+                    $root.find('.js-buyer-results-error')
+                        .text((reply && reply.message) || 'Не удалось сбросить выбор')
+                        .prop('hidden', false);
+                    self.syncResultsChrome();
+                }
+            }).catch(function () {
+                self.winnerBusy = false;
+                $root.find('.js-buyer-results-error')
+                    .text('Не удалось сбросить выбор')
+                    .prop('hidden', false);
+                self.syncResultsChrome();
+            });
+        },
+
+        completeWinnerSelection: function () {
+            if (!this.canEditWinner()) {
+                return;
+            }
+            const state = this.winnerState || {};
+            if (!(parseInt(state.can_complete, 10) || 0)) {
+                return;
+            }
+            this.winnerRequest('complete/', {}, 'Не удалось завершить выбор победителя');
+        },
+
+        finishWithoutWinner: function (reason) {
+            if (!this.canEditWinner()) {
+                return;
+            }
+            const text = String(reason || '').trim();
+            if (!text) {
+                return;
+            }
+            this.winnerRequest('finish-without/', { reason: text }, 'Не удалось завершить без победителя');
+        },
+
+        mergeResultsRows: function () {
+            const rankingApps = (this.ranking && Array.isArray(this.ranking.applications))
+                ? this.ranking.applications
+                : [];
+            const eligible = (this.winnerState && Array.isArray(this.winnerState.eligible))
+                ? this.winnerState.eligible
+                : [];
+            const byId = {};
+
+            rankingApps.forEach(function (row) {
+                if (!row) {
+                    return;
+                }
+                const id = parseInt(row.application_id, 10) || 0;
+                if (id > 0) {
+                    byId[id] = Object.assign({}, row);
+                }
+            });
+
+            eligible.forEach(function (row) {
+                if (!row) {
+                    return;
+                }
+                const id = parseInt(row.application_id, 10) || 0;
+                if (id <= 0) {
+                    return;
+                }
+                if (!byId[id]) {
+                    byId[id] = {
+                        application_id: id,
+                        supplier: row.supplier || {},
+                        admission_status: row.admission_status,
+                        total: null,
+                        rank: null,
+                        items: []
+                    };
+                }
+                byId[id].is_winner = parseInt(row.is_winner, 10) || 0;
+                if (row.supplier) {
+                    byId[id].supplier = row.supplier;
+                }
+                if (row.admission_status) {
+                    byId[id].admission_status = row.admission_status;
+                }
+            });
+
+            const ordered = [];
+            const seen = {};
+            rankingApps.forEach(function (row) {
+                const id = parseInt(row && row.application_id, 10) || 0;
+                if (id > 0 && byId[id] && !seen[id]) {
+                    ordered.push(byId[id]);
+                    seen[id] = true;
+                }
+            });
+            eligible.forEach(function (row) {
+                const id = parseInt(row && row.application_id, 10) || 0;
+                if (id > 0 && byId[id] && !seen[id]) {
+                    ordered.push(byId[id]);
+                    seen[id] = true;
+                }
+            });
+            return ordered;
+        },
+
+        collectNoticePositions: function () {
+            const byTid = {};
+            const apps = (this.ranking && Array.isArray(this.ranking.applications))
+                ? this.ranking.applications
+                : [];
+            apps.forEach(function (row) {
+                if (!row || !Array.isArray(row.items)) {
+                    return;
+                }
+                row.items.forEach(function (item) {
+                    if (!item) {
+                        return;
+                    }
+                    const tid = parseInt(item.tender_item_id, 10) || 0;
+                    if (tid <= 0 || byTid[tid]) {
+                        return;
+                    }
+                    byTid[tid] = {
+                        tender_item_id: tid,
+                        name: String(item.name || 'Позиция'),
+                        sort: parseInt(item.sort, 10) || 0
+                    };
+                });
+            });
+            const awards = this.winnerState && this.winnerState.awards;
+            if (awards && Array.isArray(awards.items)) {
+                awards.items.forEach(function (item) {
+                    if (!item) {
+                        return;
+                    }
+                    const tid = parseInt(item.tender_item_id, 10) || 0;
+                    if (tid <= 0) {
+                        return;
+                    }
+                    if (!byTid[tid]) {
+                        byTid[tid] = {
+                            tender_item_id: tid,
+                            name: String(item.name || 'Позиция'),
+                            sort: tid
+                        };
+                    }
+                });
+            }
+            return Object.keys(byTid).map(function (k) {
+                return byTid[k];
+            }).sort(function (a, b) {
+                return (a.sort - b.sort) || (a.tender_item_id - b.tender_item_id);
+            });
+        },
+
+        renderResults: function () {
+            const self = this;
+            const $root = $(this.root);
+            const state = this.winnerState;
+            if (!state) {
+                return;
+            }
+
+            const rows = this.mergeResultsRows();
+            const currency = (this.ranking && this.ranking.currency)
+                ? String(this.ranking.currency)
+                : 'RUB';
+            const itemized = !!(this.ranking && parseInt(this.ranking.itemized_enabled, 10))
+                || !!this.itemizedEnabled;
+            const awards = state.awards || {};
+            let winnerAppId = parseInt(awards.application_id, 10) || 0;
+            if (!winnerAppId) {
+                rows.forEach(function (row) {
+                    if (parseInt(row && row.is_winner, 10)) {
+                        winnerAppId = parseInt(row.application_id, 10) || winnerAppId;
+                    }
+                });
+            }
+            const mode = String(state.winner_selection_mode || 'none');
+            const completed = !!(parseInt(state.winner_selection_completed, 10) || 0);
+            const finishedWo = !!(parseInt(state.finished_without_winner, 10) || 0);
+            const canEdit = this.canEditWinner() && !completed;
+            const uiMode = this.resultsUiMode === 'positional' ? 'positional' : 'all';
+            const positions = this.collectNoticePositions();
+            const assignedCount = mode === 'all' && winnerAppId > 0
+                ? positions.length
+                : (Array.isArray(awards.items) ? awards.items.length : 0);
+            // В UI positional считаем черновик селектов; иначе — awards с сервера.
+            let selectedPositions = assignedCount;
+            if (uiMode === 'positional') {
+                selectedPositions = 0;
+                Object.keys(this.positionalDraft || {}).forEach(function (tidKey) {
+                    if ((parseInt(self.positionalDraft[tidKey], 10) || 0) > 0) {
+                        selectedPositions += 1;
+                    }
+                });
+                if (!canEdit && Array.isArray(awards.items)) {
+                    selectedPositions = awards.items.length;
+                }
+            }
+            const totalPositions = positions.length;
+            const remainingPositions = Math.max(0, totalPositions - selectedPositions);
+
+            $root.find('.js-buyer-results-proposals').text(String(rows.length));
+            const showPosStats = uiMode === 'positional' && totalPositions > 0;
+            $root.find('.js-buyer-results-stat-selected').prop('hidden', !showPosStats);
+            $root.find('.js-buyer-results-stat-remaining').prop('hidden', !showPosStats);
+            if (showPosStats) {
+                $root.find('.js-buyer-results-selected')
+                    .text(String(selectedPositions) + ' из ' + String(totalPositions));
+                $root.find('.js-buyer-results-remaining').text(String(remainingPositions));
+            }
+
+            const $unassigned = $root.find('.js-buyer-results-unassigned');
+            const pending = [];
+            if (showPosStats && canEdit) {
+                positions.forEach(function (pos, index) {
+                    if (!(parseInt(self.positionalDraft[pos.tender_item_id], 10) || 0)) {
+                        pending.push(index + 1);
+                    }
+                });
+            }
+            if (pending.length) {
+                $unassigned
+                    .text('Требуют решения: поз. ' + pending.join(', '))
+                    .prop('hidden', false);
+            } else {
+                $unassigned.prop('hidden', true).text('');
+            }
+
+            const $badge = $root.find('.js-buyer-results-badge');
+            const $winner = $root.find('.js-buyer-results-winner');
+            const $finished = $root.find('.js-buyer-results-finished-wo');
+            $badge.prop('hidden', true).text('').removeClass('is-draft is-done');
+            $winner.prop('hidden', true);
+            $finished.prop('hidden', true);
+
+            let winnerName = '';
+            let winnerTotal = '';
+            if (winnerAppId > 0) {
+                winnerName = 'Заявка #' + winnerAppId;
+                rows.forEach(function (row) {
+                    if (parseInt(row.application_id, 10) !== winnerAppId) {
+                        return;
+                    }
+                    const supplier = row.supplier || {};
+                    winnerName = String(supplier.fullname || supplier.name || winnerName);
+                    if (row.total !== null && row.total !== undefined) {
+                        winnerTotal = self.formatMoney(row.total, currency);
+                    }
+                });
+            }
+            const $winnerTotal = $root.find('.js-buyer-results-winner-total');
+            if (winnerTotal) {
+                $winnerTotal.text('Итого ' + winnerTotal).prop('hidden', false);
+            } else {
+                $winnerTotal.prop('hidden', true).text('');
+            }
+
+            if (finishedWo) {
+                $badge.addClass('is-done').text('Без победителя').prop('hidden', false);
+                $finished.prop('hidden', false);
+                $root.find('.js-buyer-results-finished-reason')
+                    .text(String(state.finished_without_winner_reason || '—'));
+            } else if (completed) {
+                $badge.addClass('is-done').text('Выбор победителей завершён').prop('hidden', false);
+                if (mode === 'all' && winnerName) {
+                    $winner.prop('hidden', false);
+                    $root.find('.js-buyer-results-winner-name').text(winnerName);
+                }
+            } else if (mode === 'all' && winnerAppId > 0) {
+                $badge.addClass('is-done').text('Все позиции распределены').prop('hidden', false);
+                $winner.prop('hidden', false);
+                $root.find('.js-buyer-results-winner-name').text(winnerName);
+            } else if (mode === 'positional' || uiMode === 'positional') {
+                if (selectedPositions <= 0) {
+                    $badge.addClass('is-draft').text('Победители ещё не выбраны').prop('hidden', false);
+                } else if (totalPositions > 0 && selectedPositions < totalPositions) {
+                    $badge.addClass('is-draft').text('Выбор победителей продолжается').prop('hidden', false);
+                } else {
+                    $badge.addClass('is-done').text('Все позиции распределены').prop('hidden', false);
+                }
+            } else {
+                $badge.addClass('is-draft').text('Победители ещё не выбраны').prop('hidden', false);
+            }
+
+            this.renderResultsTable({
+                rows: rows,
+                positions: positions,
+                currency: currency,
+                itemized: itemized,
+                winnerAppId: winnerAppId,
+                uiMode: uiMode,
+                canEdit: canEdit
+            });
+        },
+
+        renderResultsTable: function (options) {
+            const self = this;
+            const $wrap = $(this.root).find('.js-buyer-results-table-wrap');
+            if (!$wrap.length) {
+                return;
+            }
+            const rows = options.rows || [];
+            const positions = options.positions || [];
+            const currency = options.currency || 'RUB';
+            const itemized = !!options.itemized;
+            const uiMode = options.uiMode === 'positional' ? 'positional' : 'all';
+            const canEdit = !!options.canEdit;
+            const winnerAppId = parseInt(options.winnerAppId, 10) || 0;
+
+            $wrap.empty();
+            if (!rows.length) {
+                $wrap.html(
+                    '<p class="buyer-results-table__empty">Нет допущенных предложений для выбора.</p>'
+                );
+                return;
+            }
+
+            // Строки таблицы — позиции извещения; для непозиционной закупки одна строка «Предложение».
+            const bodyRows = (itemized && positions.length)
+                ? positions
+                : [{ tender_item_id: 0, name: 'Предложение целиком', sort: 0 }];
+
+            const priceByApp = {};
+            rows.forEach(function (row) {
+                const aid = parseInt(row.application_id, 10) || 0;
+                const map = {};
+                if (Array.isArray(row.items)) {
+                    row.items.forEach(function (item) {
+                        const tid = parseInt(item && item.tender_item_id, 10) || 0;
+                        if (tid > 0) {
+                            map[tid] = item;
+                        }
+                    });
+                }
+                priceByApp[aid] = map;
+            });
+
+            let head = '<tr><th scope="col" class="buyer-results-table__corner">Позиция</th>';
+            rows.forEach(function (row) {
+                const aid = parseInt(row.application_id, 10) || 0;
+                const supplier = row.supplier || {};
+                const name = String(supplier.fullname || supplier.name || ('Заявка #' + aid));
+                const isWinner = winnerAppId > 0 && aid === winnerAppId;
+                const clickable = canEdit && uiMode === 'all';
+                const total = (row.total !== null && row.total !== undefined)
+                    ? self.formatMoney(row.total, currency)
+                    : '—';
+
+                head += '<th scope="col" class="buyer-results-table__supplier'
+                    + (isWinner ? ' is-winner' : '') + '">'
+                    + '<span class="buyer-results-table__supplier-name">' + self.escapeHtml(name) + '</span>'
+                    + '<span class="buyer-results-table__supplier-total">' + self.escapeHtml(total) + '</span>';
+                if (isWinner) {
+                    head += '<span class="badge badge--shared badge--small success">Победитель</span>';
+                } else if (clickable) {
+                    head += '<button type="button" class="button secondary small js-buyer-results-col-select"'
+                        + ' data-id="' + aid + '">Выбрать по всем позициям</button>';
+                }
+                head += '</th>';
+            });
+            head += '</tr>';
+
+            let body = '';
+            bodyRows.forEach(function (pos, index) {
+                const tid = parseInt(pos.tender_item_id, 10) || 0;
+                const picked = tid > 0 ? (parseInt(self.positionalDraft[tid], 10) || 0) : 0;
+                const label = (itemized && positions.length)
+                    ? (String(index + 1) + '. ' + pos.name)
+                    : pos.name;
+
+                body += '<tr><th scope="row" class="buyer-results-table__position">'
+                    + self.escapeHtml(label) + '</th>';
+
+                rows.forEach(function (row) {
+                    const aid = parseInt(row.application_id, 10) || 0;
+                    const item = tid > 0 ? (priceByApp[aid] || {})[tid] : null;
+                    const hasPrice = tid > 0
+                        ? !!item
+                        : (row.total !== null && row.total !== undefined);
+                    const isColWinner = winnerAppId > 0 && aid === winnerAppId;
+                    const isPicked = uiMode === 'positional' && tid > 0 && picked === aid;
+                    const selectable = canEdit && uiMode === 'positional' && tid > 0 && hasPrice;
+
+                    let priceHtml = '<span class="buyer-results-table__empty-cell">—</span>';
+                    if (hasPrice) {
+                        const perUnit = item
+                            ? self.formatMoney(item.price_per_unit, currency)
+                            : self.formatMoney(row.total, currency);
+                        const lineTotal = item
+                            ? self.formatMoney(item.line_total, currency)
+                            : '';
+                        priceHtml = '<span class="buyer-results-table__price">' + self.escapeHtml(perUnit) + '</span>';
+                        if (lineTotal) {
+                            priceHtml += '<span class="buyer-results-table__line-total">'
+                                + self.escapeHtml(lineTotal) + '</span>';
+                        }
+                    }
+
+                    const classes = ['buyer-results-table__cell'];
+                    if (isColWinner && uiMode === 'all') {
+                        classes.push('is-winner');
+                    }
+                    if (isPicked) {
+                        classes.push('is-selected');
+                    }
+                    if (selectable) {
+                        classes.push('is-selectable', 'js-buyer-results-cell');
+                    }
+
+                    body += '<td class="' + classes.join(' ') + '"'
+                        + (selectable
+                            ? ' role="button" tabindex="0" data-id="' + aid + '"'
+                                + ' data-tender-item-id="' + tid + '"'
+                                + ' aria-pressed="' + (isPicked ? 'true' : 'false') + '"'
+                            : '')
+                        + '>' + priceHtml + '</td>';
+                });
+
+                body += '</tr>';
+            });
+
+            $wrap.html(
+                '<div class="buyer-results-table__scroll">'
+                + '<table class="buyer-results-table__table">'
+                + '<thead>' + head + '</thead>'
+                + '<tbody>' + body + '</tbody>'
+                + '</table></div>'
+            );
+        },
+
+        startReview: function () {
+            const self = this;
+            const $root = $(this.root);
+            if (this.tenderId <= 0 || this.busy || this.reviewStarted || !this.canStartReview) {
+                return;
+            }
+
+            this.busy = true;
+            $root.find('.js-buyer-evaluation-error').prop('hidden', true).text('');
+            $root.find('.js-buyer-start-review').prop('disabled', true);
+
+            $.fRequest({
+                url: '/api/buyer/tender/' + this.tenderId + '/start-review/',
+                method: 'POST',
+                showMessages: true,
+                data: {},
+                onSuccess: function (reply) {
+                    self.busy = false;
+                    self.applyReviewState(reply.tender && reply.tender.review);
+                    if (reply.tender && reply.tender.status && reply.tender.status.name) {
+                        $root.find('.js-buyer-tender-status').first()
+                            .attr('class', 'badge badge--shared badge--medium js-buyer-tender-status ' + (reply.tender.status.tone || 'info'))
+                    .text(String(reply.tender.status.name));
+                    }
+                    if (reply.ranking) {
+                        self.rankingLoaded = true;
+                        self.ranking = reply.ranking;
+                        self.renderRanking(reply.ranking);
+                        self.syncEvaluationChrome();
+                    } else {
+                        self.loadRanking();
+                    }
+                },
+                onError: function (reply) {
+                    self.busy = false;
+                    self.syncEvaluationChrome();
+                    $root.find('.js-buyer-evaluation-error')
+                        .text((reply && reply.message) || 'Не удалось начать рассмотрение')
+                        .prop('hidden', false);
+                }
+            }).catch(function () {
+                self.busy = false;
+                self.syncEvaluationChrome();
+                $root.find('.js-buyer-evaluation-error')
+                    .text('Не удалось начать рассмотрение')
+                    .prop('hidden', false);
+            });
+        },
+
+        loadRanking: function () {
+            const self = this;
+            const $root = $(this.root);
+            if (this.tenderId <= 0) {
+                return;
+            }
+
+            $root.find('.js-buyer-evaluation-error').prop('hidden', true).text('');
+            $root.find('.js-buyer-evaluation-loading').prop('hidden', false);
+            $root.find('.js-buyer-evaluation-ranking').prop('hidden', true);
+
+            $.fRequest({
+                url: '/api/buyer/tender/' + this.tenderId + '/ranking/',
+                method: 'GET',
+                showMessages: false,
+                onSuccess: function (reply) {
+                    self.rankingLoaded = true;
+                    self.ranking = reply;
+                    $root.find('.js-buyer-evaluation-loading').prop('hidden', true);
+                    self.renderRanking(reply);
+                    self.syncEvaluationChrome();
+                },
+                onError: function (reply) {
+                    $root.find('.js-buyer-evaluation-loading').prop('hidden', true);
+                    $root.find('.js-buyer-evaluation-error')
+                        .text((reply && reply.message) || 'Не удалось загрузить сравнение')
+                        .prop('hidden', false);
+                }
+            }).catch(function () {
+                $root.find('.js-buyer-evaluation-loading').prop('hidden', true);
+                $root.find('.js-buyer-evaluation-error')
+                    .text('Не удалось загрузить сравнение')
+                    .prop('hidden', false);
+            });
+        },
+
+        formatMoney: function (value, currency) {
+            const amount = Number(value);
+            const cur = String(currency || 'RUB');
+            const suffix = cur === 'RUB' || cur === '₽' ? ' ₽' : (' ' + cur);
+            if (!isFinite(amount)) {
+                return '—';
+            }
+            return amount.toLocaleString('ru-RU', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2
+            }) + suffix;
+        },
+
+        loadEvaluationTemplates: function () {
+            const self = this;
+            if (this.evaluationTemplateBusy) return;
+            this.evaluationTemplateBusy = true;
+            this.renderEvaluationTemplateControls();
+            $(this.root).find('.js-tender-evaluation-template-error').prop('hidden', true);
+            $.fRequest({
+                url: '/api/buyer/evaluation-template/list/',
+                method: 'GET',
+                showMessages: false,
+                onSuccess: function (state) {
+                    self.evaluationTemplateBusy = false;
+                    self.evaluationTemplates = state;
+                    self.renderEvaluationTemplateControls();
+                },
+                onError: function () {
+                    self.evaluationTemplateBusy = false;
+                    self.renderEvaluationTemplateControls();
+                    $(self.root).find('.js-tender-evaluation-template-error').prop('hidden', false);
+                }
+            }).catch(function () {
+                self.evaluationTemplateBusy = false;
+                self.renderEvaluationTemplateControls();
+                $(self.root).find('.js-tender-evaluation-template-error').prop('hidden', false);
+            });
+        },
+
+        renderEvaluationTemplateControls: function () {
+            const $root = $(this.root);
+            const state = this.evaluationTemplates;
+            const disabled = this.evaluationTemplateBusy || !state;
+            const $select = $root.find('.js-tender-evaluation-template');
+            if (state) {
+                $select.empty();
+                state.templates.forEach(function (template) {
+                    $select.append($('<option>').val(template.id).text(template.name));
+                });
+                $select.val(state.selected_id);
+            }
+            $select.prop('disabled', disabled);
+            $root.find('.js-tender-evaluation-template-settings').prop('disabled', disabled);
+            $root.find('.js-tender-evaluation-template-delete').prop('disabled', disabled || !state || state.templates.length <= 1);
+        },
+
+        changeEvaluationTemplate: function (action, data, onSuccess, onError) {
+            const self = this;
+            if (this.evaluationTemplateBusy) return;
+            this.evaluationTemplateBusy = true;
+            this.renderEvaluationTemplateControls();
+            const fail = function (reply) {
+                self.evaluationTemplateBusy = false;
+                self.renderEvaluationTemplateControls();
+                if (onError) onError(reply && reply.message || 'Не удалось сохранить шаблон');
+                else $(self.root).find('.js-tender-evaluation-template-error').prop('hidden', false);
+            };
+            $.fRequest({
+                url: '/api/buyer/evaluation-template/' + action + '/',
+                method: 'POST',
+                data: data,
+                showMessages: false,
+                onSuccess: function (state) {
+                    self.evaluationTemplateBusy = false;
+                    self.evaluationTemplates = state;
+                    self.renderEvaluationTemplateControls();
+                    $(self.root).find('.js-tender-evaluation-template-error').prop('hidden', true);
+                    if (onSuccess) onSuccess();
+                },
+                onError: fail
+            }).catch(fail);
+        },
+
+        openEvaluationTemplateDialog: function (remove) {
+            const self = this;
+            if (!this.evaluationTemplates || this.evaluationTemplateBusy) return;
+            const template = this.evaluationTemplates.templates.find(function (item) {
+                return item.id === self.evaluationTemplates.selected_id;
+            });
+            if (!template || (remove && this.evaluationTemplates.templates.length <= 1)) return;
+            const fields = [
+                ['includeSpecification', 'Стоимость полной спецификации'],
+                ['includePositions', 'Позиции'],
+                ['includeDocuments', 'Поданные документы'],
+                ['includeRanks', 'Ранги по стоимости'],
+                ['includeAnalogs', 'Аналоги по позициям']
+            ];
+            let content = '<form class="tender-evaluation-template-form">';
+            if (remove) {
+                content += '<p>Шаблон «' + this.escapeHtml(template.name) + '» будет удалён.</p>';
+            } else {
+                content += '<label class="tender-evaluation-template-form__name">Название шаблона'
+                    + '<input class="input" name="name" maxlength="120" required></label>'
+                    + '<fieldset><legend>Разделы таблицы в файле</legend>';
+                fields.forEach(function (field) {
+                    content += '<label><input type="checkbox" name="' + field[0] + '"> ' + field[1] + '</label>';
+                });
+                content += '</fieldset>';
+            }
+            content += '<p class="tender-evaluation__error js-template-error" role="alert" hidden></p>'
+                + '<div class="tender-evaluation-template-form__actions"><button type="button" class="button secondary modal-cancel">Отменить</button>'
+                + '<button type="submit" class="button ' + (remove ? 'destruct' : 'primary') + '">' + (remove ? 'Удалить' : 'Сохранить') + '</button></div></form>';
+            const dialog = new $.DialogManager({
+                title: remove ? 'Удалить шаблон?' : 'Настройка шаблона',
+                width: 560,
+                content: content,
+                onOpen: function ($container) {
+                    const $form = $container.find('form');
+                    $form.find('[name="name"]').val(template.name);
+                    fields.forEach(function (field) {
+                        $form.find('[name="' + field[0] + '"]').prop('checked', !!template.settings[field[0]]);
+                    });
+                    $form.on('submit', function (event) {
+                        event.preventDefault();
+                        const data = {id: template.id};
+                        if (!remove) {
+                            data.name = String($form.find('[name="name"]').val() || '').trim();
+                            data.settings = {};
+                            fields.forEach(function (field) {
+                                data.settings[field[0]] = $form.find('[name="' + field[0] + '"]').prop('checked') ? 1 : 0;
+                            });
+                        }
+                        const $button = $form.find('[type="submit"]');
+                        $button.prop('disabled', true);
+                        $form.find('.js-template-error').prop('hidden', true);
+                        self.changeEvaluationTemplate(remove ? 'delete' : 'save', data, function () {
+                            dialog.close();
+                        }, function (message) {
+                            $button.prop('disabled', false);
+                            $form.find('.js-template-error').text(message).prop('hidden', false);
+                        });
+                    });
+                }
+            });
+        },
+
+        moveEvaluationSupplier: function (from, target) {
+            const order = this.evaluationOrder.slice();
+            const sourceIndex = order.indexOf(from);
+            const targetIndex = order.indexOf(target);
+            if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) return;
+            order.splice(sourceIndex, 1);
+            order.splice(targetIndex, 0, from);
+            this.evaluationOrder = order;
+            this.evaluationSort = 'manual';
+            $(this.root).find('.js-tender-evaluation-sort').val('manual');
+            this.renderRanking(this.ranking);
+        },
+
+        renderRanking: function (payload) {
+            const self = this;
+            const $wrap = $(this.root).find('.js-tender-evaluation-table');
+            const apps = payload && Array.isArray(payload.applications) ? payload.applications.slice() : [];
+            const currency = payload && payload.currency || 'RUB';
+            const name = function (row) {
+                const supplier = row.supplier || {};
+                return String(supplier.fullname || supplier.name || 'Поставщик');
+            };
+            const numeric = function (value) {
+                return value === null || value === undefined || value === '' || !Number.isFinite(Number(value)) ? null : Number(value);
+            };
+            const manualOrder = new Map(this.evaluationOrder.map(function (id, index) { return [id, index]; }));
+            apps.sort(function (a, b) {
+                if (self.evaluationSort === 'manual') {
+                    const ai = manualOrder.has(Number(a.application_id)) ? manualOrder.get(Number(a.application_id)) : Number.MAX_SAFE_INTEGER;
+                    const bi = manualOrder.has(Number(b.application_id)) ? manualOrder.get(Number(b.application_id)) : Number.MAX_SAFE_INTEGER;
+                    return ai - bi || Number(a.application_id) - Number(b.application_id);
+                }
+                let compared = 0;
+                if (self.evaluationSort === 'name') {
+                    compared = name(a).localeCompare(name(b), 'ru');
+                } else {
+                    const key = self.evaluationSort === 'rank' ? 'rank' : 'total';
+                    const av = numeric(a[key]);
+                    const bv = numeric(b[key]);
+                    if (av === null || bv === null) {
+                        compared = av === bv ? 0 : (av === null ? 1 : -1);
+                    } else {
+                        compared = (av - bv) * (self.evaluationSort === 'total-desc' ? -1 : 1);
+                    }
+                }
+                return compared || Number(a.application_id) - Number(b.application_id);
+            });
+            this.evaluationOrder = apps.map(function (app) { return Number(app.application_id); });
+            const esc = function (value) { return self.escapeHtml(String(value)); };
+            const money = function (value) { return numeric(value) === null ? '—' : esc(self.formatMoney(value, currency)); };
+            const catalog = payload && payload.comparison || {};
+            const count = apps.length + 1;
+            let html = '<table class="base-table tender-evaluation__table" aria-label="Сравнение предложений">'
+                + '<colgroup><col class="tender-evaluation__label-column">'
+                + apps.map(function () { return '<col class="tender-evaluation__supplier-column">'; }).join('')
+                + '</colgroup><thead><tr><th scope="col">Показатель / позиция</th>';
+            apps.forEach(function (app, index) {
+                const id = Number(app.application_id);
+                html += '<th scope="col" class="js-tender-evaluation-column" data-id="' + id + '">'
+                    + '<div class="tender-evaluation__supplier-head"><span class="tender-evaluation__drag js-tender-evaluation-drag" draggable="true" data-id="' + id + '" title="Перетащить столбец" aria-hidden="true">⠿</span>'
+                    + '<span>' + esc(name(app)) + '</span></div>'
+                    + '<div class="tender-evaluation__column-actions">'
+                    + '<button type="button" class="button ghost small icon-only js-tender-evaluation-move" data-id="' + id + '" data-direction="-1" aria-label="' + esc('Переместить ' + name(app) + ' влево') + '"' + (index === 0 ? ' disabled' : '') + '>←</button>'
+                    + '<button type="button" class="button ghost small icon-only js-tender-evaluation-move" data-id="' + id + '" data-direction="1" aria-label="' + esc('Переместить ' + name(app) + ' вправо') + '"' + (index === apps.length - 1 ? ' disabled' : '') + '>→</button></div></th>';
+            });
+            html += '</tr></thead>';
+            const group = function (key, label) {
+                const open = !self.evaluationCollapsed[key];
+                return '<tbody><tr class="tender-evaluation__group"><td colspan="' + count + '">'
+                    + '<button type="button" class="button ghost small js-tender-evaluation-toggle" data-group="' + key
+                    + '" aria-expanded="' + open + '" aria-controls="tender-evaluation-' + self.tenderId + '-' + key + '">'
+                    + '<span class="tender-evaluation__chevron" aria-hidden="true">⌃</span>' + esc(label) + '</button></td></tr></tbody>'
+                    + '<tbody id="tender-evaluation-' + self.tenderId + '-' + key + '" data-evaluation-group="' + key + '"' + (open ? '' : ' hidden') + '>';
+            };
+            const row = function (label, cells) {
+                return '<tr><td>' + label + '</td>' + cells.map(function (cell) { return '<td>' + cell + '</td>'; }).join('') + '</tr>';
+            };
+            if (!apps.length) {
+                html += '<tbody><tr><td class="base-table__empty">Нет поданных предложений для сравнения или все предложения отклонены по допуску.</td></tr></tbody>';
+            } else {
+                html += group('specification', 'Стоимость полной спецификации');
+                html += row('Цена с НДС', apps.map(function (app) {
+                    return money(app.comparison ? app.comparison.totals.with_vat : app.total);
+                }));
+                html += row('Ставка НДС', apps.map(function (app) {
+                    const rates = app.comparison && app.comparison.totals.vat_rates || [];
+                    return rates.length ? esc(rates.join(', ')) : '—';
+                }));
+                html += row('Сумма НДС', apps.map(function (app) { return money(app.comparison && app.comparison.totals.vat); }));
+                html += row('Сумма без НДС', apps.map(function (app) { return money(app.comparison && app.comparison.totals.without_vat); }));
+                html += '</tbody>';
+                const positions = new Map();
+                (Array.isArray(catalog.items) ? catalog.items : []).forEach(function (item) {
+                    positions.set(Number(item.tender_item_id), item);
+                });
+                const values = new Map();
+                apps.forEach(function (app) {
+                    const byId = new Map();
+                    const items = app.comparison ? app.comparison.items : app.items;
+                    (Array.isArray(items) ? items : []).forEach(function (item) {
+                        const id = Number(item.tender_item_id);
+                        if (id > 0) {
+                            if (!positions.has(id)) positions.set(id, item);
+                            byId.set(id, item);
+                        }
+                    });
+                    values.set(Number(app.application_id), byId);
+                });
+                if (positions.size) {
+                    html += group('positions', 'Позиции');
+                    Array.from(positions.values()).sort(function (a, b) {
+                        return Number(a.sort) - Number(b.sort) || Number(a.tender_item_id) - Number(b.tender_item_id);
+                    }).forEach(function (item, index) {
+                        let label = esc((index + 1) + '. ' + item.name);
+                        const details = [item.qty, item.unit].filter(function (value) { return value !== null && value !== undefined && value !== ''; });
+                        if (item.vat_rate !== null && item.vat_rate !== undefined && item.vat_rate !== '') {
+                            details.push('НДС ' + item.vat_rate);
+                        }
+                        if (details.length) label += '<span class="base-table__hint tender-evaluation__unit-price">' + esc(details.join(' ')) + '</span>';
+                        html += row(label, apps.map(function (app) {
+                            const value = values.get(Number(app.application_id)).get(Number(item.tender_item_id));
+                            if (!value) return '—';
+                            return money(value.line_total) + '<span class="base-table__hint tender-evaluation__unit-price">'
+                                + money(value.price_per_unit) + (value.unit ? '/' + esc(value.unit) : '') + '</span>';
+                        }));
+                    });
+                    html += '</tbody>';
+                }
+                const fileLink = function (app, record, kind, recordId) {
+                    if (!record || !Number(record.file_link_id)) return 'Не предоставлен';
+                    const url = '/api/buyer/tender/' + self.tenderId + '/applications/' + Number(app.application_id)
+                        + '/' + kind + '/' + Number(recordId) + '/file/';
+                    return '<a href="' + url + '" hx-boost="false">'
+                        + esc(record.file_name || record.name || 'Скачать файл') + '</a>';
+                };
+                const requirements = Array.isArray(catalog.documents) ? catalog.documents : [];
+                const requirementIds = new Set(requirements.map(function (document) { return Number(document.id); }));
+                const applicationDocuments = new Map();
+                let hasExtraDocuments = false;
+                apps.forEach(function (app) {
+                    const documents = app.comparison && app.comparison.documents || [];
+                    const required = new Map();
+                    const extra = [];
+                    documents.forEach(function (document) {
+                        const id = Number(document.tender_document_id);
+                        if (requirementIds.has(id)) required.set(id, document);
+                        else if (Number(document.file_link_id)) extra.push(document);
+                    });
+                    if (extra.length) hasExtraDocuments = true;
+                    applicationDocuments.set(Number(app.application_id), {required: required, extra: extra});
+                });
+                html += group('documents', 'Поданные документы');
+                requirements.forEach(function (requirement) {
+                    html += row(esc(requirement.name), apps.map(function (app) {
+                        const document = applicationDocuments.get(Number(app.application_id)).required.get(Number(requirement.id));
+                        return document ? fileLink(app, document, 'documents', document.id) : 'Не предоставлен';
+                    }));
+                });
+                if (hasExtraDocuments) {
+                    html += row('Дополнительные документы', apps.map(function (app) {
+                        const documents = applicationDocuments.get(Number(app.application_id)).extra;
+                        return documents.length ? documents.map(function (document) {
+                            return '<div class="tender-evaluation__file">' + fileLink(app, document, 'documents', document.id) + '</div>';
+                        }).join('') : '—';
+                    }));
+                }
+                if (!requirements.length && !hasExtraDocuments) {
+                    html += '<tr><td colspan="' + count + '" class="base-table__empty">Документы не предоставлены</td></tr>';
+                }
+                html += '</tbody>';
+                const criteria = Array.isArray(catalog.criteria) ? catalog.criteria : [];
+                const answers = new Map();
+                apps.forEach(function (app) {
+                    answers.set(Number(app.application_id), new Map((app.comparison && app.comparison.criteria || []).map(function (answer) {
+                        return [Number(answer.criterion_id), answer];
+                    })));
+                });
+                html += group('criteria', 'Неценовые критерии');
+                criteria.forEach(function (criterion) {
+                    html += row(esc(criterion.name), apps.map(function (app) {
+                        const answer = answers.get(Number(app.application_id)).get(Number(criterion.id));
+                        if (!answer) return '—';
+                        if (criterion.type === 'file') return fileLink(app, answer, 'criteria', criterion.id);
+                        if (criterion.type === 'confirmation') {
+                            return Number(answer.confirmed)
+                                ? '<span class="badge badge--shared badge--medium success">Принимаю</span>'
+                                : 'Не подтверждено';
+                        }
+                        return answer.value === null || answer.value === undefined || answer.value === '' ? '—' : esc(answer.value);
+                    }));
+                });
+                if (!criteria.length) {
+                    html += '<tr><td colspan="' + count + '" class="base-table__empty">Неценовые критерии не заданы</td></tr>';
+                }
+                html += '</tbody>';
+                html += '<tfoot><tr><td></td>';
+                apps.forEach(function (app) {
+                    html += '<td><button type="button" class="button outline js-tender-evaluation-proposal" data-id="'
+                        + (parseInt(app.application_id, 10) || 0) + '">Посмотреть предложение</button></td>';
+                });
+                html += '</tr></tfoot>';
+            }
+            html += '</table>';
+            $wrap.css('--table-min-width', (360 + apps.length * 300) + 'px').html(html);
+            $(this.root).find('.js-buyer-evaluation-ranking').prop('hidden', false);
+        },
+
         showListView: function () {
             const $root = $(this.root);
             this.currentApplicationId = 0;
-            $root.find('.js-buyer-participants-list-view').prop('hidden', false);
-            $root.find('.js-buyer-participants-detail-view').prop('hidden', true);
-            this.replaceQuery({ tab: 'participants', application: null });
+            $root.find('.js-tender-participants-list-view').prop('hidden', false);
+            $root.find('.js-tender-participants-detail-view').prop('hidden', true);
+            $root.find('.tender-page__panel--participants').addClass('tender-page__panel--with-aside');
+            $root.find('.js-tender-participants-aside').prop('hidden', false);
+            this.replaceQuery({ application: null });
         },
-
         showDetailView: function () {
             const $root = $(this.root);
-            $root.find('.js-buyer-participants-list-view').prop('hidden', true);
-            $root.find('.js-buyer-participants-detail-view').prop('hidden', false);
+            $root.find('.js-tender-participants-list-view').prop('hidden', true);
+            $root.find('.js-tender-participants-detail-view').prop('hidden', false);
+            $root.find('.tender-page__panel--participants').removeClass('tender-page__panel--with-aside');
+            $root.find('.js-tender-participants-aside').prop('hidden', true);
         },
 
         gateField: function (gate) {
@@ -4341,8 +6532,8 @@
             }
 
             this.busy = true;
-            $root.find('.js-buyer-gate-decision-error').prop('hidden', true).text('');
-            $root.find('.js-buyer-gate-approve, .js-buyer-gate-reject-open, .js-buyer-gate-reject-confirm')
+            $root.find('.js-tender-application-decision-error').prop('hidden', true).text('');
+            $root.find('.js-tender-application-decision-approve, .js-tender-application-decision-reject-open, .js-tender-application-decision-reject-confirm')
                 .prop('disabled', true);
 
             const data = {};
@@ -4364,18 +6555,18 @@
                 },
                 onError: function (reply) {
                     self.busy = false;
-                    $root.find('.js-buyer-gate-approve, .js-buyer-gate-reject-open, .js-buyer-gate-reject-confirm')
+                    $root.find('.js-tender-application-decision-approve, .js-tender-application-decision-reject-open, .js-tender-application-decision-reject-confirm')
                         .prop('disabled', false);
                     const msg = (reply && reply.message) || 'Не удалось сохранить решение';
-                    $root.find('.js-buyer-gate-card[data-gate="' + gate + '"] .js-buyer-gate-decision-error')
+                    $root.find('.js-tender-application-decision-card[data-gate="' + gate + '"] .js-tender-application-decision-error')
                         .text(msg)
                         .prop('hidden', false);
                 }
             }).catch(function () {
                 self.busy = false;
-                $root.find('.js-buyer-gate-approve, .js-buyer-gate-reject-open, .js-buyer-gate-reject-confirm')
+                $root.find('.js-tender-application-decision-approve, .js-tender-application-decision-reject-open, .js-tender-application-decision-reject-confirm')
                     .prop('disabled', false);
-                $root.find('.js-buyer-gate-card[data-gate="' + gate + '"] .js-buyer-gate-decision-error')
+                $root.find('.js-tender-application-decision-card[data-gate="' + gate + '"] .js-tender-application-decision-error')
                     .text('Не удалось сохранить решение')
                     .prop('hidden', false);
             });
@@ -4388,10 +6579,10 @@
                 return;
             }
 
-            $root.find('.js-buyer-participants-error').prop('hidden', true).text('');
-            $root.find('.js-buyer-participants-empty').prop('hidden', true);
-            $root.find('.js-buyer-participants-list').prop('hidden', true).empty();
-            $root.find('.js-buyer-participants-loading').prop('hidden', false);
+            $root.find('.js-tender-participants-error').prop('hidden', true).text('');
+            $root.find('.js-tender-participants-empty').prop('hidden', true);
+            $root.find('.js-tender-participants-list').prop('hidden', true).empty();
+            $root.find('.js-tender-participants-loading').prop('hidden', false);
 
             $.fRequest({
                 url: '/api/buyer/tender/' + this.tenderId + '/applications/',
@@ -4401,22 +6592,20 @@
                     self.listLoaded = true;
                     self.applications = Array.isArray(reply.applications) ? reply.applications : [];
                     self.pricesVisible = parseInt(reply.prices_visible, 10) || 0;
-                    $root.find('.js-buyer-participants-loading').prop('hidden', true);
-                    $root.find('.js-ds-tabs-tab[data-tab="participants"] .ds-tabs__count')
-                        .text(String(self.applications.filter(function (row) {
-                            return row && row.status && row.status.code === 'submitted';
-                        }).length));
+                    $root.find('.js-tender-participants-loading').prop('hidden', true);
+                    $root.find('.js-tender-tabs .tab-btn[data-tab="participants"] .tabs-count')
+                        .text(String(self.applications.length));
                     self.renderApplicationsList();
                 },
                 onError: function (reply) {
-                    $root.find('.js-buyer-participants-loading').prop('hidden', true);
-                    $root.find('.js-buyer-participants-error')
+                    $root.find('.js-tender-participants-loading').prop('hidden', true);
+                    $root.find('.js-tender-participants-error')
                         .text((reply && reply.message) || 'Не удалось загрузить участников')
                         .prop('hidden', false);
                 }
             }).catch(function () {
-                $root.find('.js-buyer-participants-loading').prop('hidden', true);
-                $root.find('.js-buyer-participants-error')
+                $root.find('.js-tender-participants-loading').prop('hidden', true);
+                $root.find('.js-tender-participants-error')
                     .text('Не удалось загрузить участников')
                     .prop('hidden', false);
             });
@@ -4451,18 +6640,18 @@
             const name = this.statusName(status);
             let tone = 'neutral';
             if (code === 'approved' || code === 'passed' || code === 'admitted') {
-                tone = 'ok';
+                tone = 'success';
             } else if (code === 'pending') {
-                tone = 'wait';
+                tone = 'warning';
             } else if (code === 'rejected' || code === 'failed') {
                 tone = 'error';
             } else if (code === 'not_required') {
-                tone = 'muted';
+                tone = 'neutral';
             }
             return (
-                '<div class="buyer-tender-gate__head">'
-                + '<span class="buyer-tender-gate__label">' + this.escapeHtml(label) + '</span>'
-                + '<span class="buyer-tender-gate__badge is-' + tone + '">' + this.escapeHtml(name) + '</span>'
+                '<div class="tender-application-decision__head">'
+                + '<span class="tender-application-decision__label">' + this.escapeHtml(label) + '</span>'
+                + '<span class="badge badge--shared badge--small ' + this.escapeHtml(status && status.tone || tone) + '">' + this.escapeHtml(name) + '</span>'
                 + '</div>'
             );
         },
@@ -4478,31 +6667,31 @@
             const approveLabel = String(opts.approveLabel || 'Одобрить');
             const rejectLabel = String(opts.rejectLabel || 'Отклонить');
 
-            let html = '<div class="buyer-tender-gate buyer-tender-gate--card js-buyer-gate-card" data-gate="'
+            let html = '<div class="tender-application-decision js-tender-application-decision-card" data-gate="'
                 + this.escapeHtml(gate) + '">';
             html += this.gateBadge(label, status);
             if (comment) {
-                html += '<p class="buyer-tender-gate__comment">' + this.escapeHtml(comment) + '</p>';
+                html += '<p class="tender-application-decision__comment">' + this.escapeHtml(comment) + '</p>';
             }
             if (canDecide) {
-                html += '<div class="buyer-tender-gate__actions">'
-                    + '<button type="button" class="button primary js-buyer-gate-approve" data-gate="'
+                html += '<div class="tender-application-decision__actions">'
+                    + '<button type="button" class="button primary small js-tender-application-decision-approve" data-gate="'
                     + this.escapeHtml(gate) + '" data-code="' + this.escapeHtml(approveCode) + '">'
                     + this.escapeHtml(approveLabel) + '</button>'
-                    + '<button type="button" class="button secondary js-buyer-gate-reject-open">'
+                    + '<button type="button" class="button secondary small js-tender-application-decision-reject-open">'
                     + this.escapeHtml(rejectLabel) + '</button>'
                     + '</div>'
-                    + '<div class="buyer-tender-gate__reject js-buyer-gate-reject-form" hidden>'
-                    + '<label class="buyer-tender-gate__reject-label">Причина отклонения'
-                    + '<textarea class="buyer-tender-gate__reject-comment js-buyer-gate-reject-comment" rows="3"'
+                    + '<div class="tender-application-decision__reject js-tender-application-decision-reject-form" hidden>'
+                    + '<label class="tender-application-decision__reject-label">Причина отклонения'
+                    + '<textarea class="input tender-application-decision__reject-comment js-tender-application-decision-reject-comment" rows="3"'
                     + ' placeholder="Обязательно при отклонении"></textarea></label>'
-                    + '<div class="buyer-tender-gate__reject-actions">'
-                    + '<button type="button" class="button primary js-buyer-gate-reject-confirm" data-code="'
+                    + '<div class="tender-application-decision__reject-actions">'
+                    + '<button type="button" class="button primary small js-tender-application-decision-reject-confirm" data-code="'
                     + this.escapeHtml(rejectCode) + '">Подтвердить</button>'
-                    + '<button type="button" class="button secondary js-buyer-gate-reject-cancel">Отмена</button>'
+                    + '<button type="button" class="button secondary small js-tender-application-decision-reject-cancel">Отмена</button>'
                     + '</div></div>';
             }
-            html += '<p class="buyer-tender-gate__error js-buyer-gate-decision-error" hidden></p>';
+            html += '<p class="tender-application-decision__error js-tender-application-decision-error" hidden></p>';
             html += '</div>';
             return html;
         },
@@ -4528,78 +6717,152 @@
             const label = (labels[kind] || {})[code] || this.statusName(status);
 
             let tone = 'neutral';
+            let icon = 'icon-clock';
             if (code === 'approved' || code === 'passed') {
                 tone = 'ok';
+                icon = code === 'passed' ? 'icon-check-circle' : 'icon-check';
             } else if (code === 'pending') {
                 tone = 'wait';
+                icon = 'icon-clock';
             } else if (code === 'rejected' || code === 'failed') {
                 tone = 'error';
+                icon = 'icon-x-mark';
             }
 
-            return '<span class="buyer-participant-card__badge is-' + tone + '">'
-                + this.escapeHtml(label) + '</span>';
+            return '<span class="tender-participant-card__badge is-' + tone + '">'
+                + '<span class="tender-participant-card__badge-icon" aria-hidden="true">'
+                + '<svg><use href="#' + icon + '"></use></svg></span>'
+                + '<span>' + this.escapeHtml(label) + '</span></span>';
+        },
+
+        participationStatusLabel: function (status) {
+            const code = String((status && status.code) || '');
+            if (code === 'submitted') {
+                return 'Подал предложение';
+            }
+            if (code === 'withdrawn') {
+                return 'Отозвал предложение';
+            }
+            if (code === 'draft') {
+                return 'Принял участие';
+            }
+            return this.statusName(status);
+        },
+
+        participantMetaHtml: function (supplier) {
+            const row = supplier || {};
+            const address = String(row.address || '').trim();
+            const phone = String(row.phone || '').trim();
+            const inn = String(row.inn || '').trim();
+            const parts = [];
+
+            if (address) {
+                parts.push('<span class="tender-participant-card__meta-address"></span>');
+            } else if (inn) {
+                parts.push('<span class="tender-participant-card__meta-address"></span>');
+            }
+            if (phone) {
+                if (parts.length) {
+                    parts.push('<span class="tender-participant-card__meta-dot" aria-hidden="true"></span>');
+                }
+                parts.push('<span class="tender-participant-card__meta-phone"></span>');
+            }
+
+            return parts.join('');
+        },
+
+        filterApplications: function (items) {
+            const query = String(this.participantsSearch || '').trim().toLowerCase();
+            const list = Array.isArray(items) ? items : [];
+            if (!query) {
+                return list.slice();
+            }
+            return list.filter(function (app) {
+                if (!app) {
+                    return false;
+                }
+                const supplier = app.supplier || {};
+                const haystack = [
+                    supplier.fullname,
+                    supplier.name,
+                    supplier.inn,
+                    app.status && app.status.name,
+                    app.status && app.status.code
+                ].join(' ').toLowerCase();
+                return haystack.indexOf(query) !== -1;
+            });
         },
 
         renderApplicationsList: function () {
             const $root = $(this.root);
-            const $list = $root.find('.js-buyer-participants-list');
-            const items = this.applications || [];
-            const submitted = items.filter(function (row) {
-                return row && row.status && row.status.code === 'submitted';
-            }).length;
+            const $list = $root.find('.js-tender-participants-list');
+            const allItems = this.applications || [];
+            const items = this.filterApplications(allItems);
             $list.empty();
 
-            $root.find('.js-buyer-participants-summary').prop('hidden', !items.length);
-            $root.find('.js-buyer-participants-total').text(String(items.length));
-            $root.find('.js-buyer-participants-submitted').text(String(submitted));
+            $root.find('.js-tender-participants-empty').prop('hidden', true);
+            $root.find('.js-tender-participants-search-empty').prop('hidden', true);
 
-            if (!items.length) {
+            if (!allItems.length) {
                 $list.prop('hidden', true);
-                $root.find('.js-buyer-participants-empty').prop('hidden', false);
+                $root.find('.js-tender-participants-empty').prop('hidden', false);
                 return;
             }
 
-            $root.find('.js-buyer-participants-empty').prop('hidden', true);
+            if (!items.length) {
+                $list.prop('hidden', true);
+                $root.find('.js-tender-participants-search-empty').prop('hidden', false);
+                return;
+            }
+
             $list.prop('hidden', false);
 
             const self = this;
             items.forEach(function (app) {
                 const supplier = app.supplier || {};
                 const title = supplier.fullname || supplier.name || ('Поставщик #' + (supplier.id || app.supplier_company_id || '—'));
-                const inn = supplier.inn ? ('ИНН ' + supplier.inn) : '';
                 const statusCode = app.status && app.status.code ? app.status.code : '';
                 const badges = self.inlineGateBadge('qualification', app.qualification_status)
                     + self.inlineGateBadge('approval', app.approval_status);
+                const address = String(supplier.address || '').trim();
+                const phone = String(supplier.phone || '').trim();
+                const inn = String(supplier.inn || '').trim();
+                const metaPrimary = address || (inn ? ('ИНН ' + inn) : '');
                 const $card = $(
                     '<li>'
-                    + '<button type="button" class="buyer-participant-card js-buyer-participant-card" data-id="'
+                    + '<button type="button" class="tender-participant-card js-tender-participant-card" data-id="'
                     + (parseInt(app.id, 10) || 0) + '">'
-                    + '<div class="buyer-participant-card__main">'
-                    + '<div class="buyer-participant-card__head">'
-                    + '<span class="buyer-participant-card__title"></span>'
-                    + '<span class="buyer-participant-card__badges">' + badges + '</span>'
+                    + '<div class="tender-participant-card__main">'
+                    + '<div class="tender-participant-card__head">'
+                    + '<span class="tender-participant-card__title"></span>'
+                    + '<span class="tender-participant-card__badges">' + badges + '</span>'
                     + '</div>'
-                    + '<div class="buyer-participant-card__meta"></div>'
+                    + '<div class="tender-participant-card__meta">' + self.participantMetaHtml(supplier) + '</div>'
                     + '</div>'
-                    + '<div class="buyer-participant-card__side">'
-                    + '<span class="buyer-participant-card__status"></span>'
-                    + '<span class="buyer-participant-card__chevron" aria-hidden="true">→</span>'
+                    + '<div class="tender-participant-card__side">'
+                    + '<span class="tender-participant-card__chat is-disabled js-tender-participant-chat"'
+                    + ' title="Чат пока недоступен" aria-disabled="true" role="img"'
+                    + ' aria-label="Чат пока недоступен">'
+                    + '<svg aria-hidden="true"><use href="#icon-message"></use></svg>'
+                    + '</span>'
+                    + '<span class="tender-participant-card__divider" aria-hidden="true"></span>'
+                    + '<span class="tender-participant-card__status-wrap">'
+                    + '<span class="tender-participant-card__status"></span>'
+                    + '</span>'
                     + '</div>'
                     + '</button>'
                     + '</li>'
                 );
-                $card.find('.buyer-participant-card__title').text(title);
-                $card.find('.buyer-participant-card__meta').text(
-                    [
-                        inn,
-                        app.submitted_at ? ('Подано ' + self.formatDateTime(app.submitted_at)) : '',
-                        app.has_documents ? ('Документы: ' + (app.documents_count || 0)) : 'Без документов',
-                        app.nonprice_done ? 'Неценовые: готово' : 'Неценовые: не закрыты'
-                    ].filter(Boolean).join(' · ')
-                );
-                $card.find('.buyer-participant-card__status')
+                $card.find('.tender-participant-card__title').text(title);
+                if (metaPrimary) {
+                    $card.find('.tender-participant-card__meta-address').text(metaPrimary);
+                }
+                if (phone) {
+                    $card.find('.tender-participant-card__meta-phone').text(phone);
+                }
+                $card.find('.tender-participant-card__status')
                     .addClass(statusCode ? ('is-' + statusCode) : '')
-                    .text(self.statusName(app.status));
+                    .text(self.participationStatusLabel(app.status));
                 $list.append($card);
             });
         },
@@ -4612,32 +6875,37 @@
             }
 
             this.currentApplicationId = applicationId;
+            if (this.activeTab !== 'participants') {
+                this.showTab('participants');
+            }
             this.showDetailView();
-            this.replaceQuery({ tab: 'participants', application: applicationId });
+            this.replaceQuery({ application: applicationId });
 
-            const $body = $root.find('.js-buyer-application-body');
-            $body.prop('hidden', true).empty();
-            $root.find('.js-buyer-application-error').prop('hidden', true).text('');
-            $root.find('.js-buyer-application-loading').prop('hidden', false);
+            const $body = $root.find('.js-tender-application-body');
+            $body.prop('hidden', true);
+            $root.find('.js-tender-application-panel-body').empty();
+            $root.find('.js-tender-application-sidebar').empty();
+            $root.find('.js-tender-application-error').prop('hidden', true).text('');
+            $root.find('.js-tender-application-loading').prop('hidden', false);
 
             $.fRequest({
                 url: '/api/buyer/tender/' + this.tenderId + '/applications/' + applicationId + '/',
                 method: 'GET',
                 showMessages: false,
                 onSuccess: function (reply) {
-                    $root.find('.js-buyer-application-loading').prop('hidden', true);
+                    $root.find('.js-tender-application-loading').prop('hidden', true);
                     self.pricesVisible = parseInt(reply.prices_visible, 10) || 0;
                     self.renderApplicationDetail(reply.application || null);
                 },
                 onError: function (reply) {
-                    $root.find('.js-buyer-application-loading').prop('hidden', true);
-                    $root.find('.js-buyer-application-error')
+                    $root.find('.js-tender-application-loading').prop('hidden', true);
+                    $root.find('.js-tender-application-error')
                         .text((reply && reply.message) || 'Не удалось открыть заявку')
                         .prop('hidden', false);
                 }
             }).catch(function () {
-                $root.find('.js-buyer-application-loading').prop('hidden', true);
-                $root.find('.js-buyer-application-error')
+                $root.find('.js-tender-application-loading').prop('hidden', true);
+                $root.find('.js-tender-application-error')
                     .text('Не удалось открыть заявку')
                     .prop('hidden', false);
             });
@@ -4645,10 +6913,13 @@
 
         renderApplicationDetail: function (app) {
             const $root = $(this.root);
-            const $body = $root.find('.js-buyer-application-body');
+            const $body = $root.find('.js-tender-application-body');
+            const $sidebar = $root.find('.js-tender-application-sidebar');
             if (!app) {
-                $body.prop('hidden', true).empty();
-                $root.find('.js-buyer-application-error')
+                $body.prop('hidden', true);
+                $root.find('.js-tender-application-panel-body').empty();
+                $sidebar.empty();
+                $root.find('.js-tender-application-error')
                     .text('Заявка не найдена')
                     .prop('hidden', false);
                 return;
@@ -4661,172 +6932,330 @@
             const pricesVisible = !!this.pricesVisible;
             const self = this;
             const actions = app.gate_actions || {};
+            const el = this.root;
+            const approvalCode = String((app.approval_status && app.approval_status.code) || '');
+            const qualificationCode = String((app.qualification_status && app.qualification_status.code) || '');
+            const criteria = Array.isArray(app.criteria) ? app.criteria : [];
 
-            let gatesHtml = '<div class="buyer-tender-application__gates">';
-            gatesHtml += '<div class="buyer-tender-gate buyer-tender-gate--card">'
-                + this.gateBadge(
-                    'Неценовые критерии',
-                    { code: app.nonprice_done ? 'approved' : 'pending', name: app.nonprice_done ? 'Готово' : 'Не закрыты' }
-                )
-                + '</div>';
-            gatesHtml += this.gateDecisionCard({
-                gate: 'approval',
-                label: 'Одобрение',
-                status: app.approval_status,
-                comment: app.approval_comment,
-                canDecide: !!(actions.approval && parseInt(actions.approval.can_decide, 10)),
-                approveCode: 'approved',
-                rejectCode: 'rejected',
-                approveLabel: 'Одобрить',
-                rejectLabel: 'Отклонить'
-            });
-            gatesHtml += this.gateDecisionCard({
-                gate: 'qualification',
-                label: 'Квалификация',
-                status: app.qualification_status,
-                comment: app.qualification_comment,
-                canDecide: !!(actions.qualification && parseInt(actions.qualification.can_decide, 10)),
-                approveCode: 'passed',
-                rejectCode: 'failed',
-                approveLabel: 'Пройдена',
-                rejectLabel: 'Не пройдена'
-            });
+            let gatesHtml = '<div class="tender-application__decisions">';
+            if (criteria.length) {
+                gatesHtml += '<div class="tender-application-decision">'
+                    + this.gateBadge(
+                        'Неценовые критерии',
+                        { code: app.nonprice_done ? 'approved' : 'pending', name: app.nonprice_done ? 'Готово' : 'Не закрыты' }
+                    )
+                    + '</div>';
+            }
+            if (approvalCode && approvalCode !== 'not_required') {
+                gatesHtml += this.gateDecisionCard({
+                    gate: 'approval',
+                    label: 'Одобрение',
+                    status: app.approval_status,
+                    comment: app.approval_comment,
+                    canDecide: !!(actions.approval && parseInt(actions.approval.can_decide, 10)),
+                    approveCode: 'approved',
+                    rejectCode: 'rejected',
+                    approveLabel: 'Одобрить',
+                    rejectLabel: 'Отклонить'
+                });
+            }
+            if (qualificationCode && qualificationCode !== 'not_required') {
+                gatesHtml += this.gateDecisionCard({
+                    gate: 'qualification',
+                    label: 'Квалификация',
+                    status: app.qualification_status,
+                    comment: app.qualification_comment,
+                    canDecide: !!(actions.qualification && parseInt(actions.qualification.can_decide, 10)),
+                    approveCode: 'passed',
+                    rejectCode: 'failed',
+                    approveLabel: 'Квалификация пройдена',
+                    rejectLabel: 'Отклонить'
+                });
+            }
             gatesHtml += this.gateDecisionCard({
                 gate: 'admission',
-                label: 'Допуск к сравнению',
+                label: 'Заявка',
                 status: app.admission_status,
                 comment: app.admission_comment,
                 canDecide: !!(actions.admission && parseInt(actions.admission.can_decide, 10)),
                 approveCode: 'admitted',
                 rejectCode: 'rejected',
-                approveLabel: 'Допустить',
+                approveLabel: 'Принять заявку',
                 rejectLabel: 'Отклонить'
             });
             gatesHtml += '</div>';
 
-            let docsHtml = '';
-            const docs = Array.isArray(app.documents) ? app.documents : [];
-            if (!docs.length) {
-                docsHtml = '<p class="des">Документы КП не приложены.</p>';
-            } else {
-                docsHtml = '<ul class="buyer-tender-application__docs">';
-                docs.forEach(function (doc) {
-                    const hasFile = (parseInt(doc.file_link_id, 10) || 0) > 0;
-                    docsHtml += '<li class="buyer-tender-application__doc">'
-                        + '<span class="buyer-tender-application__doc-name">'
-                        + self.escapeHtml(doc.name || 'Документ')
-                        + '</span>'
-                        + '<span class="des">'
-                        + (hasFile ? ('Файл загружен' + (doc.file_link_id ? ' (#' + doc.file_link_id + ')' : '')) : 'Файл не загружен')
-                        + '</span></li>';
-                });
-                docsHtml += '</ul>';
-            }
+            const panels = {
+                notice: this.renderApplicationNoticePanel(el),
+                lots: this.renderApplicationLotsPanel(app, pricesVisible),
+                documents: this.renderApplicationDocsPanel(app),
+                nonPrice: this.renderApplicationCriteriaPanel(app)
+            };
+            Object.keys(panels).forEach(function (id) {
+                $root.find('.js-tender-application-panel-body[data-panel="' + id + '"]').html(panels[id]);
+            });
 
-            let itemsHtml = '';
-            const items = Array.isArray(app.items) ? app.items : [];
-            if (!items.length) {
-                itemsHtml = '<p class="des">Нет позиций в заявке.</p>';
-            } else {
-                itemsHtml = '<div class="buyer-tender-overview__table-wrap"><table class="buyer-tender-overview__table">'
-                    + '<thead><tr><th class="is-center">№</th><th>Наименование</th>'
-                    + '<th class="is-center">Кол-во</th><th class="is-center">Ед.</th>'
-                    + '<th class="is-center">Цена</th></tr></thead><tbody>';
-                items.forEach(function (item, idx) {
-                    let priceCell = 'Цена скрыта до вскрытия';
-                    if (pricesVisible && item.price_per_unit != null && item.price_per_unit !== '') {
-                        priceCell = String(item.price_per_unit);
-                    }
-                    itemsHtml += '<tr>'
-                        + '<td class="is-center">' + (idx + 1) + '</td>'
-                        + '<td>' + self.escapeHtml(item.name || '—') + '</td>'
-                        + '<td class="is-center">' + self.escapeHtml(item.qty != null ? item.qty : '—') + '</td>'
-                        + '<td class="is-center">' + self.escapeHtml(item.unit || '—') + '</td>'
-                        + '<td class="is-center">' + self.escapeHtml(priceCell) + '</td>'
-                        + '</tr>';
-                });
-                itemsHtml += '</tbody></table></div>';
-            }
-
-            let criteriaHtml = '';
-            const criteria = Array.isArray(app.criteria) ? app.criteria : [];
-            if (!criteria.length) {
-                criteriaHtml = '<p class="des">Ответов на критерии нет.</p>';
-            } else {
-                criteriaHtml = '<ul class="buyer-tender-application__criteria">';
-                criteria.forEach(function (row) {
-                    criteriaHtml += '<li>'
-                        + '<div class="buyer-tender-application__criterion-name">'
-                        + self.escapeHtml(row.name || ('Критерий #' + (row.criterion_id || '')))
-                        + (row.is_mandatory ? ' *' : '')
-                        + '</div>'
-                        + '<div class="des">'
-                        + self.escapeHtml(row.value || (row.confirmed ? 'Подтверждено' : '—'))
-                        + '</div></li>';
-                });
-                criteriaHtml += '</ul>';
-            }
-
-            const subtabs = [
-                { id: 'lots', label: 'Лоты', body: itemsHtml },
-                { id: 'documents', label: 'Документы', body: docsHtml },
-                { id: 'nonPrice', label: 'Неценовые критерии', body: criteriaHtml }
-            ];
-            const active = subtabs.some(function (tab) {
-                return tab.id === self.detailSubtab;
-            }) ? this.detailSubtab : 'lots';
+            const active = panels[self.detailSubtab] ? self.detailSubtab : 'lots';
             this.detailSubtab = active;
-
-            let mainHtml = '<div class="buyer-application-subtabs" role="tablist">';
-            subtabs.forEach(function (tab) {
-                mainHtml += '<button type="button" role="tab"'
-                    + ' class="buyer-application-subtab js-buyer-application-subtab'
-                    + (tab.id === active ? ' is-active' : '') + '"'
-                    + ' data-subtab="' + tab.id + '"'
-                    + ' aria-selected="' + (tab.id === active ? 'true' : 'false') + '">'
-                    + self.escapeHtml(tab.label) + '</button>';
-            });
-            mainHtml += '</div>';
-            subtabs.forEach(function (tab) {
-                mainHtml += '<div class="buyer-application-panel js-buyer-application-panel"'
-                    + ' data-subtab-panel="' + tab.id + '" role="tabpanel"'
-                    + (tab.id === active ? '' : ' hidden') + '>'
-                    + tab.body + '</div>';
-            });
+            if (this.applicationTabs) {
+                this.applicationTabs.showTab(active);
+            }
 
             const statusCode = (app.status && app.status.code) ? app.status.code : '';
-            const metaLines = [];
-            if (supplier.inn) {
-                metaLines.push('ИНН ' + supplier.inn);
-            }
-            if (app.submitted_at) {
-                metaLines.push('Подано: ' + this.formatDateTime(app.submitted_at));
-            }
+            const offerTotal = this.computeApplicationOfferTotal(app, pricesVisible);
+            const sumLabel = pricesVisible && offerTotal != null
+                ? this.formatMoney(offerTotal, 'RUB') + ' с НДС'
+                : (pricesVisible ? '—' : 'Скрыто до вскрытия');
 
-            let sidebarHtml = '<aside class="buyer-application-sidebar" aria-label="Карточка участника и решения">';
-            sidebarHtml += '<div class="buyer-application-sidebar__head">'
-                + '<p class="buyer-application-sidebar__supplier js-buyer-application-supplier"></p>'
-                + '<span class="buyer-participant-card__status'
+            let sidebarHtml = '<div class="tender-application-participant__head">'
+                + '<div class="tender-application-participant__identity">'
+                + '<span class="tender-application-participant__avatar" aria-hidden="true">'
+                + '<svg width="20" height="20" viewBox="0 0 24 24" fill="none">'
+                + '<path d="M3 21V7.5L12 3l9 4.5V21H3z" stroke="currentColor" stroke-width="1.5"/>'
+                + '<path d="M9 21v-6h6v6" stroke="currentColor" stroke-width="1.5"/>'
+                + '</svg></span>'
+                + '<div class="tender-application-participant__identity-main">'
+                + '<p class="tender-application-participant__supplier js-tender-application-supplier"></p>'
+                + '<span class="tender-participant-card__status'
                 + (statusCode ? ' is-' + this.escapeHtml(statusCode) : '') + '">'
-                + this.escapeHtml(this.statusName(app.status)) + '</span>';
-            metaLines.forEach(function (line) {
-                sidebarHtml += '<p class="buyer-application-sidebar__meta">' + self.escapeHtml(line) + '</p>';
-            });
+                + this.escapeHtml(this.participationStatusLabel(app.status)) + '</span>'
+                + '</div></div>';
+            if (app.submitted_at) {
+                sidebarHtml += '<p class="tender-application-participant__meta">Подано: '
+                    + this.escapeHtml(this.formatDateTime(app.submitted_at)) + '</p>';
+            }
+            sidebarHtml += '<p class="tender-application-participant__meta">Сумма: '
+                + '<span class="tender-application-participant__sum">'
+                + this.escapeHtml(sumLabel) + '</span></p>';
             sidebarHtml += '</div>';
-            sidebarHtml += '<div class="buyer-application-sidebar__block">'
-                + '<p class="buyer-application-sidebar__title">Решения организатора</p>'
+            sidebarHtml += '<div class="tender-application-participant__block">'
+                + '<p class="tender-application-participant__title">Решения организатора</p>'
                 + gatesHtml
                 + '</div>';
-            sidebarHtml += '</aside>';
 
-            $body.html(
-                '<div class="buyer-application-layout">'
-                + '<div class="buyer-application-main">' + mainHtml + '</div>'
-                + sidebarHtml
-                + '</div>'
-            );
-            $body.find('.js-buyer-application-supplier').text(title);
+            $sidebar.html(sidebarHtml);
+            $sidebar.find('.js-tender-application-supplier').text(title);
             $body.prop('hidden', false);
+        },
+
+        noticeAttr: function (el, name) {
+            if (!el || !el.getAttribute) {
+                return '';
+            }
+            return String(el.getAttribute(name) || '').trim();
+        },
+
+        renderApplicationNoticePanel: function (el) {
+            const self = this;
+            const title = this.noticeAttr(el, 'data-notice-title') || '—';
+            const number = this.noticeAttr(el, 'data-notice-number') || '—';
+            const method = this.noticeAttr(el, 'data-notice-method') || '—';
+            const status = this.noticeAttr(el, 'data-notice-status') || '—';
+            const access = this.noticeAttr(el, 'data-notice-access') || '—';
+            const deadline = this.noticeAttr(el, 'data-notice-deadline') || '—';
+            let description = this.noticeAttr(el, 'data-notice-description');
+            if (!description && title && title !== '—') {
+                description = 'Закупка по процедуре «' + title + '». Условия поставки и оплаты — согласно извещению.';
+            }
+            if (!description) description = '—';
+            const item = function (label, value, copyable) {
+                let html = '<div class="detail-field"><p class="detail-field__label">' + self.escapeHtml(label) + '</p>';
+                const content = '<span>' + self.escapeHtml(value) + '</span>';
+                if (copyable && value && value !== '—') {
+                    html += '<div class="detail-field__value detail-copy-value">' + content
+                        + '<button type="button" class="button ghost icon-only detail-copy js-detail-copy" data-copy="' + self.escapeHtml(value)
+                        + '" aria-label="Скопировать ' + self.escapeHtml(label) + '"><svg width="14" height="14" aria-hidden="true"><use href="#icon-position-copy"></use></svg></button></div>';
+                } else {
+                    html += '<p class="detail-field__value">' + self.escapeHtml(value) + '</p>';
+                }
+                return html + '</div>';
+            };
+            const blocks = [
+                {
+                    title: 'Сведения о процедуре',
+                    rows: [
+                        item('Наименование', title, false),
+                        item('Номер извещения', number, true),
+                        item('Способ закупки', method, false),
+                        item('Этап', status, false),
+                        item('Тип доступа', access, false)
+                    ]
+                },
+                {
+                    title: 'Условия',
+                    rows: [
+                        item('Срок подачи предложений', deadline, false),
+                        item('Описание', description, false)
+                    ]
+                }
+            ];
+
+            let html = '<div class="tender-notice tender-application__notice">';
+            blocks.forEach(function (block) {
+                html += '<section class="detail-section"><h4 class="detail-section__title">' + self.escapeHtml(block.title)
+                    + '</h4><div class="detail-fields">' + block.rows.join('') + '</div></section>';
+            });
+            return html + '</div>';
+        },
+
+        computeApplicationOfferTotal: function (app, pricesVisible) {
+            if (!pricesVisible) {
+                return null;
+            }
+            const items = Array.isArray(app && app.items) ? app.items : [];
+            let total = 0;
+            let hasAny = false;
+            items.forEach(function (item) {
+                if (!item || item.price_per_unit == null || item.price_per_unit === '') {
+                    return;
+                }
+                const price = Number(item.price_per_unit);
+                const qty = item.qty != null && item.qty !== '' ? Number(item.qty) : 1;
+                if (!isFinite(price)) {
+                    return;
+                }
+                hasAny = true;
+                total += price * (isFinite(qty) ? qty : 1);
+            });
+            return hasAny ? total : null;
+        },
+
+        formatPlainMoney: function (value) {
+            const amount = Number(value);
+            if (!isFinite(amount)) {
+                return '—';
+            }
+            return amount.toLocaleString('ru-RU', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2
+            });
+        },
+
+        renderApplicationLotsPanel: function (app, pricesVisible) {
+            const self = this;
+            const items = Array.isArray(app.items) ? app.items : [];
+            if (!items.length) {
+                return '<p class="tender-application__empty">Позиции по лотам не добавлены.</p>';
+            }
+
+            const offerTotal = this.computeApplicationOfferTotal(app, pricesVisible);
+            const offerTotalLabel = pricesVisible && offerTotal != null
+                ? this.formatPlainMoney(offerTotal)
+                : '—';
+
+            let html = '<div class="tender-application__positions">';
+            html += '<div class="table-scroll tender-application-positions" tabindex="0" role="region" aria-label="Позиции предложения">'
+                + '<table class="base-table" aria-label="Позиции предложения"><colgroup>'
+                + '<col class="tender-positions__number"><col class="tender-positions__name"><col class="tender-positions__quantity"><col class="tender-positions__unit">'
+                + '<col class="tender-positions__vat"><col class="tender-positions__price"><col class="tender-positions__price"><col></colgroup>'
+                + '<thead><tr>'
+                + '<th scope="col">Номер</th><th scope="col">Наименование</th><th scope="col">Количество</th><th scope="col">Ед.</th>'
+                + '<th scope="col">НДС</th><th scope="col">НМЦ позиции</th><th scope="col">Цена участника, ₽</th><th scope="col">Место поставки</th>'
+                + '</tr></thead><tbody>';
+
+            items.forEach(function (item, idx) {
+                let offerCell = '—';
+                if (pricesVisible && item.price_per_unit != null && item.price_per_unit !== '') {
+                    offerCell = self.formatPlainMoney(item.price_per_unit);
+                } else if (!pricesVisible) {
+                    offerCell = '—';
+                }
+                const nmc = item.max_price_no_vat != null && item.max_price_no_vat !== ''
+                    ? self.formatPlainMoney(item.max_price_no_vat)
+                    : '—';
+                html += '<tr>'
+                    + '<td>' + (idx + 1) + '</td>'
+                    + '<td title="' + self.escapeHtml(item.name || '') + '">'
+                    + self.escapeHtml(item.name || '—') + '</td>'
+                    + '<td>' + self.escapeHtml(item.qty != null && item.qty !== '' ? item.qty : '—') + '</td>'
+                    + '<td>' + self.escapeHtml(item.unit || '—') + '</td>'
+                    + '<td>' + self.escapeHtml(item.vat_rate || '—') + '</td>'
+                    + '<td>' + self.escapeHtml(nmc) + '</td>'
+                    + '<td>' + self.escapeHtml(offerCell) + '</td>'
+                    + '<td title="' + self.escapeHtml(item.delivery_place || '') + '">'
+                    + self.escapeHtml(item.delivery_place || '—') + '</td>'
+                    + '</tr>';
+            });
+
+            html += '</tbody>'
+                + '<tfoot><tr><td colspan="8">'
+                + 'Итого по предложению: ' + self.escapeHtml(offerTotalLabel) + ' ₽'
+                + '</td></tr></tfoot></table></div>';
+
+            html += '<div class="tender-application-summary">'
+                + '<p class="tender-application-summary__title">Итого по заявке</p>'
+                + '<div class="tender-application-summary__row">'
+                + '<span>Сумма без НДС</span><span>'
+                + self.escapeHtml(offerTotalLabel) + ' ₽</span></div>'
+                + '<div class="tender-application-summary__row">'
+                + '<span>НДС</span><span>—</span></div>'
+                + '<div class="tender-application-summary__divider" aria-hidden="true"></div>'
+                + '<div class="tender-application-summary__row is-total">'
+                + '<span>Итого</span><span>'
+                + self.escapeHtml(offerTotalLabel) + ' ₽</span></div>'
+                + '</div></div>';
+
+            return html;
+        },
+
+        renderApplicationDocsPanel: function (app) {
+            const self = this;
+            const docs = Array.isArray(app.documents) ? app.documents : [];
+            if (!docs.length) {
+                return '<p class="tender-application__empty">Документы не приложены.</p>';
+            }
+
+            let html = '<div class="table-scroll tender-application-documents" tabindex="0" role="region" aria-label="Документы предложения">'
+                + '<table class="base-table" aria-label="Документы предложения">'
+                + '<thead><tr>'
+                + '<th scope="col">№</th><th scope="col">Наименование</th><th scope="col">Тип</th><th scope="col">Дата загрузки</th><th scope="col">Статус</th>'
+                + '</tr></thead><tbody>';
+
+            docs.forEach(function (doc, idx) {
+                const hasFile = (parseInt(doc.file_link_id, 10) || 0) > 0;
+                html += '<tr>'
+                    + '<td>' + (idx + 1) + '</td>'
+                    + '<td>' + self.escapeHtml(doc.name || 'Документ') + '</td>'
+                    + '<td>—</td>'
+                    + '<td>—</td>'
+                    + '<td><span class="badge badge--shared badge--small neutral">'
+                    + (hasFile ? 'Загружен' : 'Нет файла') + '</span></td>'
+                    + '</tr>';
+            });
+            html += '</tbody></table></div>';
+            return html;
+        },
+
+        renderApplicationCriteriaPanel: function (app) {
+            const self = this;
+            const criteria = Array.isArray(app.criteria) ? app.criteria : [];
+            if (!criteria.length) {
+                return '<p class="tender-application__empty">Нет данных.</p>';
+            }
+
+            let html = '<div class="tender-application__criteria">';
+            criteria.forEach(function (row, idx) {
+                const type = row.type === 'non_price' ? 'text' : (row.type || 'text');
+                let answer = '—';
+                if (type === 'confirmation') answer = row.confirmed ? 'Подтверждено' : 'Не подтверждено';
+                else if (type === 'file') answer = row.file_name || 'Файл не загружен';
+                else if (row.value) answer = row.value;
+                html += '<div class="detail-field">'
+                    + '<p class="detail-field__label">'
+                    + (idx + 1) + '. ' + self.escapeHtml(row.name || ('Критерий #' + (row.criterion_id || '')))
+                    + (row.is_mandatory ? ' *' : '')
+                    + '</p>'
+                    + '<p class="detail-field__value">'
+                    + self.escapeHtml(answer) + '</p>';
+                if (type === 'file' && row.file_link_id && app.id) {
+                    html += '<a href="/api/buyer/tender/' + encodeURIComponent(this.tenderId)
+                        + '/applications/' + encodeURIComponent(app.id)
+                        + '/criteria/' + encodeURIComponent(row.criterion_id) + '/file/">Скачать файл</a>';
+                }
+                html += '</div>';
+            }, this);
+            html += '</div>';
+            return html;
         }
     });
 })(jQuery);

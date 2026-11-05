@@ -1,0 +1,48 @@
+{if $positions.items}
+    <div class="supplier-application-positions__table-wrap">
+        <table class="supplier-application-positions__table">
+            <caption>Сохранённые позиции заявки</caption>
+            <thead>
+                <tr>
+                    <th scope="col">Номер</th>
+                    <th scope="col">Наименование</th>
+                    <th scope="col">Аналог</th>
+                    <th scope="col">Кол-во</th>
+                    <th scope="col">Ед.</th>
+                    <th scope="col">НДС</th>
+                    <th scope="col">Цена за единицу, без НДС</th>
+                    <th scope="col">Комментарий</th>
+                </tr>
+            </thead>
+            <tbody>
+                {foreach $positions.items as $item}
+                    <tr>
+                        <td>{$item@iteration}</td>
+                        <td>{$item.name|default:'—'|escape}</td>
+                        <td>—</td>
+                        <td>{if $item.qty !== null}{$item.qty|number_format:3:',':' '|regex_replace:'/,?0+$/':''|escape}{else}—{/if}</td>
+                        <td>{$item.unit|default:'—'|escape}</td>
+                        <td>{$item.vat_rate|default:'—'|escape}</td>
+                        <td>{if $item.price_per_unit !== null}{$item.price_per_unit|number_format:2:',':' '|escape} ₽{else}—{/if}</td>
+                        <td>—</td>
+                    </tr>
+                {/foreach}
+            </tbody>
+        </table>
+    </div>
+    <section class="supplier-application-positions__totals" aria-label="Итоговая стоимость">
+        <h2>Итоговая стоимость</h2>
+        <dl>
+            <div><dt>Сумма без НДС:</dt><dd>{if $positions.totals.net !== null}{$positions.totals.net|number_format:2:',':' '|escape} ₽{else}—{/if}</dd></div>
+            <div><dt>Сумма НДС:</dt><dd>{if $positions.totals.vat !== null}{$positions.totals.vat|number_format:2:',':' '|escape} ₽{else}—{/if}</dd></div>
+            <div class="supplier-application-positions__gross"><dt>Итого с НДС:</dt><dd>{if $positions.totals.gross !== null}{$positions.totals.gross|number_format:2:',':' '|escape} ₽{else}—{/if}</dd></div>
+        </dl>
+        {if !$positions.totals.prices_complete}
+            <p class="supplier-application__hint">В заявке заполнены не все цены. Итоговая стоимость пока не рассчитана.</p>
+        {elseif !$positions.totals.vat_complete}
+            <p class="supplier-application__hint">НДС указан не для всех позиций. Итог с НДС пока не рассчитан.</p>
+        {/if}
+    </section>
+{else}
+    <p class="supplier-application-positions__empty">В заявке пока нет сохранённых позиций.</p>
+{/if}

@@ -17,9 +17,17 @@ class pb2bFrontendApiBuyerTenderSaveController extends pb2bFrontendCabinetContro
         $tender = $this->tenderService()->updateFromBuyer(
             $tender_id,
             $this->tenderCompanyId(),
-            $dto
+            $dto,
+            wa()->getUser()
         );
 
         $this->response = $this->tenderSuccessPayload($tender, 'Сохранено');
+        $this->response['criteria'] = $tender->getCriteria();
+        if ($dto->hasDocuments()) {
+            $this->response['documents'] = pb2bTenderDocumentResource::collection($tender->getDocuments());
+        }
+        if ($dto->hasItems()) {
+            $this->response['items'] = pb2bTenderItemResource::collection($tender->getItems());
+        }
     }
 }

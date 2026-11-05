@@ -14,6 +14,7 @@ class pb2bProcedure extends pb2bWaproObject
         }
         if (empty($this->id)) {
             $statuses = pb2bWaproHelper::getConfigOption('procedure_statuses', 'code');
+            $statuses = pb2bWaproHelper::getConfigOption('procedure_statuses', 'code');
             $draft_id = (int) ($statuses['draft']['id'] ?? 1);
             if (empty($data['status'])) {
                 $data['status'] = $draft_id;

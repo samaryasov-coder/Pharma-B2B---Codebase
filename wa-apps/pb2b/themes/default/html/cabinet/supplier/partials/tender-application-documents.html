@@ -1,0 +1,24 @@
+{if $requested_documents}
+    <section class="supplier-application__section supplier-application__list">
+        <h2 class="detail-section__title">Запрашиваемые документы</h2>
+        {foreach $requested_documents as $document}
+            <article class="supplier-application__list-item">
+                <h3 class="detail-field__label">{$document.name|default:'Документ'|escape}</h3>
+                {if $document.description}
+                    <p class="detail-field__value">{$document.description|escape|nl2br}</p>
+                {/if}
+                <p class="detail-field__value">
+                    {if $document.is_required}Обязательный{else}Необязательный{/if}
+                    <span aria-hidden="true"> · </span>
+                    {if $document.file_name}
+                        Файл загружен: {$document.file_name|escape}
+                    {else}
+                        Файл не загружен
+                    {/if}
+                </p>
+            </article>
+        {/foreach}
+    </section>
+{else}
+    <p class="supplier-application-positions__empty">Организатор не запрашивал документы.</p>
+{/if}

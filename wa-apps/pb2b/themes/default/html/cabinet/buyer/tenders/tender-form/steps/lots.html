@@ -1,0 +1,132 @@
+            <div class="tender-form-step tender-form-step--lots">
+
+            <!-- Edit mode -->
+            <div class="tender-lots-edit js-lots-edit">
+                <div class="tender-form-alert js-lots-error-banner" style="display:none;" role="alert">
+                    <svg class="tender-form-alert__icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 1.667A8.333 8.333 0 1 0 10 18.333 8.333 8.333 0 0 0 10 1.667Zm-.75 4.166a.75.75 0 0 1 1.5 0v5a.75.75 0 0 1-1.5 0v-5Zm.75 8.334a.833.833 0 1 1 0-1.667.833.833 0 0 1 0 1.667Z" fill="currentColor"/></svg>
+                    <span class="tender-form-alert__text js-lots-error-text"></span>
+                    <button type="button" class="tender-form-alert__close js-lots-error-dismiss" aria-label="Закрыть">
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M4.5 4.5l9 9M13.5 4.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    </button>
+                </div>
+
+                <div class="creation-card tender-lots-card tender-form-card tender-form-card--sectioned">
+                    <div class="tender-lots-card__head">
+                        <div class="tender-lots-card__title-row">
+                            <div class="creation-card-title tender-lots-card__title tender-form-card__title">Заполнение лотов</div>
+                            <div class="button-group js-lots-apply-template" role="group" aria-label="Шаблоны позиции" title="Шаблоны будут доступны позже">
+                                <button type="button" class="button secondary">
+                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M5.3125 1.25C5.13991 1.25 5 1.38991 5 1.5625V12.1875C5 12.3601 5.13991 12.5 5.3125 12.5H13.4375C13.6101 12.5 13.75 12.3601 13.75 12.1875V8.4375C13.75 7.22938 12.7706 6.25 11.5625 6.25H10.3125C9.44955 6.25 8.75 5.55044 8.75 4.6875V3.4375C8.75 2.22938 7.77062 1.25 6.5625 1.25H5.3125ZM9.58908 1.8063C9.85121 2.29164 10 2.84719 10 3.4375V4.6875C10 4.86009 10.1399 5 10.3125 5H11.5625C12.1527 5 12.7081 5.14874 13.1934 5.41076C12.4989 3.79615 11.2036 2.50073 9.58908 1.8063ZM15 12.1875C15 13.0504 14.3004 13.75 13.4375 13.75H11.25V15.9375C11.25 16.8004 10.5504 17.5 9.6875 17.5H1.5625C0.699555 17.5 0 16.8004 0 15.9375V5.3125C0 4.44955 0.699555 3.75 1.5625 3.75H3.125C3.3352 3.75 3.54363 3.758 3.75 3.77371V1.5625C3.75 0.699555 4.44955 0 5.3125 0H6.875C7.33568 0 7.78787 0.0384031 8.22841 0.112312C12.0716 0.757081 15 4.09845 15 8.125V12.1875ZM3.75 5.02799C3.54427 5.00947 3.33581 5 3.125 5H1.5625C1.38991 5 1.25 5.13991 1.25 5.3125V15.9375C1.25 16.1101 1.38991 16.25 1.5625 16.25H9.6875C9.86009 16.25 10 16.1101 10 15.9375V13.75H5.3125C4.44955 13.75 3.75 13.0504 3.75 12.1875V5.02799Z" fill="currentColor"/></svg>
+                                    <span>Применить шаблон к позиции</span>
+                                </button>
+                                <button type="button" class="button secondary icon-only" aria-label="Шаблоны">
+                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5.75 8.25L10 12.5L14.25 8.25" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="js-lots-tabs">
+                            {include file="html/cabinet/partials/tabs.html"
+                                tabs=[['id'=>'lots', 'label'=>'Позиции', 'active'=>true], ['id'=>'documents', 'label'=>'Документы']]
+                                tabs_aria="Разделы заполнения лотов"
+                                tabs_with_panels=false}
+                        </div>
+                    </div>
+
+                    <div class="tender-lots-body">
+                        <div class="tender-lots-col tender-lots-col--list">
+                            <button type="button" class="button secondary js-lots-add">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M10 3.125C10.3452 3.125 10.625 3.40482 10.625 3.75V9.375H16.25C16.5952 9.375 16.875 9.65482 16.875 10C16.875 10.3452 16.5952 10.625 16.25 10.625H10.625V16.25C10.625 16.5952 10.3452 16.875 10 16.875C9.65482 16.875 9.375 16.5952 9.375 16.25V10.625H3.75C3.40482 10.625 3.125 10.3452 3.125 10C3.125 9.65482 3.40482 9.375 3.75 9.375H9.375V3.75C9.375 3.40482 9.65482 3.125 10 3.125Z" fill="currentColor"/></svg>
+                                <span class="js-lots-add-label">Добавить позицию</span>
+                            </button>
+                            <div class="tender-lots-list js-lots-list"></div>
+                            <div class="tender-lots-list js-docs-list" style="display:none;"></div>
+                        </div>
+
+                        <div class="tender-lots-col tender-lots-col--editor">
+                            <div class="tender-lots-editor-card">
+                                <div class="js-lot-editor-wrap"></div>
+                                <div class="js-doc-editor-wrap" style="display:none;"></div>
+                                <div class="tender-lots-editor-empty js-lots-editor-empty" style="display:none;">
+                                    <span class="js-lots-editor-empty-text">Выберите позицию из списка слева</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tender-lots-col tender-lots-col--budget js-lots-budget-col">
+                            <div class="tender-lots-budget js-lots-budget">
+                                <div class="tender-lots-budget__head">Контроль бюджета</div>
+                                <div class="tender-lots-budget__body">
+                                    <div class="tender-lots-budget__rows">
+                                        <div class="tender-lots-budget__row"><span>Сумма цен по позициям</span><span class="js-budget-sum-prices">0,00 ₽</span></div>
+                                        <div class="tender-lots-budget__row"><span>НДС позиций</span><span class="js-budget-sum-vat">0,00 ₽</span></div>
+                                        <div class="tender-lots-budget__row"><span>НМЦ лота</span><span class="js-budget-nmc js-budget-synced">0,00 ₽</span></div>
+                                        <div class="tender-lots-budget__row"><span>НДС лота</span><span class="js-budget-lot-vat">20%</span></div>
+                                    </div>
+                                    <div class="tender-lots-budget__divider" aria-hidden="true"></div>
+                                    <div class="tender-lots-budget__rows">
+                                        <div class="tender-lots-budget__row"><span>Разница</span><span class="js-budget-diff">0,00 ₽</span></div>
+                                        <div class="tender-lots-budget__row"><span>Соотношение</span><span class="js-budget-ratio">—</span></div>
+                                    </div>
+                                    <div class="tender-lots-budget__synced js-budget-synced-msg" style="display:none;">
+                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1.333A6.667 6.667 0 1 0 8 14.667 6.667 6.667 0 0 0 8 1.333Zm3.138 4.529a.667.667 0 0 1-.096.938L7.377 9.862a.667.667 0 0 1-.942-.02L5.293 8.7a.667.667 0 1 1 .943-.943l.69.69 3.243-2.595a.667.667 0 0 1 .97.01Z" fill="currentColor"/></svg>
+                                        <span>НМЦ соответствует сумме позиций</span>
+                                    </div>
+                                    <div class="tender-lots-budget__actions js-budget-actions" style="display:none;">
+                                        <button type="button" class="button secondary js-budget-accept-nmc">Принять сумму по позициям как НМЦ лота</button>
+                                        <button type="button" class="button secondary js-budget-clear-prices">Очистить цену в позициях</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="creation-manage-buttons tender-lots-footer">
+                        <a class="manage-button button large outline js-tender-create-cancel" href="/cabinet/buyer/tenders/" hx-get="/cabinet/buyer/tenders/" hx-target=".js-main-content" hx-push-url="true">Отменить</a>
+                        <div class="manage-buttons-right">
+                            <button type="button" class="manage-button button large secondary back js-tender-step-prev">Назад</button>
+                            <button type="button" class="manage-button button large primary js-lots-preview">Предварительный просмотр</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Preview mode -->
+            <div class="tender-lots-preview js-lots-preview-view" style="display:none;">
+                <div class="tender-lots-preview__head">
+                    <div class="tender-lots-preview__title-row">
+                        <div class="tender-lots-preview__title tender-form-card__title">Предварительный просмотр</div>
+                    </div>
+                    <div class="tender-lots-preview__hint tender-form-card__hint">Проверьте корректность введённых данных перед публикацией</div>
+                </div>
+
+                <div class="tender-lots-preview__section">
+                    <div class="tender-lots-preview__section-head">
+                        <span class="tender-lots-preview__section-title">Позиции</span>
+                        <span class="tender-lots-preview__badge js-preview-pos-count">0</span>
+                    </div>
+                    <div class="tender-lots-preview__section-hint tender-form-field__help">Нажмите на строку, чтобы отредактировать позицию</div>
+                    <div class="js-preview-pos-table"></div>
+                </div>
+
+                <div class="tender-lots-preview__section tender-lots-preview__section--docs">
+                    <div class="tender-lots-preview__section-head">
+                        <span class="tender-lots-preview__section-title js-preview-docs-title">Требуемые документы</span>
+                        <span class="tender-lots-preview__badge js-preview-doc-count">0</span>
+                    </div>
+                    <div class="js-preview-doc-table"></div>
+                </div>
+
+                <div class="creation-manage-buttons tender-lots-preview-footer">
+                    <button type="button" class="manage-button button large outline js-lots-exit-preview">Вернуться к редактированию</button>
+                    <div class="manage-buttons-right">
+                        {if $form_editing_published|default:false}
+                            <button type="button" class="manage-button button large primary js-tender-save-draft">Сохранить изменения</button>
+                        {else}
+                            <button type="button" class="manage-button button large primary js-tender-step-next">Перейти к рассылке</button>
+                        {/if}
+                    </div>
+                </div>
+            </div>
+
+            </div>

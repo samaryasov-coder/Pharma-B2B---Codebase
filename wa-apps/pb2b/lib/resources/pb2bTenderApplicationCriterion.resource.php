@@ -19,6 +19,7 @@ class pb2bTenderApplicationCriterionResource extends pb2bBaseJsonResource
             'value' => $row['value'] ?? null,
             'file_link_id' => $file_link_id > 0 ? $file_link_id : null,
             'confirmed' => !empty($row['confirmed']) ? 1 : 0,
+            'file_name' => (string) ($row['file_name'] ?? ''),
         );
     }
 }

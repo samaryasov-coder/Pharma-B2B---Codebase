@@ -1,141 +1,339 @@
-{* Карточка тендера buyer: шапка как в списке, обзор = извещение поставщика. *}
-{assign var=created value=$card.create_datetime|default:$card.published_at|default:''}
-{if $card.is_private}
+{assign var=tender_data value=$tender.data}
+{* Карточка тендера buyer *}
+
+{assign var=created value=$tender_data.create_datetime|default:$tender_data.published_at|default:''}
+
+{if $tender_data.is_private}
     {assign var=access_label value='Закрытый'}
 {else}
     {assign var=access_label value='Открытый'}
 {/if}
-{assign var=method_line value=$card.type.name|default:'Тендер'}
-{if $card.number}
-    {assign var=method_line value=$method_line|cat:' №'|cat:$card.number}
+
+{assign var=method_line value=$tender_type.name|default:'Тендер'}
+{if $tender_data.number}
+    {assign var=method_line value=$method_line|cat:' №'|cat:$tender_data.number}
 {/if}
 
-<div class="cabinet-container js-cabinet-page" data-page="tender" data-role="buyer" data-id="{$tender.id|escape}">
-    <div class="buyer-tender-page">
-        <header class="buyer-tender-page__header">
-            <div class="buyer-tender-page__title-row">
-                <h1 class="buyer-tender-page__title">{$method_line|escape}</h1>
-                <a
-                    href="/cabinet/buyer/tenders/?edit={$tender.id|escape}"
-                    class="button secondary buyer-tender-page__edit js-buyer-tender-edit"
-                >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                        <path d="M12 20h9" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
-                        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/>
-                    </svg>
-                    <span>Редактировать</span>
-                </a>
-            </div>
-        </header>
-
-        <article class="buyer-tender-card buyer-tender-card--detail" aria-label="Сводка тендера">
-            <div class="buyer-tender-card__main">
-                <div class="buyer-tender-card__title-row">
-                    <h2 class="buyer-tender-card__title">{$card.title|default:'Без названия'|escape}</h2>
-                    <span class="buyer-tender-card__status buyer-tender-card__status--{$status_tone|default:'info'|escape}">
-                        {$card.status.name|default:'—'|escape}
-                    </span>
+<div
+    class="cabinet-container js-cabinet-page"
+    data-page="tender"
+    data-role="buyer"
+    data-id="{$tender.id|escape}"
+    data-can-start-review="{$permissions.can_start_review|intval|escape}"
+    data-review-started="{$review_started|intval|escape}"
+    data-can-select-winner="{$permissions.can_select_winner|default:0|escape}"
+    data-winner-selection-completed="{$tender_data.winner_selection_completed|default:0|escape}"
+    data-itemized-enabled="{$tender_data.itemized_enabled|default:0|escape}"
+    data-notice-title="{$tender_data.title|default:''|escape}"
+    data-notice-number="{$tender_data.number|default:''|escape}"
+    data-notice-method="{$tender_type.name|default:'Тендер'|escape}"
+    data-notice-status="{$tender_status.name|default:''|escape}"
+    data-notice-access="{$access_label|escape}"
+    data-notice-deadline="{if $tender_data.end_at}{$tender_data.end_at|date_format:'%d.%m.%Y в %H:%M'}{/if}"
+    data-notice-description="{$tender_data.description|default:''|escape}"
+>
+    <div class="tender-page">
+        <!-- верхний блок -->
+        <div class="tender-page__header">
+            <!-- заголовок -->
+            {assign var=tender_header_actions value=''}
+            {if $permissions.can_edit|default:0}
+                {capture assign="tender_header_actions"}
+                    <a href="/cabinet/buyer/tender/{$tender.id|escape}/edit/" class="button secondary js-buyer-tender-edit">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M12 20h9" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+                            <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Редактировать</span>
+                    </a>
+                {/capture}
+            {/if}
+            {include file="html/cabinet/partials/page-header.html"
+                page_header_title=$method_line
+                page_header_actions=$tender_header_actions
+                page_header_back_url=""}
+            <!-- общий верхний блок (карточка) -->
+            <article class="buyer-tender-card buyer-tender-card--detail" aria-label="Сводка тендера">
+                <div class="buyer-tender-card__main">
+                    <div class="buyer-tender-card__title-row">
+                        <h2 class="buyer-tender-card__title">{$tender_data.title|default:'Без названия'|escape}</h2>
+                        {include file="html/cabinet/partials/badge.html" badge_text=$tender_status.name|default:'—' badge_tone=$tender_status.tone|default:'info' badge_class='js-buyer-tender-status'}
+                    </div>
+                    <div class="buyer-tender-card__meta">
+                        <span>Дата создания: {if $created}{$created|date_format:"%d.%m.%Y"}{else}—{/if}</span>
+                        <span class="buyer-tender-card__dot" aria-hidden="true"></span>
+                        <span>{$method_line|escape}</span>
+                        <span class="buyer-tender-card__dot" aria-hidden="true"></span>
+                        <span>{$access_label|escape}</span>
+                    </div>
                 </div>
-                <div class="buyer-tender-card__meta">
-                    <span>Дата создания: {if $created}{$created|date_format:"%d.%m.%Y"}{else}—{/if}</span>
-                    <span class="buyer-tender-card__dot" aria-hidden="true"></span>
-                    <span>{$method_line|escape}</span>
-                    <span class="buyer-tender-card__dot" aria-hidden="true"></span>
-                    <span>{$access_label|escape}</span>
+                <div class="buyer-tender-card__metric">
+                    <span class="buyer-tender-card__metric-label">Приглашено</span>
+                    <span class="buyer-tender-card__metric-value">{$counts.invited|default:0|escape}</span>
                 </div>
-            </div>
-            <div class="buyer-tender-card__metric">
-                <span class="buyer-tender-card__metric-label">Приглашено</span>
-                <span class="buyer-tender-card__metric-value">{$invited_count|default:$card.invited_count|default:0|escape}</span>
-            </div>
-            <div class="buyer-tender-card__metric">
-                <span class="buyer-tender-card__metric-label">Участники</span>
-                <span class="buyer-tender-card__metric-value">{$participants_count|default:0|escape}</span>
-            </div>
-            <div class="buyer-tender-card__metric">
-                <span class="buyer-tender-card__metric-label">Предложения</span>
-                <span class="buyer-tender-card__metric-value">{$proposals_count|default:0|escape}</span>
-            </div>
-            <div class="buyer-tender-card__deadline">
-                <span class="buyer-tender-card__metric-label">Окончание приёма заявок</span>
-                <div class="buyer-tender-card__deadline-row">
-                    <span class="buyer-tender-card__metric-value{if $deadline_expired} is-expired{/if}">
-                        {if $card.end_at}{$card.end_at|date_format:"%d.%m.%Y в %H:%M"}{else}—{/if}
-                    </span>
-                    {if $days_left_label}
-                        <span class="buyer-tender-card__days{if $deadline_expired} is-expired{/if}">
-                            {$days_left_label|escape}
+                <div class="buyer-tender-card__metric">
+                    <span class="buyer-tender-card__metric-label">Участники</span>
+                    <span class="buyer-tender-card__metric-value">{$counts.participants|default:0|escape}</span>
+                </div>
+                <div class="buyer-tender-card__metric">
+                    <span class="buyer-tender-card__metric-label">Предложения</span>
+                    <span class="buyer-tender-card__metric-value">{$counts.proposals|default:0|escape}</span>
+                </div>
+                <div class="buyer-tender-card__deadline">
+                    <span class="buyer-tender-card__metric-label">Окончание приёма заявок</span>
+                    <div class="buyer-tender-card__deadline-row">
+                        <span class="buyer-tender-card__metric-value{if $deadline.expired} is-expired{/if}">
+                            {if $tender_data.end_at}{$tender_data.end_at|date_format:"%d.%m.%Y в %H:%M"}{else}—{/if}
                         </span>
-                    {/if}
+                        {if $deadline.label}
+                            {assign var=deadline_badge_tone value='neutral'}
+                            {if $deadline.expired}{assign var=deadline_badge_tone value='disabled'}{/if}
+                            {include file="html/cabinet/partials/badge.html" badge_text=$deadline.label badge_size='small' badge_variant='tag' badge_outline=true badge_tone=$deadline_badge_tone}
+                        {/if}
+                    </div>
                 </div>
+            </article>
+
+        </div>
+
+        <!-- основной блок -->
+        <div class="tender-page__body js-tender-tabs">
+            <div class="tender-page__tabs">
+                {include
+                    file="html/cabinet/partials/tabs.html"
+                    tabs=$tabs
+                    tabs_aria="Разделы тендера"
+                    tabs_size="large"
+                    tabs_with_panels=false
+                }
             </div>
-        </article>
 
-        <div class="buyer-tender-tabs js-ds-tabs-scope">
-            {include
-                file="html/cabinet/partials/ds-tabs-underline.html"
-                ds_tabs=$ds_tabs
-                ds_tabs_aria="Разделы тендера"
-                ds_tabs_with_panels=false
-            }
-            <div class="ds-tabs-panels">
-                <div
-                    class="ds-tabs-panel buyer-tender-overview js-ds-tabs-panel is-active"
+            <div class="tender-page__panels tabs-content">
+                <div class="tab-content tender-page__panel tender-page__panel--overview tender-page__panel--with-aside is-active"
                     role="tabpanel"
-                    data-tab-panel="overview"
-                >
-                    {include file="html/cabinet/supplier/partials/tender-tab-notice.html"}
+                    data-tab="overview">
+                    <div class="tender-page__main">
+                        {include file="html/cabinet/partials/tender-tab-notice.html" notice=$tender_data}
+                    </div>
+                    <aside class="tender-page__aside" aria-label="Действия тендера">
+                        {include file="html/cabinet/buyer/partials/tender-overview-aside.html"}
+                    </aside>
+                </div>
+
+                <div class="tab-content tender-page__panel tender-page__panel--participants tender-page__panel--with-aside"
+                    data-tab="participants"
+                    role="tabpanel"
+                    hidden>
+                    <div class="tender-page__main tender-participants">
+                        <div class="tender-participants__list-view js-tender-participants-list-view">
+                            <div class="tender-participants-toolbar">
+                                <div class="tender-participants-toolbar__search">
+                                    <span class="tender-participants-toolbar__search-icon" aria-hidden="true">
+                                        <svg><use href="#icon-search"></use></svg>
+                                    </span>
+                                    <input
+                                        type="search"
+                                        class="tender-participants-toolbar__search-input js-tender-participants-search"
+                                        placeholder="Поиск"
+                                        aria-label="Поиск участников"
+                                        autocomplete="off"
+                                    >
+                                </div>
+                            </div>
+
+                            <div class="tender-participants__loading js-tender-participants-loading" hidden>Загрузка…</div>
+                            <div class="tender-participants__error js-tender-participants-error" hidden></div>
+                            <div class="tender-participants__empty js-tender-participants-empty" hidden>
+                                <p class="tender-participants__empty-title">Пока никто не участвует</p>
+                                <p class="des">Здесь появятся поставщики, которые начали участие или подали предложение.</p>
+                            </div>
+                            <div class="tender-participants__empty js-tender-participants-search-empty" hidden>
+                                <p class="tender-participants__empty-title">Ничего не найдено</p>
+                                <p class="des">Попробуйте изменить поисковый запрос.</p>
+                            </div>
+                            <ul class="tender-participants__list js-tender-participants-list" hidden></ul>
+                        </div>
+
+                        <div class="tender-participants__detail-view js-tender-participants-detail-view" hidden>
+                            {include file="html/cabinet/partials/tender-application.html" tender_application_tabs=$application_tabs}
+                        </div>
+                    </div>
+                    <aside class="tender-page__aside js-tender-participants-aside" aria-label="Действия тендера">
+                        {include file="html/cabinet/buyer/partials/tender-overview-aside.html"}
+                    </aside>
                 </div>
 
                 <div
-                    class="ds-tabs-panel buyer-tender-participants js-ds-tabs-panel"
-                    data-tab-panel="participants"
+                    class="tab-content tender-page__panel tender-page__panel--evaluation"
+                    data-tab="evaluation"
                     role="tabpanel"
                     hidden
                 >
-                    <div class="js-buyer-participants-list-view">
-                        <div class="buyer-tender-participants__head">
-                            <h3 class="buyer-tender-participants__title">Участники</h3>
-                            <p class="des buyer-tender-participants__hint">
-                                Заявки со статусом «Подана» и «Отозвана». Черновики поставщиков не отображаются.
-                            </p>
+                    <div class="tender-page__main tender-evaluation">
+                        {capture assign=evaluation_header_actions}
+                            <select class="js-tender-evaluation-template" aria-label="Шаблон отчёта сравнения" disabled>
+                                <option>Полный отчёт сравнения</option>
+                            </select>
+                            <button type="button" class="button secondary js-tender-evaluation-template-settings" disabled>Настроить шаблон</button>
+                            <button type="button" class="button secondary js-tender-evaluation-template-delete" disabled>Удалить шаблон</button>
+                        {/capture}
+                        {include
+                            file="html/cabinet/partials/page-header.html"
+                            page_header_title="Сравнение предложений от поставщиков"
+                            page_header_level="h3"
+                            page_header_size="h4"
+                            page_header_actions=$evaluation_header_actions
+                            page_header_title_class=""
+                            page_header_back_url=""
+                        }
+                        <div class="tender-evaluation__error js-tender-evaluation-template-error" role="alert" hidden>
+                            Не удалось загрузить или сохранить шаблоны.
+                            <button type="button" class="button outline small js-tender-evaluation-template-retry">Повторить</button>
                         </div>
-                        <div class="buyer-participants-summary js-buyer-participants-summary" hidden>
-                            <div class="buyer-participants-summary__cell">
-                                <span class="buyer-participants-summary__label">Всего участников</span>
-                                <span class="buyer-participants-summary__value js-buyer-participants-total">0</span>
+                        <div class="tender-evaluation__review">
+                            <p class="des js-buyer-evaluation-hint">После окончания приёма начните рассмотрение, чтобы сравнить предложения.</p>
+                            <span class="js-buyer-evaluation-started"{if !$review_started} hidden{/if}>Рассмотрение начато</span>
+                            <button type="button" class="button primary js-buyer-start-review"{if !$permissions.can_start_review} disabled{/if}{if $review_started} hidden{/if}>Начать рассмотрение заявок</button>
+                        </div>
+                        <div class="tender-evaluation__loading js-buyer-evaluation-loading" role="status" hidden>Загрузка…</div>
+                        <div class="tender-evaluation__error js-buyer-evaluation-error" role="alert" hidden></div>
+                        <div class="tender-evaluation__empty js-buyer-evaluation-empty"{if $review_started} hidden{/if}>
+                            <p>Цены ещё не вскрыты</p>
+                            <p class="des">Сравнение станет доступно после начала рассмотрения заявок.</p>
+                        </div>
+                        <div class="js-buyer-evaluation-ranking" hidden>
+                            <div class="tender-evaluation__toolbar">
+                                <label>Порядок поставщиков
+                                    <select class="js-tender-evaluation-sort">
+                                        <option value="rank">По месту в рейтинге</option>
+                                        <option value="manual">Ручной порядок</option>
+                                        <option value="total-asc">По стоимости: сначала дешевле</option>
+                                        <option value="total-desc">По стоимости: сначала дороже</option>
+                                        <option value="name">По названию</option>
+                                    </select>
+                                </label>
                             </div>
-                            <div class="buyer-participants-summary__cell">
-                                <span class="buyer-participants-summary__label">Подали предложение</span>
-                                <span class="buyer-participants-summary__value is-success js-buyer-participants-submitted">0</span>
-                            </div>
-                        </div>
-                        <div class="buyer-tender-participants__loading js-buyer-participants-loading" hidden>Загрузка…</div>
-                        <div class="buyer-tender-participants__error js-buyer-participants-error" hidden></div>
-                        <div class="buyer-tender-participants__empty js-buyer-participants-empty" hidden>
-                            <p class="buyer-tender-participants__empty-title">Пока никто не подал заявку</p>
-                            <p class="des">Здесь появятся поставщики, которые отправили предложение по этому тендеру.</p>
-                        </div>
-                        <ul class="buyer-tender-participants__list js-buyer-participants-list" hidden></ul>
-                    </div>
-
-                    <div class="js-buyer-participants-detail-view" hidden>
-                        <div class="buyer-application-head">
-                            <button type="button" class="buyer-application-back js-buyer-participants-back">← К участникам</button>
-                            <h3 class="buyer-application-head__title">Предложение участника</h3>
-                        </div>
-                        <div class="buyer-tender-application js-buyer-participants-detail">
-                            <div class="buyer-tender-participants__loading js-buyer-application-loading">Загрузка…</div>
-                            <div class="buyer-tender-participants__error js-buyer-application-error" hidden></div>
-                            <div class="js-buyer-application-body" hidden></div>
+                            <div class="table-scroll tender-evaluation__scroll js-tender-evaluation-table" tabindex="0" role="region" aria-label="Сравнение предложений от поставщиков"></div>
                         </div>
                     </div>
                 </div>
 
-                {* Заглушки disabled-табов — панели есть, чтобы ds-tabs не ломался *}
-                <div class="ds-tabs-panel js-ds-tabs-panel" role="tabpanel" data-tab-panel="questions" hidden></div>
-                <div class="ds-tabs-panel js-ds-tabs-panel" role="tabpanel" data-tab-panel="evaluation" hidden></div>
-                <div class="ds-tabs-panel js-ds-tabs-panel" role="tabpanel" data-tab-panel="results" hidden></div>
+                <div class="tab-content tender-page__panel tender-page__panel--questions" role="tabpanel" data-tab="questions" >
+                    <div class="tender-page__main">
+                        questions
+                    </div>
+                </div>
+
+                <div
+                    class="tab-content tender-page__panel tender-page__panel--results"
+                    data-tab="results"
+                    role="tabpanel"
+                    hidden
+                >
+                    <div class="tender-page__main buyer-tender-results">
+                        <div class="buyer-tender-results__loading js-buyer-results-loading" hidden>Загрузка…</div>
+                        <div class="buyer-tender-results__error js-buyer-results-error" hidden></div>
+
+                        <div class="buyer-tender-results__empty js-buyer-results-empty"{if $review_started || $tender_data.winner_selection_completed} hidden{/if}>
+                            <p class="buyer-tender-results__empty-title">Рассмотрение ещё не начато</p>
+                            <p class="des">
+                                Сначала на вкладке «Оценка» нажмите «Начать рассмотрение заявок» — после этого здесь можно выбрать победителя.
+                            </p>
+                        </div>
+
+                        <div class="buyer-tender-results__body js-buyer-results-body" hidden>
+                            <section
+                                class="buyer-tender-results__summary js-buyer-results-summary"
+                                aria-label="Обзор выбора победителя"
+                            >
+                                <div class="buyer-tender-results__summary-main">
+                                    <h3 class="buyer-tender-results__title">Выбор победителя</h3>
+
+                                    <div class="buyer-tender-results__stats js-buyer-results-stats">
+                                        <div class="buyer-tender-results__stat js-buyer-results-stat-selected" hidden>
+                                            <span class="buyer-tender-results__stat-label">Выбрано позиций</span>
+                                            <span class="buyer-tender-results__stat-value js-buyer-results-selected">—</span>
+                                        </div>
+                                        <div class="buyer-tender-results__stat js-buyer-results-stat-remaining" hidden>
+                                            <span class="buyer-tender-results__stat-label">Осталось позиций</span>
+                                            <span class="buyer-tender-results__stat-value js-buyer-results-remaining">—</span>
+                                        </div>
+                                        <div class="buyer-tender-results__stat">
+                                            <span class="buyer-tender-results__stat-label">Подано предложений</span>
+                                            <span class="buyer-tender-results__stat-value js-buyer-results-proposals">—</span>
+                                        </div>
+                                    </div>
+
+                                    <p class="buyer-tender-results__unassigned js-buyer-results-unassigned" hidden></p>
+
+                                    <div class="buyer-tender-results__badge js-buyer-results-badge" hidden></div>
+
+                                    <div class="buyer-tender-results__winner js-buyer-results-winner" hidden>
+                                        <span class="buyer-tender-results__stat-label">Победитель</span>
+                                        <span class="buyer-tender-results__stat-value js-buyer-results-winner-name"></span>
+                                        <span class="buyer-tender-results__winner-total js-buyer-results-winner-total" hidden></span>
+                                    </div>
+
+                                    <div class="buyer-tender-results__finished-wo js-buyer-results-finished-wo" hidden>
+                                        <span class="buyer-tender-results__stat-label">Завершено без победителя</span>
+                                        <span class="buyer-tender-results__stat-value js-buyer-results-finished-reason"></span>
+                                    </div>
+                                </div>
+                                <div class="buyer-tender-results__summary-actions js-buyer-results-actions">
+                                    <button
+                                        type="button"
+                                        class="button secondary js-buyer-winner-finish-wo"
+                                        {if !$permissions.can_select_winner}hidden{/if}
+                                    >
+                                        Завершить без победителя
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="button primary js-buyer-winner-complete"
+                                        disabled
+                                        {if !$permissions.can_select_winner}hidden{/if}
+                                    >
+                                        Завершить выбор победителя
+                                    </button>
+                                </div>
+                            </section>
+
+                            <div
+                                class="buyer-tender-results__method js-buyer-results-method"
+                                {if !$tender_data.itemized_enabled || !$permissions.can_select_winner}hidden{/if}
+                            >
+                                <p class="buyer-tender-results__method-label" id="buyer-results-method-label">
+                                    Метод выбора победителя
+                                </p>
+                                <div
+                                    class="buyer-tender-results__mode js-buyer-results-mode"
+                                    role="group"
+                                    aria-labelledby="buyer-results-method-label"
+                                >
+                                    <button
+                                        type="button"
+                                        class="buyer-tender-results__mode-btn is-active js-buyer-results-mode-btn"
+                                        data-mode="all"
+                                    >
+                                        Единый поставщик
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="buyer-tender-results__mode-btn js-buyer-results-mode-btn"
+                                        data-mode="positional"
+                                    >
+                                        Попозиционный выбор
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div
+                                class="buyer-results-table js-buyer-results-table-wrap"
+                                aria-label="Таблица выбора победителя"
+                            ></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

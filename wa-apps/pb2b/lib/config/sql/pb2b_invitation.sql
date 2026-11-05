@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS pb2b_invitation (
+CREATE TABLE IF NOT EXISTS pb2b_tender_invitation (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     tender_id INT UNSIGNED NOT NULL,
     supplier_company_id INT UNSIGNED NOT NULL,

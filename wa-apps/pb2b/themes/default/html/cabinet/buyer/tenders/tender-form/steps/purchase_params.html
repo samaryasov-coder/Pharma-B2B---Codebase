@@ -1,0 +1,242 @@
+<div class="tender-form-step">
+    <section class="tender-form-card">
+        <div class="tender-form-card__head">
+            <h2 class="tender-form-card__title">Параметры закупки</h2>
+            <p class="tender-form-card__hint">Заполните все основные данные извещения</p>
+        </div>
+
+        <div class="tender-form-fields js-price-request-only">
+            <label class="checkbox tender-form-control">
+                <input type="checkbox" name="itemized_enabled" value="1" class="js-field-itemized">
+                <span class="checkmark" aria-hidden="true"></span>
+                <span class="tender-form-control__copy">
+                    <span class="input-label">Попозиционная закупка возможна</span>
+                    <span class="input-hint">Участники не видят начальную цену. Участники могут подавать цену выше начальной.</span>
+                </span>
+            </label>
+            <label class="checkbox tender-form-control">
+                <input type="checkbox" name="allow_analogues" value="1" class="js-field-allow-analogues">
+                <span class="checkmark" aria-hidden="true"></span>
+                <span class="tender-form-control__copy">
+                    <span class="input-label">Разрешена подача аналогов закупаемой позиции</span>
+                    <span class="input-hint">Участники не видят начальную цену. Участники могут подавать цену выше начальной.</span>
+                </span>
+            </label>
+            <label class="checkbox tender-form-control">
+                <input type="checkbox" name="auto_extend_no_offers" value="1" class="js-field-auto-extend-no-offers">
+                <span class="checkmark" aria-hidden="true"></span>
+                <span class="tender-form-control__copy">
+                    <span class="input-label">Автопродление процедуры при отсутствии предложений</span>
+                    <span class="input-hint">Конкурс продляется на 24 часа в случае отсутствия предложений по истечению срока указанного в заявке</span>
+                </span>
+            </label>
+
+            <div class="tender-form-expand">
+                <label class="checkbox tender-form-control">
+                    <input type="checkbox" name="auto_extend_change" value="1" class="js-field-auto-extend-change" checked>
+                    <span class="checkmark" aria-hidden="true"></span>
+                    <span class="tender-form-control__copy">
+                        <span class="input-label">Автопродление процедуры при изменении стоимости/ранга за 30 минут до окончания тендера</span>
+                    </span>
+                </label>
+
+                <div class="tender-form-panel tender-form-reveal visible js-renewal-inner">
+                    <div class="tender-form-field tender-form-select-field">
+                        <label class="tender-form-field__label" for="tender-renewal-period">Период автопродления</label>
+                        <select id="tender-renewal-period" class="select2 filter-select renewal-period js-field-renewal-period" name="renewalPeriod" data-placeholder="Укажите период">
+                            <option value="15">15 минут</option>
+                            <option value="30" selected>30 минут</option>
+                            <option value="60">1 час</option>
+                        </select>
+                    </div>
+
+                    <div class="tender-form-field">
+                        <label class="checkbox tender-form-control tender-form-control--nested">
+                            <input type="checkbox" name="minIncrement" value="1" class="js-field-min-step" checked>
+                            <span class="checkmark" aria-hidden="true"></span>
+                            <span class="tender-form-control__copy"><span class="input-label">Минимальный шаг изменения предложения</span></span>
+                        </label>
+                        <div class="tender-form-fields tender-form-reveal tender-form-reveal--indented visible js-min-step-radios">
+                            <label class="radio outline tender-form-control">
+                                <input type="radio" name="increment" value="own" class="js-field-min-step-base" checked>
+                                <span class="radiomark" aria-hidden="true"></span>
+                                <span class="tender-form-control__copy"><span class="input-label">От своей цены</span></span>
+                            </label>
+                            <label class="radio outline tender-form-control">
+                                <input type="radio" name="increment" value="best" class="js-field-min-step-base">
+                                <span class="radiomark" aria-hidden="true"></span>
+                                <span class="tender-form-control__copy"><span class="input-label">От лучшей цены</span></span>
+                            </label>
+                            <div class="tender-form-increment visible js-min-step-value">
+                                <div class="tender-form-increment__switch">
+                                    <button type="button" class="increment-button active js-min-step-type" data-type="amount">Сумма</button>
+                                    <button type="button" class="increment-button js-min-step-type" data-type="percent">Процент</button>
+                                </div>
+                                <div class="input-box js-min-step-amount">
+                                    <input type="text" class="js-field-min-step-value" inputmode="decimal" name="minIncrementSum" value="1000" placeholder="1000">
+                                    <svg><use href="#icon-ruble"></use></svg>
+                                </div>
+                                <div class="input-box js-min-step-percent" style="display:none;">
+                                    <input type="text" class="js-field-min-step-percent" inputmode="decimal" name="minIncrementPercent" placeholder="10">
+                                    <span class="input-suffix">%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <label class="checkbox tender-form-control tender-form-control--nested">
+                        <input type="checkbox" name="onlyDecrease" value="1" class="js-field-only-reduction">
+                        <span class="checkmark" aria-hidden="true"></span>
+                        <span class="tender-form-control__copy"><span class="input-label">Разрешать только уменьшение предложений при корректировке</span></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <hr class="tender-form-divider js-price-request-only">
+        <div class="tender-form-section js-price-request-only">
+            <h3 class="tender-form-section__title">При выборе победителя учитывается цена</h3>
+            <div class="tender-form-options tender-form-options--compact">
+                <label class="radio outline tender-form-control">
+                    <input type="radio" name="vat_option" value="with_vat" class="js-field-vat" checked>
+                    <span class="radiomark" aria-hidden="true"></span>
+                    <span class="tender-form-control__copy"><span class="input-label">С НДС</span></span>
+                </label>
+                <label class="radio outline tender-form-control">
+                    <input type="radio" name="vat_option" value="without_vat" class="js-field-vat">
+                    <span class="radiomark" aria-hidden="true"></span>
+                    <span class="tender-form-control__copy"><span class="input-label">Без НДС</span></span>
+                </label>
+            </div>
+        </div>
+    </section>
+
+    <section class="tender-form-card">
+        <div class="tender-form-card__head">
+            <h2 class="tender-form-card__title">Даты и время</h2>
+            <p class="tender-form-card__hint">Заполните все данные по датам и времени</p>
+        </div>
+        <div class="tender-form-date-list">
+            <div class="tender-form-date-item">
+                <div class="tender-form-date-item__head">
+                    <h3 class="tender-form-section__title">Конечный срок подачи заявок</h3>
+                    <p class="tender-form-card__hint">Минимальный срок 5 календарных дней</p>
+                </div>
+                <div class="tender-form-date-fields">
+                    <div class="tender-form-date-field">
+                        <label class="tender-form-field__label" for="tender-end-date">Дата</label>
+                        <div class="date-picker">
+                            <input type="text" id="tender-end-date" class="date-select filter-date js-field-end-date" placeholder="ДД.ММ.ГГГГ" readonly>
+                            <svg><use href="#icon-calendar"></use></svg>
+                        </div>
+                    </div>
+                    <div class="tender-form-date-field">
+                        <label class="tender-form-field__label" for="tender-end-time">Время</label>
+                        <div class="date-picker time">
+                            <input type="text" id="tender-end-time" class="time js-field-end-time" placeholder="00:00" readonly>
+                            <svg><use href="#icon-clock"></use></svg>
+                        </div>
+                    </div>
+                </div>
+                <div class="tender-form-field__help">Россия, Москва (UTC +3:00)</div>
+            </div>
+
+            <div class="tender-form-date-item">
+                <div class="tender-form-date-item__head">
+                    <h3 class="tender-form-section__title">Окончание загрузки документов</h3>
+                    <p class="tender-form-card__hint">Участники смогут обновить коммерческое предложение и другие документы после окончания приёма, если указать отдельную дату</p>
+                </div>
+                <div class="tender-form-date-fields">
+                    <div class="tender-form-date-field">
+                        <label class="tender-form-field__label" for="tender-docs-date">Дата</label>
+                        <div class="date-picker">
+                            <input type="text" id="tender-docs-date" class="date-select filter-date js-field-docs-date" placeholder="ДД.ММ.ГГГГ" readonly>
+                            <svg><use href="#icon-calendar"></use></svg>
+                        </div>
+                    </div>
+                    <div class="tender-form-date-field">
+                        <label class="tender-form-field__label" for="tender-docs-time">Время</label>
+                        <div class="date-picker time">
+                            <input type="text" id="tender-docs-time" class="time js-field-docs-time" placeholder="00:00" readonly>
+                            <svg><use href="#icon-clock"></use></svg>
+                        </div>
+                    </div>
+                </div>
+                <div class="tender-form-field__help">Россия, Москва (UTC +3:00)</div>
+            </div>
+
+            <div class="tender-form-date-item">
+                <div class="tender-form-date-item__head">
+                    <h3 class="tender-form-section__title">Плановая дата подведения итогов</h3>
+                    <p class="tender-form-card__hint">Укажите предполагаемую дату подведения итогов процедуры.</p>
+                </div>
+                <div class="tender-form-date-fields">
+                    <div class="tender-form-date-field">
+                        <label class="tender-form-field__label" for="tender-result-date">Дата</label>
+                        <div class="date-picker">
+                            <input type="text" id="tender-result-date" class="date-select filter-date js-field-result-date" placeholder="ДД.ММ.ГГГГ" readonly>
+                            <svg><use href="#icon-calendar"></use></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="tender-form-card">
+        <div class="tender-form-card__head">
+            <h2 class="tender-form-card__title">Дополнительная информация</h2>
+            <p class="tender-form-card__hint">Заполните дополнительную информацию</p>
+        </div>
+        <div class="tender-form-fields">
+            <label class="checkbox tender-form-control">
+                <input type="checkbox" name="require_add_docs" value="1" class="js-field-require-docs">
+                <span class="checkmark" aria-hidden="true"></span>
+                <span class="tender-form-control__copy"><span class="input-label">Требуется предоставление дополнительной документации</span></span>
+            </label>
+            <div class="tender-form-field tender-form-field--limited">
+                <label class="tender-form-field__label" for="tender-additional-info">Дополнительная информация</label>
+                <div class="input-box">
+                    <input type="text" id="tender-additional-info" class="js-field-additional-info" name="additional_info" placeholder="Введите информацию для поставщиков">
+                </div>
+                <div class="js-extra-info-list add-info-extra-list"></div>
+                <button class="button outline js-add-info-field" type="button">
+                    <svg><use href="#icon-plus"></use></svg>
+                    <span>Добавить дополнительные поля информации</span>
+                </button>
+            </div>
+            <div class="tender-form-field tender-form-field--limited">
+                <label class="tender-form-field__label" for="tender-approver">Утверждение заявки перед началом конкурса</label>
+                <div class="input-box input-box--search">
+                    <input type="text" id="tender-approver" class="js-field-approver" name="approver" placeholder="Добавить утверждающего">
+                    <svg><use href="#icon-search"></use></svg>
+                </div>
+                <div class="js-extra-approver-list add-info-extra-list"></div>
+                <button class="button outline js-add-approver" type="button">
+                    <svg><use href="#icon-plus"></use></svg>
+                    <span>Добавить дополнительного утверждающего</span>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <section class="tender-form-card js-price-request-only">
+        <div class="tender-form-card__head">
+            <h2 class="tender-form-card__title">Неценовые критерии</h2>
+            <p class="tender-form-card__hint">Добавьте требования, которые должен заполнить поставщик при подаче заявки</p>
+        </div>
+        <div class="js-criteria-list npc-criteria-list"></div>
+        <button class="button outline tender-form-action js-criterion-add" type="button">
+            <svg><use href="#icon-plus"></use></svg>
+            <span>Добавить критерий</span>
+        </button>
+    </section>
+
+    <div class="creation-manage-buttons">
+        <a class="manage-button button large outline js-tender-create-cancel" href="/cabinet/buyer/tenders/" hx-get="/cabinet/buyer/tenders/" hx-target=".js-main-content" hx-push-url="true">Отменить</a>
+        <div class="manage-buttons-right">
+            <button type="button" class="manage-button button large secondary back js-tender-step-prev">Назад</button>
+            <button type="button" class="manage-button button large primary js-tender-step-next">Продолжить</button>
+        </div>
+    </div>
+</div>

@@ -248,10 +248,12 @@ html {
     --button-height-lg: 56px;
     --button-height-md: 44px;
     --button-height-sm: 30px;
+    --button-icon-height-sm: 34px;
 
     --button-svg-size-lg: 20px;
     --button-svg-size-md: 16px;
     --button-svg-size-sm: 12px;
+    --button-icon-svg-size-sm: 18px;
 
     --button-radius-lg: 14px;
     --button-radius-md: 12px;
@@ -740,8 +742,7 @@ html {
 
 
 
-
-
+/* 
 
 ul.tabs{
     position: relative;
@@ -850,7 +851,7 @@ ul.tabs:not(.vertical) > li.selected > a::after {
 }
 
 
-
+  */
 
 
 
@@ -878,6 +879,7 @@ ul.tabs:not(.vertical) > li.selected > a::after {
 
     padding: var(--btn-padding-py) var(--btn-padding-px);
     height: var(--btn-height);
+    border: 0;
     border-radius: var(--btn-radius);
     gap: var(--btn-gap);
     outline: 1px solid var(--btn-border-color);
@@ -899,6 +901,30 @@ ul.tabs:not(.vertical) > li.selected > a::after {
 .button.icon-only {
     --btn-padding-px: var(--btn-padding-py) !important;
     width: var(--btn-height);;
+    flex-shrink: 0;
+}
+
+.button-group {
+    display: inline-flex;
+    align-items: stretch;
+    flex-shrink: 0;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.button-group > .button {
+    min-width: 0;
+}
+
+.button-group > .button:not(:last-child) {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.button-group > .button:not(:first-child) {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-left: 1px solid var(--gray-200);
 }
 .button svg{
     --btn-svg-size: var(--button-svg-size-md);
@@ -954,6 +980,14 @@ ul.tabs:not(.vertical) > li.selected > a::after {
 }
 .button.small{
     --btn-svg-size: var(--button-svg-size-sm);
+}
+
+.button.small.icon-only {
+    --btn-height: var(--button-icon-height-sm);
+}
+
+.button.small.icon-only svg {
+    --btn-svg-size: var(--button-icon-svg-size-sm);
 }
 
 .button.primary {
@@ -1187,6 +1221,17 @@ textarea {
 
 .radio input:checked + .radiomark::after {
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12'><path d='M0 6C0 2.68629 2.68629 0 6 0C9.31371 0 12 2.68629 12 6C12 9.31371 9.31371 12 6 12C2.68629 12 0 9.31371 0 6Z' fill='white'/></svg>");    background-size: contain;
+}
+
+.radio.outline input:checked + .radiomark {
+    background-color: var(--white);
+}
+
+.radio.outline input:checked + .radiomark::after {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--primary-900);
 }
 
 .radio .input-label,

@@ -146,6 +146,16 @@
         <div class="form-step">
             <div class="form">
                 <div class="input-wrap required">
+                    <label class="input-label" for="company_type">Тип компании</label>
+                    <select id="company_type" name="company[company_type]" class="js-select">
+                        <option value="">Выберите тип компании</option>
+                        {foreach pb2bCompanyType::cases() as $type}
+                            <option value="{$type->value|escape}">{$type->name()|escape}</option>
+                        {/foreach}
+                    </select>
+                    <span class="input-hint"></span>
+                </div>
+                <div class="input-wrap required">
                     <label class="input-label" for="inn">ИНН компании</label>
                     <div class="input-box">
                         <input id="inn" name="company[inn]" type="text" class="input" placeholder="Введите ИНН">
@@ -173,12 +183,13 @@
                     </div>
                     <span class="input-hint"></span>
                 </div>
-                <div class="input-wrap required">
+                <div class="input-wrap required js-organization-type-wrap">
                     <label class="input-label" for="ofc">Организационная форма компании</label>
-                    <select id="ofc" name="company[ofc]" class="js-select">
+                    <select id="ofc" name="company[type_organization]" class="js-select">
+                        <option value="">Выберите организационную форму</option>
                         {foreach pb2bOrganizationType::cases() as $type}
                             <option value="{$type->value|default:''|escape}">
-                                {$type->title()|default:''|escape}
+                                {$type->name()|default:''|escape}
                             </option>
                         {/foreach}
                     </select>
@@ -203,6 +214,20 @@
                     </div>
                     <button class="button small outline">+ Добавить резервный E-mail</button>
                     <span class="input-hint"></span>
+                </div>
+                <div class="input-wrap required">
+                    <label class="input-label">Роль компании на площадке</label>
+                    <label class="checkbox">
+                        <input name="company[buyer]" type="checkbox" value="1">
+                        <span class="checkmark"></span>
+                        <span class="input-label">Покупатель</span>
+                    </label>
+                    <label class="checkbox">
+                        <input name="company[supplier]" type="checkbox" value="1">
+                        <span class="checkmark"></span>
+                        <span class="input-label">Поставщик</span>
+                    </label>
+                    <span class="input-hint js-company-role-hint">Выберите одну или обе роли</span>
                 </div>
                 <div class="input-wrap required">
                     <label class="input-label" for="phone">Номер телефона</label>

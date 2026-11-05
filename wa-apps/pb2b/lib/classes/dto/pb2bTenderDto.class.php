@@ -42,7 +42,7 @@ readonly class pb2bTenderDto extends pb2bBaseDto
     /** @var list<int> */
     public array $invitations;
 
-    /** @var list<array{name?:string,type?:string,description?:string,is_mandatory?:int|bool,weight?:float|null}> */
+    /** @var list<array<string,mixed>> */
     public array $criteria;
 
     /** @var list<array<string,mixed>> */
@@ -51,13 +51,20 @@ readonly class pb2bTenderDto extends pb2bBaseDto
     /** @var list<array<string,mixed>> */
     public array $documents;
 
+    public array $classifiers;
+
     public function __construct(array $data = [])
     {
+        if (array_key_exists('classifiers', $data)) {
+            if ($data['classifiers'] === '') {
+                $data['classifiers'] = array();
+            }
+            if (!is_array($data['classifiers'])) {
+                throw new waException('Неверный формат списка классификаторов', pb2bHttpStatus::BAD_REQUEST);
+            }
+        }
         if (array_key_exists('invitations', $data)) {
-            $invitations = $data['invitations'];
-            $data['invitations'] = is_array($invitations)
-                ? array_values(array_map('intval', $invitations))
-                : [];
+            $data['invitations'] = self::normalizeInvitations($data['invitations']);
         }
         if (array_key_exists('criteria', $data)) {
             $data['criteria'] = self::normalizeCriteria($data['criteria']);
@@ -71,68 +78,101 @@ readonly class pb2bTenderDto extends pb2bBaseDto
         parent::__construct($data);
     }
 
-    /** Поля для `$tender->save()` — без type / invitations / criteria / items / documents. */
     public function toSaveArray(): array
     {
         $row = $this->toArray();
-        unset($row['type'], $row['invitations'], $row['criteria'], $row['items'], $row['documents']);
+        unset($row['type'], $row['invitations'], $row['criteria'], $row['items'], $row['documents'], $row['classifiers']);
 
         return $row;
     }
 
+    public function hasClassifiers(): bool
+    {
+        return $this->has('classifiers');
+    }
+
     public function hasInvitations(): bool
     {
-        return (new ReflectionProperty($this, 'invitations'))->isInitialized($this);
+        return $this->has('invitations');
     }
 
     public function hasCriteria(): bool
     {
-        return (new ReflectionProperty($this, 'criteria'))->isInitialized($this);
+        return $this->has('criteria');
     }
 
     public function hasItems(): bool
     {
-        return (new ReflectionProperty($this, 'items'))->isInitialized($this);
+        return $this->has('items');
     }
 
     public function hasDocuments(): bool
     {
-        return (new ReflectionProperty($this, 'documents'))->isInitialized($this);
+        return $this->has('documents');
+    }
+
+    private static function normalizeInvitations($raw): array
+    {
+        if ($raw === '') {
+            return array();
+        }
+        if (!is_array($raw)) {
+            throw new waException('Неверный формат списка приглашений', pb2bHttpStatus::BAD_REQUEST);
+        }
+        $ids = array();
+        foreach ($raw as $item) {
+            $value = is_array($item) ? ($item['supplier_company_id'] ?? $item['id'] ?? null) : $item;
+            $id = filter_var($value, FILTER_VALIDATE_INT);
+            if ($id === false || $id <= 0) {
+                throw new waException('Неверный ID приглашённой компании', pb2bHttpStatus::BAD_REQUEST);
+            }
+            $ids[$id] = $id;
+        }
+
+        return array_values($ids);
     }
 
     /**
      * @param mixed $raw
-     * @return list<array{name:string,type:string,description:string,is_mandatory:int,weight:?float}>
+     * @return list<array<string,mixed>>
      */
     private static function normalizeCriteria($raw): array
     {
-        if (!is_array($raw)) {
-            return [];
+        if ($raw === '') {
+            return array();
         }
-        $out = [];
+        if (!is_array($raw)) {
+            throw new waException('Неверный формат списка критериев', pb2bHttpStatus::BAD_REQUEST);
+        }
+        $out = array();
         foreach ($raw as $row) {
             if (!is_array($row)) {
-                continue;
+                throw new waException('Неверный формат критерия', pb2bHttpStatus::BAD_REQUEST);
             }
             $name = trim((string) ($row['name'] ?? ''));
-            if ($name === '') {
-                continue;
-            }
-            $type = trim((string) ($row['type'] ?? 'non_price'));
-            if ($type === '') {
-                $type = 'non_price';
+            $type = trim((string) ($row['type'] ?? 'text'));
+            $type = $type === 'non_price' || $type === '' ? 'text' : $type;
+            $raw_id = $row['id'] ?? 0;
+            $id = filter_var($raw_id, FILTER_VALIDATE_INT);
+            if ($id === false || $id < 0) {
+                throw new waException('Неверный ID критерия', pb2bHttpStatus::BAD_REQUEST);
             }
             $weight = null;
             if (array_key_exists('weight', $row) && $row['weight'] !== '' && $row['weight'] !== null) {
                 $weight = (float) $row['weight'];
             }
-            $out[] = [
+            $out[] = array(
+                'id' => $id,
                 'name' => $name,
                 'type' => $type,
                 'description' => trim((string) ($row['description'] ?? '')),
                 'is_mandatory' => !empty($row['is_mandatory']) || !empty($row['required']) ? 1 : 0,
+                'confirmation_text' => $type === 'confirmation'
+                    ? trim((string) ($row['confirmation_text'] ?? $row['confirmationText'] ?? ''))
+                    : '',
+                'sort' => count($out),
                 'weight' => $weight,
-            ];
+            );
         }
 
         return $out;
@@ -144,23 +184,28 @@ readonly class pb2bTenderDto extends pb2bBaseDto
      */
     private static function normalizeItems($raw): array
     {
-        if (!is_array($raw)) {
-            return [];
+        if ($raw === '') {
+            return array();
         }
-        $out = [];
+        if (!is_array($raw)) {
+            throw new waException('Неверный формат списка позиций', pb2bHttpStatus::BAD_REQUEST);
+        }
+        $out = array();
         $sort = 0;
         foreach ($raw as $row) {
             if (!is_array($row)) {
-                continue;
+                throw new waException('Неверный формат позиции', pb2bHttpStatus::BAD_REQUEST);
+            }
+            $id = filter_var($row['id'] ?? 0, FILTER_VALIDATE_INT);
+            if ($id === false || $id < 0) {
+                throw new waException('Неверный ID позиции', pb2bHttpStatus::BAD_REQUEST);
             }
             $name = trim((string) ($row['name'] ?? ''));
-            if ($name === '') {
-                continue;
+            $qty = $row['qty'] ?? $row['quantity'] ?? 0;
+            if (!is_numeric($qty)) {
+                throw new waException('Количество должно быть числом', pb2bHttpStatus::BAD_REQUEST);
             }
-            $qty = (float) ($row['qty'] ?? $row['quantity'] ?? 0);
-            if ($qty <= 0) {
-                $qty = 1;
-            }
+            $qty = (float) $qty;
             $file_link_id = (int) ($row['file_link_id'] ?? 0);
             $max_price = null;
             if (array_key_exists('max_price_no_vat', $row) && $row['max_price_no_vat'] !== '' && $row['max_price_no_vat'] !== null) {
@@ -168,7 +213,8 @@ readonly class pb2bTenderDto extends pb2bBaseDto
             } elseif (array_key_exists('maxPriceNoVat', $row) && $row['maxPriceNoVat'] !== '' && $row['maxPriceNoVat'] !== null) {
                 $max_price = (float) $row['maxPriceNoVat'];
             }
-            $out[] = [
+            $out[] = array(
+                'id' => $id,
                 'name' => $name,
                 'qty' => $qty,
                 'unit' => trim((string) ($row['unit'] ?? '')),
@@ -178,7 +224,7 @@ readonly class pb2bTenderDto extends pb2bBaseDto
                 'comment' => trim((string) ($row['comment'] ?? '')),
                 'file_link_id' => $file_link_id > 0 ? $file_link_id : null,
                 'sort' => array_key_exists('sort', $row) ? (int) $row['sort'] : $sort,
-            ];
+            );
             $sort++;
         }
 
@@ -191,32 +237,32 @@ readonly class pb2bTenderDto extends pb2bBaseDto
      */
     private static function normalizeDocuments($raw): array
     {
-        if (!is_array($raw)) {
-            return [];
+        if ($raw === '') {
+            return array();
         }
-        $out = [];
+        if (!is_array($raw)) {
+            throw new waException('Неверный формат списка документов', pb2bHttpStatus::BAD_REQUEST);
+        }
+        $out = array();
         $sort = 0;
         foreach ($raw as $row) {
             if (!is_array($row)) {
-                continue;
+                throw new waException('Неверный формат документа', pb2bHttpStatus::BAD_REQUEST);
             }
-            $kind = trim((string) ($row['kind'] ?? ''));
-            if (!pb2bTenderDocument::isAllowedKind($kind)) {
-                continue;
-            }
-            $name = trim((string) ($row['name'] ?? ''));
-            if ($name === '') {
-                continue;
+            $id = filter_var($row['id'] ?? 0, FILTER_VALIDATE_INT);
+            if ($id === false || $id < 0) {
+                throw new waException('Неверный ID документа', pb2bHttpStatus::BAD_REQUEST);
             }
             $file_link_id = (int) ($row['file_link_id'] ?? 0);
-            $out[] = [
-                'kind' => $kind,
-                'name' => $name,
+            $out[] = array(
+                'id' => $id,
+                'kind' => trim((string) ($row['kind'] ?? '')),
+                'name' => trim((string) ($row['name'] ?? '')),
                 'description' => trim((string) ($row['description'] ?? '')),
                 'is_required' => !empty($row['is_required']) || !empty($row['isRequired']) ? 1 : 0,
                 'file_link_id' => $file_link_id > 0 ? $file_link_id : null,
                 'sort' => array_key_exists('sort', $row) ? (int) $row['sort'] : $sort,
-            ];
+            );
             $sort++;
         }
 

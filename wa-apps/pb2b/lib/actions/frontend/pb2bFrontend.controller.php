@@ -54,7 +54,15 @@ class pb2bFrontendController extends waJsonController
 
     protected function handleException(Throwable $e): void
     {
-        $this->getResponse()->setStatus($e->getCode());
-        $this->error($e->getMessage());
+        $code = (int) $e->getCode();
+        if ($code < 400 || $code > 599) {
+            $code = 500;
+        }
+        $this->getResponse()->setStatus($code);
+        $payload = array();
+        if ($e instanceof pb2bValidationException) {
+            $payload = $e->getPayload();
+        }
+        $this->error($e->getMessage(), $payload);
     }
 }

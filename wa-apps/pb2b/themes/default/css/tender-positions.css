@@ -1,0 +1,21 @@
+.tender-page__panel--positions {
+    --table-min-width: 1560px;
+}
+
+.tender-positions__number {
+    width: 90px;
+}
+
+.tender-positions__name {
+    width: 300px;
+}
+
+.tender-positions__quantity,
+.tender-positions__vat,
+.tender-positions__price {
+    width: 150px;
+}
+
+.tender-positions__unit {
+    width: 130px;
+}

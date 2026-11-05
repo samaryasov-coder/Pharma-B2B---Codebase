@@ -1,0 +1,63 @@
+{* Общий shell create/edit формы тендера. Шаги — tender-form/steps/*.html по $form_steps. *}
+{assign var=form_back_url value="/cabinet/buyer/tenders/"}
+
+<div
+    class="cabinet-container js-cabinet-page tender-create"
+    data-page="tender-form"
+    data-role="buyer"
+    data-mode="{$form_mode|escape}"
+    data-type="{$form_type_code|escape}"
+    data-type-id="{$form_type_id|escape}"
+    data-tender-id="{$form_tender_id|escape}"
+    data-steps="{$form_step_keys_json|escape}"
+    data-status-code="{$form_status_code|escape}"
+>
+    <div class="creation-container creation-container--header">
+        {capture assign="form_header_actions"}
+            <button type="button" class="button secondary js-tender-save-draft">
+                {if $form_edit_mode}Сохранить изменения{else}Сохранить в черновик{/if}
+            </button>
+            <button type="button" class="button secondary js-tender-apply-template">Применить шаблон</button>
+        {/capture}
+        {include file="html/cabinet/partials/page-header.html"
+            page_header_title=$form_title
+            page_header_title_class="js-creation-title"
+            page_header_actions=$form_header_actions
+            page_header_back_url=""}
+
+        <div class="creation-steps js-tender-steps">
+            {foreach from=$form_steps item=step name=form_step}
+                <div
+                    class="creation-step{if !$smarty.foreach.form_step.first} next{/if}"
+                    data-step="{$step.key|escape}"
+                >{$step.label|escape}</div>
+            {/foreach}
+        </div>
+    </div>
+
+    <input type="hidden" class="js-tender-id" value="{$form_tender_id|escape}">
+    <input type="hidden" class="js-tender-type" value="{$form_type_id|escape}">
+
+    <div class="creation-container creation-container--body js-tender-create-body">
+        {foreach from=$form_steps item=step name=form_panel}
+            <div
+                class="js-tender-step-panel"
+                data-step="{$step.key|escape}"
+                {if !$smarty.foreach.form_panel.first}style="display:none;"{/if}
+            >
+                <div class="tender-form-alert tender-form-alert--step js-step-validation-banner" style="display:none;" role="alert" data-step="{$step.key|escape}">
+                    <svg class="tender-form-alert__icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 1.667A8.333 8.333 0 1 0 10 18.333 8.333 8.333 0 0 0 10 1.667Zm-.75 4.166a.75.75 0 0 1 1.5 0v5a.75.75 0 0 1-1.5 0v-5Zm.75 8.334a.833.833 0 1 1 0-1.667.833.833 0 0 1 0 1.667Z" fill="currentColor"/></svg>
+                    <span class="tender-form-alert__text js-step-validation-text"></span>
+                    <button type="button" class="tender-form-alert__close js-step-validation-dismiss" aria-label="Закрыть">
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M4.5 4.5l9 9M13.5 4.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    </button>
+                </div>
+                {include file="html/cabinet/buyer/tenders/tender-form/steps/`$step.key`.html"}
+            </div>
+        {/foreach}
+    </div>
+
+    {if $form_detail_json}
+        <script type="application/json" class="js-tender-form-detail">{$form_detail_json nofilter}</script>
+    {/if}
+</div>

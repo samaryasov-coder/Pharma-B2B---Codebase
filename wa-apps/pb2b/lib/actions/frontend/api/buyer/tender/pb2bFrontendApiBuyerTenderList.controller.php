@@ -2,20 +2,20 @@
 
 class pb2bFrontendApiBuyerTenderListController extends pb2bFrontendCabinetController
 {
-    use pb2bFrontendApiBuyerTenderTrait;
-
     public function executeBuyer(): void
     {
-        $this->assertBuyerCompanySelected();
-
-        $filters = [
+        $filters = array(
             'status' => waRequest::get('status', 0, waRequest::TYPE_INT),
             'type' => waRequest::get('type', 0, waRequest::TYPE_INT),
-        ];
+        );
+        $tenders = (new pb2bTenderService())->listFromBuyer(
+            $this->context->company(),
+            $filters
+        );
 
-        $this->response = [
+        $this->response = array(
             'error' => false,
-            'items' => $this->tenderService()->listFromBuyer($this->tenderCompanyId(), $filters),
-        ];
+            'items' => pb2bTenderListResource::collection($tenders),
+        );
     }
 }

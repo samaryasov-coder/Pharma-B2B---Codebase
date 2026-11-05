@@ -8,7 +8,6 @@ class pb2bCompanyRoleMiddleware
         if (!$company) {
             return false;
         }
-
         return match ($role) {
             pb2bCompanyRole::BUYER => $company->isBuyer(),
             pb2bCompanyRole::SUPPLIER => $company->isSupplier(),

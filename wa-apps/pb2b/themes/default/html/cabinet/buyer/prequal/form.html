@@ -1,0 +1,33 @@
+<div class="cabinet-container js-cabinet-page tender-create prequal-create" data-page="prequal-form" data-prequal-id="{$prequal_id|escape}">
+    <div class="creation-container creation-container--header">
+        {capture assign=prequal_actions}
+            <button type="submit" form="prequal-draft-form" class="button secondary js-prequal-save">{if $prequal_id}Сохранить изменения{else}Сохранить в черновик{/if}</button>
+        {/capture}
+        {if $prequal_id}
+            {assign var=prequal_title value='Редактирование предварительной квалификации'}
+        {else}
+            {assign var=prequal_title value='Создание предварительной квалификации'}
+        {/if}
+        {include file="html/cabinet/partials/page-header.html"
+            page_header_title=$prequal_title
+            page_header_title_class="js-prequal-title"
+            page_header_actions=$prequal_actions
+            page_header_back_url="/cabinet/buyer/tenders/"}
+        <p class="prequal-code js-prequal-code"{if !$prequal_id} hidden{/if}>{$prequal_data.procedure_code|default:''|escape}</p>
+        <nav aria-label="Шаги создания предварительной квалификации">
+            <ol class="prequal-steps">
+                <li><button type="button" class="button outline js-prequal-step" data-step="access" aria-current="step">1. Доступ к процедуре</button></li>
+                <li><button type="button" class="button outline js-prequal-step" data-step="basic">2. Основные данные</button></li>
+            </ol>
+        </nav>
+    </div>
+    <form id="prequal-draft-form" class="creation-container creation-container--body js-prequal-form">
+        <div class="prequal-message js-prequal-message" role="status" aria-live="polite" tabindex="-1" hidden></div>
+        <div class="js-prequal-panel" data-step="access">
+            {include file="html/cabinet/buyer/prequal/form/access.html"}
+        </div>
+        <div class="js-prequal-panel" data-step="basic" hidden>
+            {include file="html/cabinet/buyer/prequal/form/basic.html"}
+        </div>
+    </form>
+</div>

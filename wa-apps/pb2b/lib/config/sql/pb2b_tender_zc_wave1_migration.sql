@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS pb2b_tender_classifier (
     KEY ix_tender_id (tender_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS pb2b_criterion (
+CREATE TABLE IF NOT EXISTS pb2b_tender_criterion (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     tender_id INT UNSIGNED NOT NULL,
     type VARCHAR(32) NOT NULL DEFAULT 'non_price',
@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS pb2b_tender_state_log (
     KEY ix_at_dt (at_dt)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS pb2b_invitation (
+CREATE TABLE IF NOT EXISTS pb2b_tender_invitation (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     tender_id INT UNSIGNED NOT NULL,
     supplier_company_id INT UNSIGNED NOT NULL,
@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS pb2b_invitation (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- description для criterion, если таблица создана раньше без него
--- ALTER TABLE pb2b_criterion ADD COLUMN description TEXT NULL AFTER is_mandatory;
+-- ALTER TABLE pb2b_tender_criterion ADD COLUMN description TEXT NULL AFTER is_mandatory;
 
 -- ---------------------------------------------------------------------------
 -- 2. pb2b_tender — колонки P1 для полного мастера ЗЦ (visibility + params)

@@ -7,9 +7,9 @@
 class pb2bProcedureCodeService
 {
     private const STORAGE = [
-        'price_request' => ['table' => 'pb2b_tender', 'column' => 'number'],
-        'proposal_request' => ['table' => 'pb2b_tender', 'column' => 'number'],
-        'prequalification' => ['table' => 'pb2b_tender', 'column' => 'number'],
+        pb2bTenderType::PRICE_REQUEST->value => ['table' => 'pb2b_tender', 'column' => 'number'],
+        pb2bTenderType::PROPOSAL_REQUEST->value => ['table' => 'pb2b_tender', 'column' => 'number'],
+        'prequalification' => array('table' => 'pb2b_prequal', 'column' => 'procedure_code'),
         'supplier_approval' => ['table' => 'pb2b_docflow_request', 'column' => 'procedure_code'],
     ];
 

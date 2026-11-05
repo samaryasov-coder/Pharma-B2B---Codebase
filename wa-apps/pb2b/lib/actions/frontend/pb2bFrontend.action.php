@@ -16,7 +16,17 @@ class pb2bFrontendAction extends waViewAction
 
     protected function handleException(Throwable $e): void
     {
-        if ($e instanceof pb2bMiddlewareException) $this->handleMiddlewareException($e);
+        if ($e instanceof pb2bMiddlewareException) {
+            $this->renderError((int) $e->status, 'Доступ к странице ограничен');
+            $this->handleMiddlewareException($e);
+            return;
+        }
+        if ($e instanceof waException && $e->getCode() >= 400 && $e->getCode() < 500) {
+            $this->renderError((int) $e->getCode(), $e->getMessage());
+            return;
+        }
+        waLog::log((string) $e, 'pb2b-exceptions.log');
+        $this->renderError(pb2bHttpStatus::INTERNAL_SERVER_ERROR, 'Внутренняя ошибка сервера');
     }
 
     protected function handleMiddlewareException(pb2bMiddlewareException $e)
@@ -34,6 +44,9 @@ class pb2bFrontendAction extends waViewAction
     {
         wa()->getResponse()->setTitle($message);
         wa()->getResponse()->setStatus($status);
+        if ($this->isHxRequest()) {
+            wa()->getResponse()->addHeader('X-PB2B-Page-Error', '1');
+        }
         $this->view->assign(['error_code' => $status, 'error_message' => $message]);
         $this->setThemeTemplate('error.html');
     }

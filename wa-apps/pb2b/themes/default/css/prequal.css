@@ -1,0 +1,70 @@
+.prequal-create [hidden] {
+    display: none !important;
+}
+
+.prequal-steps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 0;
+    margin: 24px 0;
+    list-style: none;
+}
+
+.prequal-steps [aria-current="step"] {
+    border-color: var(--gray-700);
+}
+
+.prequal-access {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    background: transparent;
+}
+
+.prequal-access > label {
+    flex: 1 1 260px;
+}
+
+.prequal-footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 24px 0;
+    border-top: 1px solid var(--gray-200);
+}
+
+.prequal-code,
+.prequal-message {
+    font: var(--text-font-p3);
+    color: var(--gray-700);
+}
+
+.prequal-message {
+    padding: 16px;
+    margin-bottom: 24px;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--input-radius-sm);
+}
+
+.prequal-message.is-error {
+    color: var(--error-dark);
+    border-color: var(--error-middle);
+}
+
+.prequal-create .select2-container {
+    width: 100% !important;
+}
+
+.prequal-visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}

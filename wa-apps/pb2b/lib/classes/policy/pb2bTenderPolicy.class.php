@@ -22,54 +22,52 @@ class pb2bTenderPolicy
         return self::ownsActive($tender, $company);
     }
 
-    public static function replaceCriteria(pb2bTender $tender, pb2bCompany $company): bool
+    public static function startReview(pb2bTender $tender, pb2bCompany $company): bool
     {
         return self::ownsActive($tender, $company);
     }
 
-    public static function replaceInvitations(pb2bTender $tender, pb2bCompany $company): bool
+    /** Черновик выбора победителя: select all/positional, clear. Тип/статус — в Service. */
+    public static function selectWinner(pb2bTender $tender, pb2bCompany $company): bool
     {
         return self::ownsActive($tender, $company);
     }
 
-    public static function replaceClassifiers(pb2bTender $tender, pb2bCompany $company): bool
+    /** Завершение выбора / finish-without → переходы статуса. */
+    public static function completeWinner(pb2bTender $tender, pb2bCompany $company): bool
     {
         return self::ownsActive($tender, $company);
     }
 
     public static function replaceItems(pb2bTender $tender, pb2bCompany $company): bool
     {
-        return self::ownsActive($tender, $company);
+        return self::update($tender, $company);
     }
 
     public static function replaceDocuments(pb2bTender $tender, pb2bCompany $company): bool
     {
-        return self::ownsActive($tender, $company);
+        return self::update($tender, $company);
     }
 
     public static function uploadFile(pb2bTender $tender, pb2bCompany $company): bool
     {
-        return self::ownsActive($tender, $company);
+        return self::update($tender, $company);
     }
 
-    public static function viewAsSupplier(pb2bTender $tender, pb2bCompany $company): bool
+    public static function viewAsSupplier(pb2bTender $tender, pb2bCompany $company, bool $has_invitation): bool
     {
-        return self::supplierCanAccess($tender, $company);
+        return self::supplierCanAccess($tender, $company, $has_invitation);
     }
 
-    public static function apply(pb2bTender $tender, pb2bCompany $company): bool
+    public static function apply(pb2bTender $tender, pb2bCompany $company, bool $has_invitation): bool
     {
-        return self::supplierCanAccess($tender, $company);
+        return self::supplierCanAccess($tender, $company, $has_invitation);
     }
 
-    private static function supplierCanAccess(pb2bTender $tender, pb2bCompany $company): bool
+    private static function supplierCanAccess(pb2bTender $tender, pb2bCompany $company, bool $has_invitation): bool
     {
-        if ((int) $company->id <= 0 || !(int) $tender->id) {
-            return false;
-        }
-        if (!$company->isSupplier()) {
-            return false;
-        }
+        if ((int) $company->id <= 0 || !(int) $tender->id) return false;
+        if (!$company->isSupplier()) return false;
 
         $row = self::tenderRow($tender);
         if ($row === array()) {
@@ -88,7 +86,7 @@ class pb2bTenderPolicy
             return true;
         }
 
-        return self::hasInvitation((int) $tender->id, (int) $company->id);
+        return $has_invitation;
     }
 
     /**
@@ -111,36 +109,7 @@ class pb2bTenderPolicy
 
     private static function isSupplierVisibleStatus(string $code): bool
     {
-        return in_array($code, array(
-            'priem_zayavok',
-            'vskrytie_zayavok',
-            'rassmotrenie_i_dopusk',
-            'peretorzhka_aktivna',
-            'auktsionnye_torgi',
-            'otsenka',
-            'podvedenie_itogov',
-            'zaklyuchenie_dogovora',
-            'arkhiv',
-            'priostanovlen',
-            'nesostoyalsya',
-        ), true);
-    }
-
-    private static function hasInvitation(int $tender_id, int $supplier_company_id): bool
-    {
-        if ($tender_id <= 0 || $supplier_company_id <= 0) {
-            return false;
-        }
-        try {
-            $row = (new pb2bInvitationModel())->getByField(array(
-                'tender_id' => $tender_id,
-                'supplier_company_id' => $supplier_company_id,
-            ));
-        } catch (Exception $e) {
-            return false;
-        }
-
-        return is_array($row) && (int) ($row['id'] ?? 0) > 0;
+        return pb2bTenderStatus::isSupplierVisible($code);
     }
 
     private static function ownsActive(pb2bTender $tender, pb2bCompany $company): bool

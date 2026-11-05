@@ -10,7 +10,9 @@
             this.initMasks();
             this.initRegister();
             this.bindEvents();
+            this.bindCompanyType();
             this.initNavigation();
+            this.toggleCompanyFields();
             this.goToStep(0);
         },
 
@@ -139,24 +141,49 @@
                     method: 'POST',
                     data: data,
                     success(response) {
-                        if (response.status === 'ok' && response.data) {
-                            if (response.data.error) {
-                                self.showVaultBoyError(response.data.message);
+                        if (response.status === 'success' && response.payload) {
+                            if (response.payload.error) {
+                                self.showVaultBoyError(response.payload.message);
                                 return;
                             }
                             self.$stages.eq(self.$stages.length - 1).removeClass('active').addClass('success');
                             window.location.reload();
 
                         } else {
-                            console.log('Кринжовый ответ сервера:', response);
+                            self.showVaultBoyError(response.message || 'Не удалось зарегистрировать компанию');
                         }
                     },
                     error(xhr) {
-                        console.log('Сервер умер:', xhr.responseText);
+                        const response = xhr.responseJSON || {};
+                        self.showVaultBoyError(response.message || response.payload?.message || 'Не удалось зарегистрировать компанию');
                     }
                 });
 
             });
+        },
+
+        bindCompanyType() {
+            const self = this;
+            $(document).on('change', '#company_type', function () {
+                self.toggleCompanyFields();
+                self.updateButtons(self.currentStep);
+            });
+            $(document).on('change', '[name="company[buyer]"], [name="company[supplier]"]', function () {
+                self.updateButtons(self.currentStep);
+            });
+        },
+
+        toggleCompanyFields() {
+            const isOrganization = $('#company_type').val() === 'organization';
+            const $organizationType = $('.js-organization-type-wrap');
+            const $organizationSelect = $organizationType.find('select');
+            const $kppWrap = $('#kpp').closest('.input-wrap');
+            const $kpp = $('#kpp');
+
+            $organizationType.toggle(isOrganization);
+            $organizationSelect.prop('disabled', !isOrganization);
+            $kppWrap.toggle(isOrganization);
+            $kpp.prop('disabled', !isOrganization);
         },
 
         showVaultBoyCustom({ img, bg, text }){
@@ -247,8 +274,13 @@
 
             let allFilled = true;
             $step.find('.input-wrap.required input, .input-wrap.required select').each(function () {
+                if ($(this).is(':disabled') || $(this).attr('type') === 'checkbox') return;
                 if (!$(this).val()) allFilled = false;
             });
+
+            if (index === 1 && !$step.find('[name="company[buyer]"]:checked, [name="company[supplier]"]:checked').length) {
+                allFilled = false;
+            }
 
             $nextBtn.prop('disabled', !allFilled);
         },

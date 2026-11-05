@@ -1,9 +1,6 @@
 <?php
 
-/**
- * Шаги wizard участия поставщика (URL ?step=…).
- * Не путать со статусами заявки в config (tender_application_*).
- */
+
 enum pb2bTenderParticipationStep: string
 {
     case NON_PRICE = 'nonPrice';

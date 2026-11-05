@@ -1,0 +1,81 @@
+.badge.badge--shared {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    box-sizing: border-box;
+    gap: 4px;
+    max-width: 100%;
+    vertical-align: middle;
+    white-space: nowrap;
+    background: var(--badge-bg, var(--bdg-background-color));
+    color: var(--badge-color, var(--bdg-text-color));
+}
+
+.badge.badge--small {
+    padding: 4px 8px;
+    border-radius: var(--badge-radius-sm);
+    font: var(--text-font-l3);
+}
+
+.badge.badge--medium {
+    padding: 4px 8px;
+    border-radius: var(--badge-radius-md);
+    font: var(--text-font-p3);
+}
+
+.badge.badge--large {
+    padding: 6px 12px;
+    border-radius: var(--badge-radius-lg);
+    font: var(--text-font-l1);
+}
+
+.badge.badge--tag {
+    font-weight: var(--font-weight-medium);
+    gap: 6px;
+}
+
+.badge.badge--tag.badge--small {
+    padding: 6px 10px;
+    border-radius: 10px;
+}
+
+.badge.badge--tag.badge--medium {
+    padding: 6px 12px;
+    line-height: var(--line-height-l1);
+    border-radius: 14px;
+}
+
+.badge.badge--outline {
+    background: var(--badge-bg, transparent);
+    border: 1px solid var(--badge-border, var(--gray-200));
+}
+
+.badge.badge--shared.info {
+    --bdg-background-color: var(--badge-background-color-brand);
+    --bdg-text-color: var(--badge-text-color-brand);
+}
+
+.badge__leading,
+.badge-group__leading {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+}
+
+.badge__leading > svg {
+    width: 1em;
+    height: 1em;
+}
+
+.badge-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 100%;
+}
+
+.badge-group__leading {
+    color: var(--gray-400);
+}
