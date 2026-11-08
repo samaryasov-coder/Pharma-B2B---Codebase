@@ -29,11 +29,11 @@ jobs:
           case "$GITHUB_REF_NAME" in
 
             main)
-              echo "folder=/var/www/pharmab2b/httpdocs" >> "$GITHUB_OUTPUT"
+              echo "folder=/var/www/pharmab2b" >> "$GITHUB_OUTPUT"
               ;;
 
             test/sergey)
-              echo "folder=/var/www/pharmab2b/test-sergey" >> "$GITHUB_OUTPUT"
+              echo "folder=/var/www/test-sergey" >> "$GITHUB_OUTPUT"
               ;;
 
             *)
