@@ -9,20 +9,20 @@
     </div>
 {else}
     <form class="supplier-participation-nonprice js-participation-nonprice" novalidate>
-        <div class="supplier-participation-nonprice__list">
+        <div class="form-item-list">
             {foreach $criteria as $cr}
                 {assign var=cid value=$cr.id}
                 {assign var=ans value=$app_criteria[$cid]|default:null}
                 {assign var=answer_file_link_id value=$ans.file_link_id|default:0}
                 <div
-                    class="supplier-participation-nonprice__row"
+                    class="form-item"
                     data-criterion-id="{$cid|escape}"
                     data-mandatory="{if $cr.is_mandatory|default:0}1{else}0{/if}"
                     data-type="{$cr.type|default:'text'|escape}"
                     data-file-link-id="{$answer_file_link_id|escape}"
                 >
                     <div class="supplier-participation-nonprice__label-row">
-                        <label class="supplier-participation-nonprice__label" for="participation-criterion-{$cid|escape}">
+                        <label class="form-item__label" for="participation-criterion-{$cid|escape}">
                             {$cr.name|default:'Критерий'|escape}
                             {if $cr.is_mandatory|default:0}
                                 {include file="html/cabinet/partials/badge.html" badge_text="Обязательный" badge_size="small" badge_tone="error"}
@@ -31,7 +31,7 @@
                             {/if}
                         </label>
                         {if $cr.description|default:''}
-                            <p class="des supplier-participation-nonprice__desc">{$cr.description|escape}</p>
+                            <p class="des form-item__description">{$cr.description|escape}</p>
                         {/if}
                     </div>
                     {if $cr.type == 'date'}
@@ -39,7 +39,7 @@
                             class="input js-participation-criterion-value"
                             value="{$ans.value|default:''|escape}" {if !$can_edit}disabled{/if}>
                     {elseif $cr.type == 'file'}
-                        <div class="supplier-participation-nonprice__file">
+                        <div class="form-item__file">
                             {if $can_edit}
                                 <label class="button secondary">
                                     Загрузить файл

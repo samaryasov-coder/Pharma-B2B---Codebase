@@ -1,0 +1,29 @@
+<div class="tab-content tender-page__panel tender-page__panel--questions{if $app_status_code != 'submitted'} tender-page__panel--with-aside{/if}" role="tabpanel" data-tab="questions" hidden>
+    <div class="tender-page__main">
+        <section class="tender-questions" aria-label="Вопросы по процедуре">
+            <div class="empty-container">
+                <h3 class="title">Вопросов пока нет</h3>
+                <p class="des">Переписка с организатором пока недоступна.</p>
+            </div>
+        </section>
+    </div>
+    {if $app_status_code != 'submitted'}
+        <aside class="tender-page__aside" aria-label="Участие и заявки тендера">
+            <div class="tender-page__aside-content tender-side-panel">
+                {if $can_open_participation}
+                    <div class="tender-side-panel__actions">
+                        <a class="button primary js-supplier-tender-participate" href="{$participation.url|escape}" hx-boost="false">{if $app_status_code == 'draft'}Продолжить оформление{else}Участвовать{/if}</a>
+                    </div>
+                {/if}
+                {if $app_status_code == 'withdrawn' || $is_canceled || $participation.closed}
+                    <section class="tender-side-card">
+                        <div class="tender-side-card__head">
+                            <h3 class="tender-side-card__title">{if $app_status_code == 'withdrawn'}Заявка отозвана{elseif $is_canceled}Процедура завершена{else}Приём заявок завершён{/if}</h3>
+                        </div>
+                        <p class="tender-side-card__empty">{if $app_status_code == 'withdrawn'}Срок подачи заявок завершён.{elseif $is_canceled}В этой процедуре нельзя подать новое предложение.{else}Срок подачи предложений истёк. Новую заявку подать нельзя.{/if}</p>
+                    </section>
+                {/if}
+            </div>
+        </aside>
+    {/if}
+</div>

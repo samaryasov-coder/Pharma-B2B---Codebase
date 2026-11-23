@@ -1,0 +1,86 @@
+<div class="tender-form-step">
+    <section class="tender-form-card">
+        <div class="tender-form-card__head">
+            <h2 class="tender-form-card__title" tabindex="-1">Основные данные</h2>
+            <p class="tender-form-card__hint">Заполните основные данные процедуры предварительной квалификации</p>
+        </div>
+        <div class="tender-form-fields">
+            <div class="tender-form-field">
+                <label class="input-title" for="prequal-title">Наименование процедуры</label>
+                <div class="input-wrap">
+                    <div class="input-box">
+                        <input id="prequal-title" class="input" type="text" name="data[title]" maxlength="255" placeholder="Введите наименование процедуры" value="{$prequal_data.title|default:''|escape}">
+                    </div>
+                </div>
+                <div class="prequal-field-error js-prequal-field-error" data-field="title" role="alert" hidden></div>
+            </div>
+            <div class="tender-form-field">
+                <label class="input-title" for="prequal-description">Описание процедуры</label>
+                <div class="textarea-box">
+                    <textarea id="prequal-description" class="input" name="data[description]" rows="5" placeholder="Опишите цель квалификации и требования к поставщикам">{$prequal_data.description|default:''|escape}</textarea>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <section class="tender-form-card">
+        <div class="tender-form-card__head">
+            <h2 class="tender-form-card__title">Категории</h2>
+            <p class="tender-form-card__hint">Выберите подходящие категории из общего классификатора</p>
+        </div>
+        <div class="creation-card-categories">
+            <div class="creation-card-categories-results common-classifier active is-flat" data-tab="common">
+                <div class="input-wrap tenders-search notification">
+                    <div class="input-box">
+                        <span class="input-prefix"><svg aria-hidden="true"><use href="#icon-search"></use></svg></span>
+                        <input type="text" class="input tenders js-prequal-category-search" placeholder="Поиск по классификатору" aria-label="Поиск по общему классификатору">
+                    </div>
+                </div>
+                <div class="creation-card-categories-result js-prequal-category-tree">
+                    {if $prequal_categories}
+                        {include file="html/cabinet/buyer/prequal/prequal-form/category-tree.html" nodes=$prequal_categories}
+                        <p class="tender-form-card__hint js-prequal-category-no-results" hidden>Категории не найдены</p>
+                    {else}
+                        <p class="tender-form-card__hint">В общем классификаторе пока нет категорий</p>
+                    {/if}
+                </div>
+                <div class="creation-card-results-tags-title">Выбранные категории</div>
+                <div class="creation-card-results-tags js-prequal-category-selected"></div>
+                <div class="creation-card-results-empty js-prequal-category-empty">Категории не выбраны</div>
+            </div>
+
+        </div>
+    </section>
+
+    <section class="file-upload-card tender-form-card">
+        <div class="tender-form-card__head">
+            <h2 class="tender-form-card__title">Файлы документации / технического задания</h2>
+            <p class="tender-form-card__hint">Приложите документацию, описывающую процедуру и условия квалификации</p>
+        </div>
+        <div class="creation-card-file-area">
+            <div class="file-drop-zone js-prequal-file-dropzone">
+                <div class="file-drop-icon"><svg aria-hidden="true"><use href="#icon-file-upload"></use></svg></div>
+                <div class="file-drop-text">
+                    <span class="file-browse-btn">Нажмите сюда</span>
+                    <span class="file-drop-primary"> или перетащите файлы для загрузки</span>
+                </div>
+                <div class="file-drop-hint">PDF, DOC, DOCX · до 10 МБ на файл</div>
+                <input type="file" class="file-input js-prequal-file-input" multiple accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" aria-label="Добавить файлы документации">
+            </div>
+        </div>
+        <div class="file-list js-prequal-file-list">
+            {foreach $prequal_documents as $document}
+                <div class="file-item" data-id="{$document.id|escape}" data-kind="{$document.kind|escape}" data-file-link-id="{$document.file_link_id|escape}" data-filename="{$document.filename|default:''|escape}" data-name="{$document.name|escape}" data-description="{$document.description|escape}" data-required="{$document.is_required|escape}" data-size="{$document.size|escape}" data-ext="{$document.ext|escape}"></div>
+            {/foreach}
+        </div>
+    </section>
+
+    <div class="creation-manage-buttons">
+        <a class="button large outline" href="/cabinet/buyer/tenders/" hx-get="/cabinet/buyer/tenders/" hx-target=".js-main-content" hx-push-url="true">Отменить</a>
+        <div class="manage-buttons-right">
+            <button type="button" class="button large secondary js-prequal-back">Назад</button>
+            <button type="button" class="button large primary js-prequal-next">Продолжить</button>
+        </div>
+    </div>
+</div>

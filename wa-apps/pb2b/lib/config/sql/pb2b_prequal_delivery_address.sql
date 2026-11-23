@@ -1,0 +1,2 @@
+ALTER TABLE pb2b_prequal
+    ADD COLUMN delivery_address VARCHAR(500) NULL DEFAULT NULL;

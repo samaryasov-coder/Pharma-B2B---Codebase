@@ -1,0 +1,41 @@
+<div class="cabinet-container js-cabinet-page tender-create prequal-create" data-page="prequal-form">
+    <div class="creation-container creation-container--header">
+
+        {capture assign=prequal_actions}
+            <button type="submit" form="prequal-draft-form" class="button secondary js-prequal-save">{if $prequal_id}Сохранить изменения{else}Сохранить в черновик{/if}</button>
+        {/capture}
+
+        {if $prequal_id}
+            {assign var=prequal_title value='Редактирование предварительной квалификации'}
+        {else}
+            {assign var=prequal_title value='Создание предварительной квалификации'}
+        {/if}
+
+        {include file="html/cabinet/partials/page-header.html"
+            page_header_title=$prequal_title
+            page_header_title_class="js-prequal-title"
+            page_header_actions=$prequal_actions}
+
+        <!-- <p class="prequal-code js-prequal-code"{if !$prequal_id} hidden{/if}>{$prequal_data.procedure_code|default:''|escape}</p> -->
+
+        <div class="creation-steps js-prequal-steps" aria-label="Шаги создания предварительной квалификации">
+            {foreach from=$prequal_steps item=step name=prequal_step}
+                <div class="creation-step{if $smarty.foreach.prequal_step.first} is-current completed{else} next{/if}{if $step.available} js-prequal-step{/if}"
+                    data-step="{$step.key|escape}"
+                    {if $step.available}{if $smarty.foreach.prequal_step.first}aria-current="step"{/if}{else}aria-disabled="true"{/if}>{$step.label|escape}</div>
+            {/foreach}
+        </div>
+    </div>
+
+    <form id="prequal-draft-form" class="creation-container creation-container--body js-prequal-form" hx-boost="false">
+        <input type="hidden" name="id" value="{$prequal_id|escape}">
+        <div class="prequal-message js-prequal-message" role="status" aria-live="polite" tabindex="-1" hidden></div>
+        {foreach from=$prequal_steps item=step name=prequal_panel}
+            {if $step.available}
+                <div class="js-prequal-panel" data-step="{$step.key|escape}"{if !$smarty.foreach.prequal_panel.first} hidden{/if}>
+                    {include file="html/cabinet/buyer/prequal/prequal-form/steps/`$step.key`.html"}
+                </div>
+            {/if}
+        {/foreach}
+    </form>
+</div>

@@ -4,7 +4,7 @@ class pb2bFrontendApiBuyerEvaluationTemplateSaveController extends pb2bFrontendC
 {
     public function executeBuyer(): void
     {
-        $this->response = $this->ok((new pb2bTenderEvaluationTemplateService())->save(
+        $this->response = array_merge(array('error' => false), (new pb2bTenderEvaluationTemplateService())->save(
             $this->context->contact(),
             $this->context->company(),
             waRequest::post('id', '', waRequest::TYPE_STRING_TRIM),

@@ -1,0 +1,57 @@
+<div class="tender-form-step">
+    <section class="tender-form-card">
+        <div class="tender-form-card__head">
+            <h2 class="tender-form-card__title" tabindex="-1">Адреса и условия</h2>
+            <p class="tender-form-card__hint">Укажите адреса и условия предоставления образцов или материалов</p>
+        </div>
+        <div class="tender-form-section">
+            <div class="tender-form-group">
+                <div class="tender-form-field">
+                    <label class="tender-form-field__label" for="prequal-address">Адрес</label>
+                    <div class="tender-form-list js-prequal-address-list">
+                        <div class="tender-form-list__item">
+                            <div class="tender-form-textarea">
+                                <textarea id="prequal-address" maxlength="500" rows="3" placeholder="Индекс, страна, область, населённый пункт, улица, дом, строение или корпус, квартира или офис">{$prequal_data.delivery_address|default:''|escape}</textarea>
+                                <div class="tender-form-textarea__counter char-counter">0/500</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="tender-form-field">
+                <label class="tender-form-field__label" for="prequal-delivery-info">Дополнительные условия</label>
+                <div class="tender-form-textarea">
+                    <textarea id="prequal-delivery-info" maxlength="200" rows="3" placeholder="Укажите условия отправки и предоставления образцов или материалов"></textarea>
+                    <div class="tender-form-textarea__counter char-counter">0/200</div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="tender-form-card">
+        <div class="tender-form-card__head"><h2 class="tender-form-card__title">Контакты</h2></div>
+        <div class="tender-form-group">
+            <div class="tender-form-field tender-form-select">
+                <label class="tender-form-field__label" for="prequal-contact">Контакты</label>
+                <div class="tender-form-list js-prequal-contact-list">
+                    <div class="tender-form-list__item"><select id="prequal-contact" class="select2 filter-select js-prequal-contact" data-placeholder="Выберите контакт из списка организации"><option value=""></option></select></div>
+                </div>
+            </div>
+            <div class="tender-form-actions">
+                <button type="button" class="button outline js-prequal-add-contact"><svg aria-hidden="true"><use href="#icon-plus"></use></svg><span>Добавить ещё контакт</span></button>
+                <button type="button" class="button outline" disabled title="Создание контакта пока не подключено"><svg aria-hidden="true"><use href="#icon-plus"></use></svg><span>Создать новый контакт вне организации</span></button>
+            </div>
+        </div>
+    </section>
+    <label class="checkbox tender-form-control tender-form-consent">
+        <input type="checkbox">
+        <span class="checkmark" aria-hidden="true"></span>
+        <span class="tender-form-control__copy"><span class="input-label">Я даю согласие на получение информационных сообщений</span></span>
+    </label>
+    <div class="creation-manage-buttons">
+        <a class="button large outline" href="/cabinet/buyer/tenders/" hx-get="/cabinet/buyer/tenders/" hx-target=".js-main-content" hx-push-url="true">Отменить</a>
+        <div class="manage-buttons-right">
+            <button type="button" class="button large secondary js-prequal-back">Назад</button>
+            <button type="button" class="button large primary js-prequal-next">Продолжить</button>
+        </div>
+    </div>
+</div>

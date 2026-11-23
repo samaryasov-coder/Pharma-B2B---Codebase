@@ -1,0 +1,21 @@
+{foreach $nodes as $node}
+    <div class="clf-node js-prequal-category-node" data-label="{$node.name|escape}">
+        <div class="clf-node__row">
+            {if $node.children|default:array()}
+                <button type="button" class="clf-node__toggle js-prequal-category-toggle" aria-expanded="false" aria-label="Развернуть категорию"></button>
+            {else}
+                <span class="clf-node__toggle is-leaf" aria-hidden="true"></span>
+            {/if}
+            <label class="tender-creation-checkbox">
+                <input type="checkbox" class="js-prequal-category-check" name="data[category_ids][]" value="{$node.id|escape}" data-label="{$node.name|escape}"{if isset($prequal_category_ids[$node.id])} checked{/if}>
+                <span class="checkbox-ui"></span>
+                <span class="checkbox-text">{$node.name|escape}</span>
+            </label>
+        </div>
+        {if $node.children|default:array()}
+            <div class="clf-node__children">
+                {include file="html/cabinet/buyer/prequal/prequal-form/category-tree.html" nodes=$node.children}
+            </div>
+        {/if}
+    </div>
+{/foreach}

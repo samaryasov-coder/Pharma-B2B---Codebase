@@ -16,6 +16,9 @@ class pb2bFrontendApiBuyerTenderListController extends pb2bFrontendCabinetContro
         $this->response = array(
             'error' => false,
             'items' => pb2bTenderListResource::collection($tenders),
+            'prequal_items' => empty($filters['status']) && empty($filters['type'])
+                ? pb2bPrequalListResource::collection((new pb2bPrequalService())->listFromBuyer($this->context->company()))
+                : array(),
         );
     }
 }

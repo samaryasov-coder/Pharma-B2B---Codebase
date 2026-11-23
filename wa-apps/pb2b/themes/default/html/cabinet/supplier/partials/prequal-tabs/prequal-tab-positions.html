@@ -1,0 +1,21 @@
+<div class="tab-content tender-page__panel" role="tabpanel" data-tab="positions" hidden>
+    <div class="tender-page__main">
+        <div class="tender-notice">
+            <section class="detail-section">
+                <h3 class="detail-section__title">Предметы квалификации</h3>
+                <div class="detail-fields">
+                    {foreach $items as $item}
+                        <div class="detail-field">
+                            <div class="detail-field__label">{$item.name|default:'Без названия'|escape}</div>
+                            <div class="detail-field__value">
+                                {if isset($item.qty) && $item.qty !== ''}Количество: {$item.qty|escape}{if $item.unit|default:''} {$item.unit|escape}{/if}<br>{/if}
+                                {if $item.comment|default:''}{$item.comment|escape|nl2br}<br>{/if}
+                                {if $item.file_link_id|default:0 && $item.filename|default:''}<a href="/api/supplier/prequal/{$prequal.id|intval}/file/{$item.file_link_id|intval}/" hx-boost="false">{$item.filename|escape}</a>{/if}
+                            </div>
+                        </div>
+                    {foreachelse}<p class="detail-field__value">Предметы квалификации не указаны.</p>{/foreach}
+                </div>
+            </section>
+        </div>
+    </div>
+</div>

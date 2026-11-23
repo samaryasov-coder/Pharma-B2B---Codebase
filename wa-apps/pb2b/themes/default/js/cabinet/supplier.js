@@ -650,6 +650,10 @@
                 if (id <= 0) {
                     return;
                 }
+                if ($(this).attr('data-kind') === 'prequal') {
+                    window.location.href = '/cabinet/supplier/prequal/' + id + '/';
+                    return;
+                }
                 const hasApp = String($(this).attr('data-has-application') || '') === '1';
                 const submitted = $(this).attr('data-application-submitted') === '1';
                 const base = '/cabinet/supplier/tender/' + id + '/';
@@ -874,6 +878,7 @@
             const self = this;
             items.forEach(function (row) {
                 const tender = row.tender || {};
+                const isPrequal = row.kind === 'prequal';
                 const meta = row.card || {};
                 const application = row.application || null;
                 const id = parseInt(tender.id, 10) || 0;
@@ -893,7 +898,7 @@
                 const appLabel = hasApplication ? self.applicationLabel(application) : '';
 
                 const $card = $(
-                    '<article class="supplier-tender-card" data-id="' + id + '" data-has-application="'
+                    '<article class="supplier-tender-card" data-kind="' + (isPrequal ? 'prequal' : 'tender') + '" data-id="' + id + '" data-has-application="'
                     + (hasApplication ? '1' : '0') + '" data-application-submitted="'
                     + (submitted ? '1' : '0') + '">'
                     + '<div class="supplier-tender-card__main">'
@@ -953,7 +958,11 @@
                     .text(statusName);
                 $card.find('.supplier-tender-card__title').text(tender.title || 'Без названия');
                 $card.find('.supplier-tender-card__number').text(methodLine);
-                $card.find('.supplier-tender-card__price-value').text(self.formatPrice(tender));
+                if (isPrequal) {
+                    $card.find('.supplier-tender-card__price, .supplier-tender-card__date, .js-city, .js-category').remove();
+                } else {
+                    $card.find('.supplier-tender-card__price-value').text(self.formatPrice(tender));
+                }
                 $card.find('.supplier-tender-card__deadline-value').text(self.formatDeadline(tender.end_at));
 
                 const $days = $card.find('.js-tender-deadline-badge');
@@ -983,7 +992,7 @@
                 if (tender.approval_required == 1 || tender.approval_required === true) {
                     addRequirement('Требуется одобрение поставщика');
                 }
-                if (!$tags.children().length) {
+                if (!isPrequal && !$tags.children().length) {
                     addRequirement('Требуется предварительная квалификация');
                     addRequirement('Требуется одобрение поставщика');
                 }
@@ -999,17 +1008,67 @@
 
                 $card.find('.js-city-value').text(city || '—');
                 $card.find('.js-org-value').text(organizer || '—');
-                addChip(
-                    $card.find('.js-category'),
-                    category || 'Производственная тара и инструменты'
-                );
+                if (!isPrequal) {
+                    addChip($card.find('.js-category'), category || 'Производственная тара и инструменты');
+                }
 
                 $list.append($card);
             });
         }
     });
 
-    // Карточка извещения: витрина + вход в /participation/, отзыв из aside.
+    $.Cabinet.registerPage('prequal', {
+        init: function (root) {
+            const url = new URL(window.location.href);
+            if (url.searchParams.get('application_submitted') === '1') {
+                url.searchParams.delete('application_submitted');
+                window.history.replaceState(window.history.state, '', url);
+                $.AlertManager.showSuccess('Заявка подана');
+            }
+
+            new TabsManager({
+                container: $(root).find('.js-prequal-tabs'),
+                defaultTab: 'notice',
+                contentScope: '.tabs-content',
+                hashSync: true
+            });
+        }
+    });
+
+    $.Cabinet.registerPage('prequal-participation', {
+        init: function (root) {
+            const $form = $(root).find('.js-prequal-application-form');
+            const $button = $form.find('[type="submit"]');
+
+            $form.off('.prequalApplication').on('change.prequalApplication', '.js-prequal-document-file', function () {
+                const file = this.files && this.files[0];
+                $(this).closest('.form-item__file')
+                    .find('.js-prequal-document-filename').text(file ? file.name : '');
+            }).on('submit.prequalApplication', function (event) {
+                event.preventDefault();
+                if ($button.prop('disabled')) {
+                    return;
+                }
+
+                $.fRequest({
+                    url: this.action,
+                    method: 'POST',
+                    data: new FormData(this),
+                    button: $button,
+                    onSuccess: function () {
+                        window.location.replace($form.attr('data-notice-url') + '?application_submitted=1');
+                        return false;
+                    },
+                    onError: function (reply) {
+                        return reply.message || 'Не удалось подать заявку';
+                    }
+                }).catch(function () {
+                    $.AlertManager.showError('Не удалось подать заявку');
+                });
+            });
+        }
+    });
+
     $.Cabinet.registerPage('tender', {
         root: null,
         tenderId: 0,
@@ -1227,11 +1286,11 @@
 
             $root.on('change', '.js-participation-criterion-file', function () {
                 const file = this.files && this.files[0];
-                if (file) self.uploadNonPriceFile($(this).closest('.supplier-participation-nonprice__row'), file);
+                if (file) self.uploadNonPriceFile($(this).closest('.form-item'), file);
             });
 
             $root.on('click', '.js-participation-criterion-file-remove', function () {
-                const $row = $(this).closest('.supplier-participation-nonprice__row');
+                const $row = $(this).closest('.form-item');
                 $row.attr('data-file-link-id', '0');
                 $row.find('.js-participation-criterion-file-name').text('Файл не загружен');
                 $row.find('.js-participation-criterion-file-link').hide();
@@ -1611,7 +1670,7 @@
 
         collectCriteria: function () {
             const criteria = [];
-            $(this.root).find('.supplier-participation-nonprice__row').each(function () {
+            $(this.root).find('.form-item').each(function () {
                 const criterionId = parseInt(this.getAttribute('data-criterion-id') || '0', 10) || 0;
                 if (criterionId <= 0) {
                     return;

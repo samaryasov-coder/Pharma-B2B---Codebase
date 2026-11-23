@@ -1,0 +1,47 @@
+<div class="tender-form-step">
+    <section class="tender-form-card">
+        <div class="tender-form-card__head">
+            <h2 class="tender-form-card__title" tabindex="-1">Доступ к процедуре</h2>
+            <p class="tender-form-card__hint">Выберите, какие поставщики смогут видеть процедуру и подавать документы.</p>
+        </div>
+
+        <div class="tender-form-section">
+            <div class="tender-form-options">
+                <label class="radio outline tender-form-control tender-form-option">
+                    <input type="radio" name="data[is_private]" value="0"{if !$prequal_data.is_private|default:0} checked{/if}>
+                    <span class="radiomark" aria-hidden="true"></span>
+                    <span class="tender-form-control__copy">
+                        <span class="input-label">Открытая процедура</span>
+                        <span class="input-hint">Участвовать могут все зарегистрированные поставщики.</span>
+                    </span>
+                </label>
+                <label class="radio outline tender-form-control tender-form-option">
+                    <input type="radio" name="data[is_private]" value="1"{if $prequal_data.is_private|default:0} checked{/if}>
+                    <span class="radiomark" aria-hidden="true"></span>
+                    <span class="tender-form-control__copy">
+                        <span class="input-label">Закрытая процедура</span>
+                        <span class="input-hint">Участвовать могут только выбранные компании.</span>
+                    </span>
+                </label>
+            </div>
+
+            <div class="tender-form-panel tender-form-reveal js-prequal-suppliers-wrap{if $prequal_data.is_private|default:0} visible{/if}">
+                <label class="tender-form-control__label" for="prequal-suppliers">Перечень участников, допущенных к процедуре</label>
+                <div class="tender-form-field tender-form-field--participants">
+                    <div class="tender-form-card__hint">Введите наименование компании</div>
+                    <select id="prequal-suppliers" class="js-prequal-suppliers" name="data[invitations][]" multiple data-placeholder="Введите название компании">
+                        {foreach $prequal_invitations as $invitation}
+                            <option value="{$invitation.supplier_company_id|escape}" selected>{$invitation.supplier_name|default:$invitation.supplier_company_id|escape}</option>
+                        {/foreach}
+                    </select>
+                    <div class="tender-form-card__hint">Добавьте компании, которые будут допущены к процедуре</div>
+                    <div class="prequal-field-error js-prequal-field-error" data-field="invitations" role="alert" hidden></div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <div class="creation-manage-buttons">
+        <a href="/cabinet/buyer/tenders/" class="button large outline" hx-get="/cabinet/buyer/tenders/" hx-target=".js-main-content" hx-push-url="true">Отменить</a>
+        <button type="button" class="button large primary js-prequal-next">Продолжить</button>
+    </div>
+</div>

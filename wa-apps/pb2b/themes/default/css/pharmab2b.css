@@ -886,7 +886,7 @@ ul.tabs:not(.vertical) > li.selected > a::after {
 
     font-size: var(--btn-font-size) !important;
     line-height: var(--btn-line-height);
-    font-weight: var(--font-weight-semibold);
+    font-weight: var(--font-weight-regular);
 }
 .button:hover{
     color: var(--btn-text-color);

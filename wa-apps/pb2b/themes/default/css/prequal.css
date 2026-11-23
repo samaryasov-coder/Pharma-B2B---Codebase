@@ -68,3 +68,81 @@
     clip-path: inset(50%);
     white-space: nowrap;
 }
+
+.prequal-items-body {
+    grid-template-columns: minmax(280px, 0.85fr) minmax(0, 2.2fr);
+}
+
+@media (max-width: 900px) {
+    .prequal-items-body {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+.prequal-field-error {
+    color: var(--error-base, #d92d20);
+    font: var(--text-font-p3);
+    margin-top: 8px;
+}
+
+.prequal-field-error[hidden] {
+    display: none;
+}
+
+
+.prequal-parameter__description {
+    font: var(--text-font-p2);
+    font-weight: var(--font-weight-regular);
+    color: var(--gray-900);
+}
+
+.prequal-parameter__description {
+    padding: 8px 12px;
+    border-radius: var(--button-radius-sm);
+    background: var(--gray-50);
+    overflow-wrap: anywhere;
+}
+
+.checkbox.prequal-parameter__checkbox {
+    position: relative;
+    width: fit-content;
+    cursor: pointer;
+}
+
+.checkbox.prequal-parameter__checkbox input {
+    display: block;
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    opacity: 0;
+}
+
+.checkbox.prequal-parameter__checkbox input:focus-visible + .checkmark {
+    outline: 2px solid var(--primary-900);
+    outline-offset: 2px;
+}
+
+.prequal-parameter__required {
+    color: var(--error-base);
+}
+
+
+.prequal-document-upload {
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.prequal-document-upload input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.prequal-document-upload:has(input:focus-visible) {
+    outline: 2px solid var(--primary-900);
+    outline-offset: 2px;
+}

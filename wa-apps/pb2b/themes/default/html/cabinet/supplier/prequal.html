@@ -1,0 +1,39 @@
+{assign var=prequal_data value=$prequal.data}
+{assign var=header_title value='Предварительная квалификация'}
+{if $prequal_data.procedure_code|default:''}{assign var=header_title value=$header_title|cat:' №'|cat:$prequal_data.procedure_code}{/if}
+<div class="cabinet-container js-cabinet-page" data-page="prequal">
+    <div class="tender-page">
+        <div class="tender-page__header">
+            <!-- заголовок -->
+            {include file="html/cabinet/partials/page-header.html" page_header_title=$header_title}
+            <!-- верхний блок -->
+            <section class="supplier-tender-info" aria-label="Сводка предквалификации">
+                <div class="supplier-tender-info__main">
+                    <div class="supplier-tender-info__meta">{include file="html/cabinet/partials/badge.html" badge_text=$prequal_status.name|default:'—' badge_tone=$prequal_status.tone|default:'info'}</div>
+                    <div class="supplier-tender-info__heading"><h2 class="supplier-tender-info__title">{$prequal_data.title|default:'Без названия'|escape}</h2></div>
+                    <div class="supplier-tender-card__place"><div class="supplier-tender-card__place-row"><span class="supplier-tender-card__place-label">Организатор:</span><span class="supplier-tender-card__place-value">{$organizer->getFullName()|escape}</span></div></div>
+                </div>
+                <div class="supplier-tender-info__divider" aria-hidden="true"></div>
+                <div class="supplier-tender-info__side"><div class="supplier-tender-info__side-block supplier-tender-info__side-block--deadline"><span class="supplier-tender-info__side-label">Окончание приёма заявок</span><div class="supplier-tender-info__deadline"><span class="supplier-tender-info__deadline-date">{if $prequal_data.accept_end_datetime|default:''}{$prequal_data.accept_end_datetime|date_format:'%d.%m.%Y в %H:%M'|escape}{else}—{/if}</span>{if $deadline.label}{include file="html/cabinet/partials/badge.html" badge_text=$deadline.label badge_size='small' badge_variant='tag' badge_outline=true}{/if}</div></div></div>
+            </section>
+        </div>
+        
+        <!-- основной блок -->
+        <div class="tender-page__body js-prequal-tabs">
+            <!-- табы -->
+            <div class="tender-page__tabs">
+                {include file="html/cabinet/partials/tabs.html" 
+                tabs=$tabs tabs_aria="Разделы предквалификации" 
+                tabs_size="large" 
+                tabs_with_panels=false}
+            </div>
+
+            <!-- вкладки -->
+            <div class="tender-page__panels tabs-content">
+                {include file="html/cabinet/supplier/partials/prequal-tabs/prequal-tab-notice.html"}
+                {include file="html/cabinet/supplier/partials/prequal-tabs/prequal-tab-positions.html"}
+                {include file="html/cabinet/supplier/partials/prequal-tabs/prequal-tab-documents.html"}
+            </div>
+        </div>
+    </div>
+</div>

@@ -14,6 +14,9 @@ return [
 
     "cabinet/$ROLE_BUYER/prequal/create/" => 'frontend/cabinetPrequalCreate',
     "cabinet/$ROLE_BUYER/prequal/<id>/edit/" => 'frontend/cabinetPrequalEdit',
+    "cabinet/$ROLE_BUYER/prequal/<id>/" => 'frontend/cabinetPrequal',
+    "cabinet/$ROLE_SUPPLIER/prequal/<id>/participation/" => 'frontend/cabinetPrequalParticipation',
+    "cabinet/$ROLE_SUPPLIER/prequal/<id>/" => 'frontend/cabinetPrequal',
 
     "cabinet/$ROLE_BOTH/accreditation/"=> 'frontend/cabinetAccreditation',
     "cabinet/$ROLE_BOTH/accreditation/request/<id>/"=> 'frontend/cabinetRequest',
@@ -59,7 +62,13 @@ return [
     /*========== API ==========*/
     "api/$ROLE_BUYER/prequal/create/" => 'frontend/apiBuyerPrequalCreate',
     "api/$ROLE_BUYER/prequal/save/" => 'frontend/apiBuyerPrequalSave',
+    "api/$ROLE_BUYER/prequal/publish/" => 'frontend/apiBuyerPrequalPublish',
     "api/$ROLE_BUYER/prequal/get/" => 'frontend/apiBuyerPrequalGet',
+    "api/$ROLE_BUYER/prequal/<id>/file/upload/" => 'frontend/apiBuyerPrequalFileUpload',
+    "api/$ROLE_BUYER/prequal/<id>/file/<file_link_id>/" => 'frontend/apiBuyerPrequalFile',
+    "api/$ROLE_SUPPLIER/prequal/<id>/submit/" => 'frontend/apiSupplierPrequalSubmit',
+    "api/$ROLE_SUPPLIER/prequal/<id>/documents/download/" => 'frontend/apiSupplierPrequalDocumentsDownload',
+    "api/$ROLE_SUPPLIER/prequal/<id>/file/<file_link_id>/" => 'frontend/apiSupplierPrequalFile',
 
     "api/$ROLE_BUYER/docflow/template/list/" => 'frontend/apiBuyerDocflowTemplateList',
     "api/$ROLE_BUYER/docflow/template/create/" => 'frontend/apiBuyerDocflowTemplateCreate',

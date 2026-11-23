@@ -1,0 +1,28 @@
+<div class="tab-content tender-page__panel" role="tabpanel" data-tab="documents" hidden>
+    <div class="tender-page__main">
+        <div class="tender-notice">
+            {foreach [$tech_spec_kind => 'Документация процедуры', $requirement_kind => 'Запрашиваемые документы'] as $document_kind => $document_heading}
+                <section class="detail-section">
+                    <h3 class="detail-section__title">{$document_heading|escape}</h3>
+                    <div class="detail-fields">
+                        {assign var=has_documents value=false}
+                        {foreach $documents as $document}
+                            {if $document.kind == $document_kind}
+                                {assign var=has_documents value=true}
+                                <div class="detail-field">
+                                    <div class="detail-field__label">{$document.name|default:$document.filename|default:'Документ'|escape}</div>
+                                    <div class="detail-field__value">
+                                        {if $document_kind == $requirement_kind}{if $document.is_required}Обязательный{else}Необязательный{/if}<br>{/if}
+                                        {if $document.description|default:''}{$document.description|escape|nl2br}<br>{/if}
+                                        {if $document.file_link_id|default:0 && $document.filename|default:''}<a href="/api/supplier/prequal/{$prequal.id|intval}/file/{$document.file_link_id|intval}/" hx-boost="false">{$document.filename|escape}</a>{/if}
+                                    </div>
+                                </div>
+                            {/if}
+                        {/foreach}
+                        {if !$has_documents}<p class="detail-field__value">Документы не указаны.</p>{/if}
+                    </div>
+                </section>
+            {/foreach}
+        </div>
+    </div>
+</div>

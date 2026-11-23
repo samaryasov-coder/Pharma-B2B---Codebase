@@ -560,10 +560,19 @@
                     return;
                 }
                 const id = parseInt($(this).data('id'), 10) || 0;
+                const kind = String($(this).data('kind') || 'tender');
                 if (id <= 0) return;
                 const item = self.items.find(function (row) {
-                    return parseInt(row.id, 10) === id;
+                    return parseInt(row.id, 10) === id && (row.kind || 'tender') === kind;
                 });
+                if (kind === 'prequal') {
+                    if (item && item.status_code === 'draft') {
+                        self.navigateCabinet('/cabinet/buyer/prequal/' + id + '/edit/');
+                    } else {
+                        window.location.href = '/cabinet/buyer/prequal/' + id + '/';
+                    }
+                    return;
+                }
                 if (item && String(item.status_code || '') === 'draft') {
                     self.navigateCabinet('/cabinet/buyer/tender/' + id + '/edit/');
                     return;
@@ -666,7 +675,9 @@
                 method: 'GET',
                 showMessages: false,
                 onSuccess: function (reply) {
-                    self.items = reply.items || [];
+                    self.items = (reply.items || []).concat(reply.prequal_items || []).sort(function (a, b) {
+                        return String(b.update_datetime || '').localeCompare(String(a.update_datetime || ''));
+                    });
                     self.fillStatusFilter();
                     self.applyFilters();
                 },
@@ -809,7 +820,7 @@
                 const methodLine = (item.type_name || 'Тендер') + (item.number ? ' №' + item.number : '');
 
                 const $card = $(`
-                    <article class="buyer-tender-card" data-id="${item.id}">
+                    <article class="buyer-tender-card" data-id="${item.id}" data-kind="${item.kind === 'prequal' ? 'prequal' : 'tender'}">
                         <div class="buyer-tender-card__main">
                             <div class="buyer-tender-card__title-row">
                                 <h3 class="buyer-tender-card__title"></h3>
@@ -825,15 +836,15 @@
                         </div>
                         <div class="buyer-tender-card__metric">
                             <span class="buyer-tender-card__metric-label">Приглашено</span>
-                            <span class="buyer-tender-card__metric-value">${parseInt(item.invited_count, 10) || 0}</span>
+                            <span class="buyer-tender-card__metric-value">${item.kind === 'prequal' ? '—' : (parseInt(item.invited_count, 10) || 0)}</span>
                         </div>
                         <div class="buyer-tender-card__metric">
                             <span class="buyer-tender-card__metric-label">Участники</span>
-                            <span class="buyer-tender-card__metric-value">${parseInt(item.participants_count, 10) || 0}</span>
+                            <span class="buyer-tender-card__metric-value">${item.kind === 'prequal' ? '—' : (parseInt(item.participants_count, 10) || 0)}</span>
                         </div>
                         <div class="buyer-tender-card__metric">
                             <span class="buyer-tender-card__metric-label">Предложения</span>
-                            <span class="buyer-tender-card__metric-value">${parseInt(item.proposals_count, 10) || 0}</span>
+                            <span class="buyer-tender-card__metric-value">${item.kind === 'prequal' ? '—' : (parseInt(item.proposals_count, 10) || 0)}</span>
                         </div>
                         <div class="buyer-tender-card__deadline">
                             <span class="buyer-tender-card__metric-label">Окончание приёма заявок</span>
@@ -7256,6 +7267,901 @@
             }, this);
             html += '</div>';
             return html;
+        }
+    });
+
+    $.Cabinet.registerPage('prequal', {
+        init: function (root) {
+            const $root = $(root);
+            if ($root.data('prequal-tabs-ready')) return;
+            $root.data('prequal-tabs-ready', true);
+            $root.on('input', '.js-prequal-participants-search', function () {
+                const query = String($(this).val() || '').trim().toLowerCase();
+                let visible = 0;
+                $root.find('.js-prequal-participant').each(function () {
+                    const match = String($(this).attr('data-search') || '').toLowerCase().includes(query);
+                    $(this).prop('hidden', !match);
+                    if (match) visible++;
+                });
+                $root.find('.js-prequal-search-empty').prop('hidden', visible > 0);
+            });
+            new TabsManager({
+                container: $root.find('.js-prequal-tabs'),
+                contentScope: '.tabs-content',
+                defaultTab: 'overview',
+                hashSync: true
+            });
+        }
+    });
+
+    $.Cabinet.registerPage('prequal-form', {
+        $root: null,
+        $form: null,
+        $suppliers: null,
+        steps: null,
+        currentStep: null,
+        highestStepReached: 0,
+        busy: false,
+        documents: null,
+        publishIssues: null,
+
+        init: function (root) {
+            const $root = $(root);
+            if ($root.data('prequal-ready')) return;
+            $root.data('prequal-ready', true);
+
+            this.$root = $root;
+            this.$form = $root.find('.js-prequal-form');
+            this.$suppliers = $root.find('.js-prequal-suppliers');
+            this.steps = $root.find('.js-prequal-step').map(function () { return this.dataset.step; }).get();
+            this.currentStep = this.steps[0];
+            this.highestStepReached = 0;
+            this.busy = false;
+            this.publishIssues = null;
+
+            this.$suppliers.select2({
+                language: 'ru',
+                placeholder: this.$suppliers.data('placeholder') || 'Выберите компании',
+                allowClear: true,
+                multiple: true,
+                ajax: {
+                    url: '/api/buyer/company/select/',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return {
+                            search: params.term,
+                            supplier: 1,
+                            page: params.page || 1
+                        };
+                    },
+                    processResults: function (data) {
+                        return data.payload || { results: [] };
+                    },
+                    cache: true
+                }
+            });
+
+            const utils = $.Cabinet.utils;
+            if (utils && typeof utils.initDatePicker === 'function') {
+                $root.find('.js-prequal-date').each(function () {
+                    utils.initDatePicker($(this), { dateFormat: 'd.m.Y', allowInput: false });
+                });
+            }
+            if (utils && typeof utils.initTimePicker === 'function') {
+                $root.find('.js-prequal-time').each(function () {
+                    utils.initTimePicker($(this), {});
+                });
+            }
+
+            $root.find('.js-prequal-contact').select2({
+                language: 'ru',
+                placeholder: 'Выберите контакт из списка организации',
+                allowClear: true,
+                minimumResultsForSearch: Infinity,
+                width: '100%'
+            });
+
+            this.initInvitationUi();
+            this.initItemsUi();
+            this.initBasicFields();
+            this.bindEvents();
+            this.bindBasicEvents();
+            this.showStep(this.currentStep, false);
+        },
+
+        initInvitationUi: function () {
+            const $step = this.$root.find('.tender-form-step--invitation');
+            const selected = [];
+            this.invitationRecipients = selected;
+            let suppliers = [];
+            let activeTab = 'all';
+            let searchTimer;
+            let request;
+
+            function render() {
+                const $list = $step.find('.js-prequal-inv-supplier-list');
+                $list.find('.tender-invitation-list__item').remove();
+                suppliers.forEach(function (supplier) {
+                    const checked = selected.some(function (row) { return row.id === supplier.id; });
+                    const $item = $('<button type="button" class="tender-invitation-list__item"><span class="tender-invitation-list__checkbox"></span><span class="tender-invitation-list__name"></span></button>');
+                    $item.toggleClass('is-checked', checked).attr('data-id', supplier.id).attr('aria-pressed', String(checked));
+                    if (checked) $item.find('.tender-invitation-list__checkbox').text('✓');
+                    $item.find('.tender-invitation-list__name').text(supplier.name);
+                    $list.append($item);
+                });
+                const $items = $step.find('.js-prequal-inv-selected-items').empty();
+                const $emails = $step.find('.js-prequal-inv-email-tags').empty();
+                selected.forEach(function (row) {
+                    const $item = $('<div class="tender-invitation-selected__item"><span class="tender-invitation-selected__item-name"></span><button type="button" class="tender-invitation-selected__item-remove js-prequal-inv-remove" aria-label="Удалить">×</button></div>');
+                    $item.find('span').text(row.name);
+                    $item.find('button').attr('data-id', row.id);
+                    (row.email ? $emails : $items).append($item);
+                });
+                $step.find('.js-prequal-inv-selected-count').text(selected.length);
+                $step.find('.js-prequal-inv-selected-empty').toggle(selected.length === 0);
+                $step.find('.js-prequal-inv-selected-list').toggle(selected.length > 0);
+                $emails.toggle($emails.children().length > 0);
+            }
+
+            function loadSuppliers() {
+                clearTimeout(searchTimer);
+                if (request) request.abort();
+                suppliers = [];
+                const $empty = $step.find('.js-prequal-inv-list-empty').show();
+                if (activeTab !== 'all') {
+                    $empty.text(activeTab === 'my' ? 'Список ваших поставщиков пока не подключён' : 'Группы поставщиков пока не подключены');
+                    render();
+                    return;
+                }
+                $empty.text('Загрузка поставщиков…');
+                render();
+                request = $.ajax({ url: '/api/buyer/company/select/', dataType: 'json', data: { search: $step.find('.js-prequal-inv-search').val().trim(), supplier: 1, page: 1 } })
+                    .done(function (reply) {
+                        const payload = reply.payload || reply.data || {};
+                        suppliers = (payload.results || []).map(function (row) { return { id: String(row.id || ''), name: String(row.text || row.name || '') }; }).filter(function (row) { return row.id; });
+                        $empty.text('Ничего не найдено').toggle(suppliers.length === 0);
+                        render();
+                    }).fail(function (xhr, status) {
+                        if (status !== 'abort') $empty.text('Не удалось загрузить поставщиков').show();
+                    });
+            }
+
+            new TabsManager({
+                container: $step.find('.js-prequal-inv-tabs'), defaultTab: 'all', hashSync: false,
+                onChange: function ({ tab }) { activeTab = tab; $step.find('.js-prequal-inv-search').val(''); if ($step.find('.js-prequal-inv-send-type-radio:checked').val() === 'auto') loadSuppliers(); }
+            });
+            $step.on('change.prequal', '.js-prequal-inv-send-type-radio', function () {
+                $step.find('.js-prequal-inv-auto-content').toggle(this.value === 'auto');
+                if (this.value === 'auto') loadSuppliers();
+                else if (request) request.abort();
+            });
+            $step.on('input.prequal', '.js-prequal-inv-search', function () {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(loadSuppliers, 250);
+            });
+            $step.on('click.prequal', '.tender-invitation-list__item', function () {
+                const id = String($(this).attr('data-id'));
+                const index = selected.findIndex(function (row) { return row.id === id; });
+                if (index >= 0) selected.splice(index, 1);
+                else {
+                    const supplier = suppliers.find(function (row) { return row.id === id; });
+                    if (supplier) selected.push(supplier);
+                }
+                render();
+            });
+            $step.on('click.prequal', '.js-prequal-inv-remove', function () {
+                const id = String($(this).attr('data-id'));
+                const index = selected.findIndex(function (row) { return row.id === id; });
+                if (index >= 0) selected.splice(index, 1);
+                render();
+            });
+            $step.on('click.prequal', '.js-prequal-inv-clear-all', function () { selected.length = 0; render(); });
+            function addEmail() {
+                const $input = $step.find('.js-prequal-inv-email-input');
+                const email = $input.val().trim();
+                if (!$input[0].checkValidity() || !email) { $input[0].reportValidity(); return; }
+                if (!selected.some(function (row) { return row.id.toLowerCase() === email.toLowerCase(); })) selected.push({ id: email, name: email, email: true });
+                $input.val('');
+                render();
+            }
+            $step.on('click.prequal', '.js-prequal-inv-email-add', addEmail);
+            $step.on('keydown.prequal', '.js-prequal-inv-email-input', function (event) { if (event.key === 'Enter') { event.preventDefault(); addEmail(); } });
+            $step.on('input.prequal', '.js-prequal-inv-msg-textarea', function () {
+                const message = this.value.trim();
+                $step.find('.js-prequal-inv-msg-counter').text(this.value.length + ' / ' + this.maxLength);
+                $step.find('.js-prequal-inv-preview-extra').text(message).toggle(!!message);
+                $step.find('.js-prequal-inv-preview-hint').toggle(!message);
+            });
+        },
+
+        initItemsUi: function () {
+            const $step = this.$root.find('.js-prequal-items-step');
+            let currentKind = 'items';
+            let nextId = 0;
+            const selected = { items: null, requirements: null };
+
+            $step.find('.js-prequal-saved-item').each(function () {
+                const $item = $(this);
+                const $entry = $($step.find('.js-prequal-item-template')[0].content.cloneNode(true)).find('.js-prequal-entry');
+                $entry.attr('data-id', String(++nextId))
+                    .data('item-id', Number($item.attr('data-id')) || 0)
+                    .data('file-link-id', Number($item.attr('data-file-link-id')) || 0)
+                    .data('filename', String($item.attr('data-filename') || ''));
+                $entry.find('.js-prequal-entry-name').val($item.attr('data-name') || '');
+                $entry.find('.js-prequal-entry-quantity').val($item.attr('data-qty') || '');
+                const unit = $item.attr('data-unit') || '';
+                const $unit = $entry.find('.js-prequal-entry-unit');
+                if (unit && !$unit.find('option').toArray().some(function (option) { return option.value === unit; })) {
+                    $unit.append($('<option></option>').val(unit).text(unit));
+                }
+                $unit.val(unit);
+                $entry.find('.js-prequal-entry-description').val($item.attr('data-comment') || '');
+                $entry.appendTo($step.find('.js-prequal-entry-editors'));
+            });
+
+            this.$root.find('.js-prequal-file-list .file-item').each(function () {
+                const $document = $(this);
+                if (String($document.data('kind')) !== 'requirement') return;
+                const $entry = $($step.find('.js-prequal-requirement-template')[0].content.cloneNode(true)).find('.js-prequal-entry');
+                $entry.attr('data-id', String(++nextId))
+                    .data('document-id', Number($document.data('id')) || 0)
+                    .data('file-link-id', Number($document.data('file-link-id')) || 0)
+                    .data('filename', String($document.data('filename') || ''));
+                $entry.find('.js-prequal-entry-name').val(String($document.data('name') || ''));
+                $entry.find('.js-prequal-entry-description').val(String($document.data('description') || ''));
+                $entry.find('.js-prequal-entry-required').prop('checked', Number($document.data('required')) === 1);
+                $entry.appendTo($step.find('.js-prequal-entry-editors'));
+            });
+
+            function render() {
+                const $entries = $step.find('.js-prequal-entry').filter(function () { return $(this).attr('data-kind') === currentKind; });
+                const $list = $step.find('.js-prequal-entry-list').empty();
+                if (!$entries.filter(function () { return $(this).attr('data-id') === selected[currentKind]; }).length) {
+                    selected[currentKind] = $entries.first().attr('data-id') || null;
+                }
+                $step.find('.js-prequal-entry').prop('hidden', true);
+                $entries.each(function (index) {
+                    const $entry = $(this);
+                    const id = $entry.attr('data-id');
+                    const title = $entry.find('.js-prequal-entry-name').val().trim() || (currentKind === 'items' ? 'Позиция №' : 'Документ №') + (index + 1);
+                    $entry.find('.js-prequal-entry-title').text(title);
+                    const $item = $('<div class="tender-lots-item js-prequal-entry-select" role="button" tabindex="0"><div class="tender-lots-item__border" aria-hidden="true"></div><div class="tender-lots-item__row"><div class="tender-lots-item__num"></div><div class="tender-lots-item__main"><div class="tender-lots-item__title"></div><div class="tender-lots-item__params"></div></div><div class="tender-lots-item__status tender-lots-item__status--draft" aria-hidden="true"></div></div></div>');
+                    $item.toggleClass('is-selected', id === selected[currentKind]).toggleClass('tender-lots-item--doc', currentKind === 'requirements').attr('data-id', id);
+                    $item.find('.tender-lots-item__num').text(index + 1);
+                    $item.find('.tender-lots-item__title').text(title);
+                    const detail = currentKind === 'items'
+                        ? [$entry.find('.js-prequal-entry-quantity').val(), $entry.find('.js-prequal-entry-unit').val()].filter(Boolean).join(' ')
+                        : ($entry.find('.js-prequal-entry-required').prop('checked') ? 'Обязательный документ' : '');
+                    if (detail) $('<span class="tender-lots-item__param"></span>').text(detail).appendTo($item.find('.tender-lots-item__params'));
+                    $list.append($item);
+                    if (id === selected[currentKind]) $entry.prop('hidden', false);
+                });
+                $step.find('.js-prequal-entry-empty').prop('hidden', $entries.length > 0)
+                    .text(currentKind === 'items' ? 'Добавьте позицию' : 'Добавьте документ');
+                $step.find('.js-prequal-entry-add span').text(currentKind === 'items' ? 'Добавить позицию' : 'Добавить документ');
+            }
+
+            new TabsManager({
+                container: $step.find('.js-prequal-items-tabs'),
+                defaultTab: 'items',
+                hashSync: false,
+                onChange: function ({ tab }) { currentKind = tab; render(); }
+            });
+            $step.on('click.prequal', '.js-prequal-entry-add', function () {
+                const selector = currentKind === 'items' ? '.js-prequal-item-template' : '.js-prequal-requirement-template';
+                const $entry = $($step.find(selector)[0].content.cloneNode(true)).find('.js-prequal-entry');
+                if (currentKind === 'items') $entry.data('item-changed', true);
+                selected[currentKind] = String(++nextId);
+                $entry.attr('data-id', selected[currentKind]).appendTo($step.find('.js-prequal-entry-editors'));
+                render();
+                $entry.find('.js-prequal-entry-name').trigger('focus');
+            });
+            $step.on('click.prequal', '.js-prequal-entry-select', function () {
+                selected[currentKind] = $(this).attr('data-id');
+                render();
+            });
+            $step.on('keydown.prequal', '.js-prequal-entry-select', function (event) {
+                if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); $(this).trigger('click'); }
+            });
+            $step.on('input.prequal change.prequal', '.js-prequal-entry-name, .js-prequal-entry-quantity, .js-prequal-entry-unit, .js-prequal-entry-required', function () {
+                $(this).closest('.js-prequal-entry[data-kind="items"]').data('item-changed', true);
+                render();
+            });
+            $step.on('input.prequal', '.js-prequal-entry-description', function () {
+                $(this).closest('.js-prequal-entry[data-kind="items"]').data('item-changed', true);
+                $(this).closest('.tender-lots-textarea').find('.js-prequal-entry-counter').text(this.value.length + '/' + this.maxLength);
+            });
+            $step.on('keydown.prequal', '.js-prequal-entry-upload', function (event) {
+                if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); $(this).trigger('click'); }
+            });
+            $step.on('click.prequal', '.js-prequal-entry-upload', function () {
+                $(this).siblings('.js-prequal-entry-file').trigger('click');
+            });
+            $step.on('dragover.prequal dragenter.prequal', '.js-prequal-entry-upload', function (event) {
+                event.preventDefault(); $(this).addClass('is-drag');
+            });
+            $step.on('dragleave.prequal drop.prequal', '.js-prequal-entry-upload', function (event) {
+                event.preventDefault(); $(this).removeClass('is-drag');
+                if (event.type === 'drop') {
+                    const input = $(this).siblings('.js-prequal-entry-file')[0];
+                    const transfer = new DataTransfer();
+                    Array.from(event.originalEvent.dataTransfer.files).slice(0, input.multiple ? undefined : 1).forEach(function (file) { transfer.items.add(file); });
+                    input.files = transfer.files;
+                    $(input).trigger('change');
+                }
+            });
+            $step.on('change.prequal', '.js-prequal-entry-file', function () {
+                const $files = $(this).siblings('.js-prequal-entry-files').empty();
+                const files = Array.from(this.files);
+                if (files.some(function (file) { return file.size > 10 * 1024 * 1024 || !/\.(docx?|pdf)$/i.test(file.name); })) {
+                    this.value = '';
+                    $files.text('Выберите файлы DOC, DOCX или PDF размером до 10 МБ');
+                    return;
+                }
+                files.forEach(function (file) {
+                    const $row = $('<div class="tender-lots-upload__file"><div class="tender-lots-upload__file-main"><div class="tender-lots-upload__ext"></div><div><div class="tender-lots-upload__name"></div><div class="tender-lots-upload__size"></div></div></div></div>');
+                    $row.find('.tender-lots-upload__ext').text(file.name.split('.').pop().toUpperCase());
+                    $row.find('.tender-lots-upload__name').text(file.name);
+                    $row.find('.tender-lots-upload__size').text(Math.round(file.size / 1024) + ' КБ');
+                    $files.append($row);
+                });
+                const $entry = $(this).closest('.js-prequal-entry');
+                const linkId = Number($entry.data('file-link-id')) || 0;
+                if (!files.length && linkId) {
+                    const prequalId = Number($entry.closest('form').find('[name="id"]').val()) || 0;
+                    $('<a></a>').attr('href', '/api/buyer/prequal/' + prequalId + '/file/' + linkId + '/')
+                        .attr('hx-boost', 'false').text(String($entry.data('filename') || 'Скачать файл')).appendTo($files);
+                }
+                if (files.length || linkId) $('<button type="button" class="button outline small js-prequal-entry-files-clear">Убрать файлы</button>').appendTo($files);
+            });
+            $step.on('click.prequal', '.js-prequal-entry-files-clear', function () {
+                const $upload = $(this).closest('.tender-lots-upload');
+                $upload.closest('.js-prequal-entry').data('file-link-id', 0).data('filename', '');
+                $upload.find('.js-prequal-entry-file').val('').trigger('change');
+            });
+            $step.on('click.prequal', '.js-prequal-entry-copy', function () {
+                const $source = $(this).closest('.js-prequal-entry');
+                const $copy = $($step.find('.js-prequal-item-template')[0].content.cloneNode(true)).find('.js-prequal-entry');
+                $copy.data('item-changed', true);
+                $copy.find('.js-prequal-entry-name').val($source.find('.js-prequal-entry-name').val());
+                $copy.find('.js-prequal-entry-quantity').val($source.find('.js-prequal-entry-quantity').val());
+                $copy.find('.js-prequal-entry-unit').val($source.find('.js-prequal-entry-unit').val());
+                $copy.find('.js-prequal-entry-description').val($source.find('.js-prequal-entry-description').val()).trigger('input');
+                $copy.data('file-link-id', Number($source.data('file-link-id')) || 0).data('filename', String($source.data('filename') || ''));
+                const transfer = new DataTransfer();
+                Array.from($source.find('.js-prequal-entry-file')[0].files).forEach(function (file) { transfer.items.add(file); });
+                $copy.find('.js-prequal-entry-file')[0].files = transfer.files;
+                $copy.find('.js-prequal-entry-file').trigger('change');
+                selected.items = String(++nextId);
+                $copy.attr('data-id', selected.items).appendTo($step.find('.js-prequal-entry-editors'));
+                render();
+            });
+            $step.on('click.prequal', '.js-prequal-entry-delete', function () {
+                $(this).closest('.js-prequal-entry').remove();
+                selected[currentKind] = null;
+                render();
+            });
+            $step.on('click.prequal', '.js-prequal-items-preview', function () {
+                ['items', 'requirements'].forEach(function (kind) {
+                    const $target = $step.find('.js-prequal-preview-' + kind).empty();
+                    const $entries = $step.find('.js-prequal-entry').filter(function () { return $(this).attr('data-kind') === kind; });
+                    if (!$entries.length) {
+                        const $empty = $('<div class="tender-lots-preview-empty"><div class="tender-lots-preview-empty__icon"><svg width="24" height="24"><use href="#icon-document-text"></use></svg></div><div class="tender-lots-preview-empty__text"></div></div>');
+                        $empty.find('.tender-lots-preview-empty__text').text(kind === 'items' ? 'Нет добавленных позиций' : 'Документы не требуются');
+                        $target.append($empty);
+                        return;
+                    }
+                    const headings = kind === 'items' ? ['№', 'Наименование', 'Количество', 'Ед.', 'Комментарий', 'Док.'] : ['№', 'Наименование документа', 'Описание', 'Файл', 'Обязательный'];
+                    const $table = $('<table class="tender-lots-preview-table"></table>').toggleClass('is-prequal', kind === 'items');
+                    const $head = $('<thead><tr></tr></thead>').appendTo($table).find('tr');
+                    headings.forEach(function (heading) { $('<th></th>').text(heading).appendTo($head); });
+                    const $body = $('<tbody></tbody>').appendTo($table);
+                    $entries.each(function (index) {
+                        const $entry = $(this);
+                        const name = $entry.find('.js-prequal-entry-name').val().trim() || (kind === 'items' ? 'Позиция №' : 'Документ №') + (index + 1);
+                        const description = $entry.find('.js-prequal-entry-description').val().trim() || '—';
+                        const files = $entry.find('.js-prequal-entry-file')[0].files;
+                        const values = kind === 'items'
+                            ? [index + 1, name, $entry.find('.js-prequal-entry-quantity').val() || '—', $entry.find('.js-prequal-entry-unit').val() || '—', description, files.length || Number($entry.data('file-link-id')) ? '1' : '—']
+                            : [index + 1, name, description, files.length || Number($entry.data('file-link-id')) ? 'Прикреплён' : 'Нет', $entry.find('.js-prequal-entry-required').prop('checked') ? 'Да' : 'Нет'];
+                        const $row = $('<tr></tr>').appendTo($body);
+                        values.forEach(function (value) { $('<td></td>').text(value).appendTo($row); });
+                    });
+                    $target.append($('<div class="tender-lots-preview-table-wrap"></div>').append($table));
+                });
+                $step.find('.js-prequal-items-edit').prop('hidden', true);
+                $step.find('.js-prequal-items-preview-view').prop('hidden', false);
+            });
+            $step.on('click.prequal', '.js-prequal-items-edit-return', function () {
+                $step.find('.js-prequal-items-preview-view').prop('hidden', true);
+                $step.find('.js-prequal-items-edit').prop('hidden', false);
+            });
+            $step.find('.js-prequal-entry-file').trigger('change');
+            if (!$step.find('.js-prequal-entry[data-kind="items"]').length) {
+                const $initial = $($step.find('.js-prequal-item-template')[0].content.cloneNode(true)).find('.js-prequal-entry');
+                selected.items = String(++nextId);
+                $initial.attr('data-id', selected.items).appendTo($step.find('.js-prequal-entry-editors'));
+                $initial.find('.js-prequal-entry-unit').val('шт.');
+            }
+            render();
+        },
+
+        initBasicFields: function () {
+            const $address = this.$root.find('#prequal-address');
+            $address.closest('.tender-form-textarea').find('.char-counter').text(String($address.val() || '').length + '/500');
+            this.documents = this.$root.find('.js-prequal-file-list .file-item').filter(function () {
+                return String($(this).data('kind')) === 'tech_spec';
+            }).map(function () {
+                return {
+                    id: Number($(this).data('id')) || 0,
+                    kind: String($(this).data('kind')),
+                    description: String($(this).data('description') || ''),
+                    is_required: Number($(this).data('required')) || 0,
+                    file_link_id: Number($(this).data('file-link-id')),
+                    name: String($(this).data('name') || ''),
+                    size: Number($(this).data('size')) || 0,
+                    ext: String($(this).data('ext') || '')
+                };
+            }).get();
+            this.renderDocuments();
+            this.renderCategories();
+        },
+
+        bindBasicEvents: function () {
+            const self = this;
+            this.$root.on('input.prequal change.prequal', '.js-prequal-panel[data-step="conditions"] input, .js-prequal-panel[data-step="conditions"] textarea, #prequal-delivery-info, #prequal-address', function () {
+                $(this).data('prequal-changed', true);
+            });
+            this.$root.on('change.prequal', '.js-prequal-condition-toggle', function () {
+                $(this).attr('aria-expanded', String(this.checked));
+                self.$root.find('#prequal-' + $(this).data('target')).prop('hidden', !this.checked);
+            });
+            this.$root.on('input.prequal', '.js-prequal-panel[data-step="contacts"] textarea[maxlength]', function () {
+                $(this).closest('.tender-form-textarea').find('.char-counter').text(this.value.length + '/' + this.maxLength);
+            });
+            this.$root.on('click.prequal', '.js-prequal-add-contact', function () {
+                const $select = $('<select class="select2 filter-select js-prequal-contact" aria-label="Дополнительный контакт"><option value=""></option></select>');
+                self.$root.find('.js-prequal-contact-list').append($('<div class="tender-form-list__item"></div>').append($select));
+                $select.select2({ language: 'ru', placeholder: 'Выберите контакт из списка организации', allowClear: true, minimumResultsForSearch: Infinity, width: '100%' });
+            });
+            this.$root.on('click.prequal', '.js-prequal-category-toggle', function () {
+                const $button = $(this);
+                const expanded = $button.attr('aria-expanded') !== 'true';
+                $button.attr('aria-expanded', String(expanded)).toggleClass('is-expanded', expanded);
+                $button.closest('.clf-node').children('.clf-node__children').toggleClass('is-open', expanded);
+            });
+            this.$root.on('change.prequal', '.js-prequal-category-check', function () {
+                const $node = $(this).closest('.clf-node');
+                $node.find('.js-prequal-category-check').prop('checked', this.checked);
+                $node.parents('.clf-node').each(function () {
+                    const $children = $(this).children('.clf-node__children').find('.js-prequal-category-check');
+                    $(this).children('.clf-node__row').find('.js-prequal-category-check')
+                        .prop('checked', $children.length > 0 && $children.filter(':checked').length === $children.length);
+                });
+                self.renderCategories();
+            });
+            this.$root.on('click.prequal', '.js-prequal-category-remove', function () {
+                self.$root.find('.js-prequal-category-check[value="' + $(this).data('id') + '"]')
+                    .prop('checked', false).trigger('change');
+            });
+            this.$root.on('input.prequal', '.js-prequal-category-search', function () {
+                const query = this.value.trim().toLowerCase();
+                const $nodes = self.$root.find('.js-prequal-category-node');
+                $nodes.get().reverse().forEach(function (node) {
+                    const $node = $(node);
+                    const matches = String($node.data('label')).toLowerCase().includes(query)
+                        || $node.find('.js-prequal-category-node:not(.is-search-hidden)').length > 0;
+                    $node.toggleClass('is-search-hidden', !matches);
+                    const expanded = !!query || $node.children('.clf-node__row').find('.js-prequal-category-toggle').attr('aria-expanded') === 'true';
+                    $node.children('.clf-node__children').toggleClass('is-open', expanded);
+                });
+                self.$root.find('.js-prequal-category-no-results').prop('hidden', $nodes.filter(':not(.is-search-hidden)').length > 0);
+            });
+            this.$root.on('click.prequal', '.js-prequal-file-dropzone', function (event) {
+                if (!$(event.target).is('.js-prequal-file-input') && !self.busy) self.$root.find('.js-prequal-file-input').trigger('click');
+            });
+            this.$root.on('change.prequal', '.js-prequal-file-input', function () {
+                self.addFiles(this.files);
+                this.value = '';
+            });
+            this.$root.on('dragover.prequal dragenter.prequal', '.js-prequal-file-dropzone', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                $(this).addClass('is-dragover');
+            });
+            this.$root.on('dragleave.prequal drop.prequal', '.js-prequal-file-dropzone', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                $(this).removeClass('is-dragover');
+                if (event.type === 'drop' && !self.busy) self.addFiles(event.originalEvent.dataTransfer.files);
+            });
+            this.$root.on('click.prequal', '.js-prequal-file-remove', function () {
+                if (self.busy) return;
+                self.documents.splice(Number($(this).data('index')), 1);
+                self.renderDocuments();
+            });
+        },
+
+        renderCategories: function () {
+            const $selected = this.$root.find('.js-prequal-category-selected').empty();
+            this.$root.find('.js-prequal-category-check:checked').each(function () {
+                const $tag = $('<span class="tag"><span class="tag-label"></span><button type="button" class="tag-remove js-prequal-category-remove" aria-label="Убрать категорию">×</button></span>');
+                $tag.find('.tag-label').text($(this).data('label'));
+                $tag.find('button').attr('data-id', this.value);
+                $selected.append($tag);
+            });
+            this.$root.find('.js-prequal-category-empty').toggleClass('is-hidden', $selected.children().length > 0);
+        },
+
+        addFiles: function (files) {
+            if (this.busy) return;
+            const self = this;
+            Array.from(files || []).forEach(function (file) {
+                const ext = file.name.split('.').pop().toLowerCase();
+                if (!['pdf', 'doc', 'docx'].includes(ext) || file.size <= 0 || file.size > 10 * 1024 * 1024) {
+                    self.showMessage('Выберите непустой PDF, DOC или DOCX размером до 10 МБ', true);
+                    return;
+                }
+                self.documents.push({ id: 0, kind: 'tech_spec', description: '', is_required: 0, file_link_id: 0, name: file.name, size: file.size, ext: ext, file: file });
+            });
+            this.renderDocuments();
+        },
+
+        renderDocuments: function () {
+            const self = this;
+            const $list = this.$root.find('.js-prequal-file-list').empty();
+            const id = Number(this.$form.find('[name="id"]').val()) || 0;
+            this.documents.forEach(function (file, index) {
+                const $item = $('<div class="file-item"><span class="file-left"><span class="file-icon"></span><span class="file-info"><span class="file-name"></span><span class="file-meta"><span class="file-status"></span><span class="file-size"></span></span></span></span><div class="file-actions"><button type="button" class="file-remove button secondary js-prequal-file-remove" aria-label="Убрать файл"><svg><use href="#icon-x-mark"></use></svg></button></div></div>');
+                $item.find('.file-icon').text(file.ext.toUpperCase());
+                $item.find('.file-name').text(file.name);
+                $item.find('.file-size').text(' · ' + (file.size / 1024 / 1024).toFixed(2) + ' МБ');
+                $item.find('.file-status').text(file.file_link_id ? 'Файл загружен' : 'Будет загружен при сохранении');
+                $item.find('.js-prequal-file-remove').attr('data-index', index).prop('disabled', self.busy);
+                if (file.file_link_id) {
+                    $item.find('.file-name').wrap($('<a></a>').attr('href', '/api/buyer/prequal/' + id + '/file/' + file.file_link_id + '/').attr('hx-boost', 'false'));
+                }
+                if (file.file_link_id || file.kind === 'requirement') {
+                    ['id', 'kind', 'name', 'description', 'is_required', 'file_link_id'].forEach(function (field) {
+                        $list.append($('<input type="hidden">').attr('name', 'data[documents][' + index + '][' + field + ']').val(file[field] || (field === 'id' || field === 'is_required' ? 0 : '')));
+                    });
+                }
+                if (file.kind === 'tech_spec') $list.append($item);
+            });
+        },
+
+        syncDocumentIds: function (rows) {
+            this.documents.forEach(function (document) {
+                if (!document.file_link_id) return;
+                const saved = (rows || []).find(function (row) {
+                    return row.kind === document.kind && Number(row.file_link_id) === Number(document.file_link_id);
+                });
+                if (saved) document.id = Number(saved.id);
+            });
+        },
+
+        uploadFiles: async function (id, root) {
+            for (const file of this.documents) {
+                if (!file.file) continue;
+                const data = new FormData();
+                data.set('file', file.file);
+                const reply = await $.fRequest({ url: '/api/buyer/prequal/' + id + '/file/upload/', data: data, showMessages: false });
+                if (!document.contains(root) || this.$root[0] !== root) return { error: true };
+                if (reply.error || !(Number(reply.file_link_id) > 0)) return { error: true, message: reply.message || 'Не удалось загрузить файл документации' };
+                file.file_link_id = Number(reply.file_link_id);
+                file.file = null;
+            }
+            const entries = this.$root.find('.js-prequal-entry[data-kind="requirements"], .js-prequal-entry[data-kind="items"]').toArray();
+            for (const element of entries) {
+                const $entry = $(element);
+                const input = $entry.find('.js-prequal-entry-file')[0];
+                if (!input.files.length) continue;
+                const data = new FormData();
+                data.set('file', input.files[0]);
+                const reply = await $.fRequest({ url: '/api/buyer/prequal/' + id + '/file/upload/', data: data, showMessages: false });
+                if (!document.contains(root) || this.$root[0] !== root) return { error: true };
+                if (reply.error || !(Number(reply.file_link_id) > 0)) return { error: true, message: reply.message || 'Не удалось загрузить файл' };
+                $entry.data('file-link-id', Number(reply.file_link_id)).data('filename', reply.filename || input.files[0].name);
+                $(input).val('').trigger('change');
+            }
+            return { error: false };
+        },
+
+        bindEvents: function () {
+            const self = this;
+
+            this.$form.on('submit.prequal', function (event) {
+                event.preventDefault();
+                self.save();
+            });
+
+            this.$root.on('click.prequal', '.js-prequal-publish', function () {
+                self.save(true);
+            });
+
+            this.$root.on('click.prequal', '.js-prequal-next', function () {
+                if (!self.busy) self.showStep(self.steps[self.steps.indexOf(self.currentStep) + 1], true);
+            });
+
+            this.$root.on('click.prequal', '.js-prequal-back', function () {
+                if (!self.busy) self.showStep(self.steps[self.steps.indexOf(self.currentStep) - 1], true);
+            });
+
+            this.$root.on('click.prequal', '.js-prequal-step', function () {
+                const index = self.steps.indexOf(this.dataset.step);
+                if (self.busy || index < 0 || index > self.highestStepReached) return;
+                self.showStep(this.dataset.step, true);
+            });
+
+            this.$form.on('change.prequal', '[name="data[is_private]"]', function () {
+                self.$root.find('.js-prequal-suppliers-wrap').toggleClass('visible', this.value === '1');
+            });
+
+            this.$root.on('input.prequal change.prequal', '#prequal-title, #prequal-validity, #prequal-end-date, #prequal-end-time, .js-prequal-suppliers, [name="data[is_private]"], .js-prequal-entry-name', function () {
+                if (self.publishIssues) self.showPublishIssues(self.getPublishIssues(), false);
+            });
+        },
+
+        showStep: function (step, focus) {
+            const stepIndex = this.steps.indexOf(step);
+            if (stepIndex < 0) return;
+            const self = this;
+
+            this.$root.toggleClass('is-wide', step === 'items' || step === 'invitation');
+            this.$form.toggleClass('is-wide', step === 'items' || step === 'invitation');
+            if (step === 'items' && (this.publishIssues || []).some(function (issue) { return issue.field === 'items'; })) {
+                this.$root.find('.js-prequal-items-edit-return').trigger('click');
+            }
+            this.currentStep = step;
+            this.highestStepReached = Math.max(this.highestStepReached, stepIndex);
+            const highestStepReached = this.highestStepReached;
+            this.$root.find('.js-prequal-panel').each(function () {
+                this.hidden = this.dataset.step !== step;
+            });
+            this.$root.find('.js-prequal-step').each(function (index) {
+                const current = this.dataset.step === step;
+                $(this).toggleClass('is-current', current)
+                    .toggleClass('completed', index <= highestStepReached)
+                    .toggleClass('next', index > highestStepReached)
+                    .toggleClass('is-invalid', !!(this.dataset.step && (self.publishIssues || []).some(function (issue) { return issue.step === this.dataset.step; }, this)))
+                    .toggleClass('is-clickable', index <= highestStepReached && !current);
+                if (current) this.setAttribute('aria-current', 'step');
+                else this.removeAttribute('aria-current');
+            });
+            if (focus) this.$root.find('.js-prequal-panel[data-step="' + step + '"] h2').trigger('focus');
+        },
+
+        showMessage: function (message, error) {
+            this.$root.find('.js-prequal-message')
+                .prop('hidden', false)
+                .toggleClass('is-error', !!error)
+                .text(message);
+        },
+
+        getPublishIssues: function () {
+            const $root = this.$root;
+            const issues = [];
+            if (!String($root.find('#prequal-title').val() || '').trim()) issues.push({ step: 'basic', field: 'title', message: 'Укажите наименование процедуры' });
+            if (!(Number($root.find('#prequal-validity').val()) >= 1)) issues.push({ step: 'conditions', field: 'validity_months', message: 'Укажите срок действия квалификации' });
+            const date = String($root.find('#prequal-end-date').val() || '').match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+            const time = String($root.find('#prequal-end-time').val() || '');
+            const deadline = date && /^\d{2}:\d{2}$/.test(time) ? Date.parse(date[3] + '-' + date[2] + '-' + date[1] + 'T' + time + ':00+03:00') : NaN;
+            if (!Number.isFinite(deadline) || deadline <= Date.now()) issues.push({ step: 'conditions', field: 'accept_end_datetime', message: 'Укажите будущий срок окончания подачи заявок' });
+            if ($root.find('[name="data[is_private]"]:checked').val() === '1' && !(this.$suppliers.val() || []).length) issues.push({ step: 'access', field: 'invitations', message: 'Для закрытой процедуры добавьте хотя бы одного поставщика' });
+            const entries = $root.find('.js-prequal-entry[data-kind="items"]').toArray().filter(function (element) {
+                const $entry = $(element);
+                return $entry.data('item-id') || $entry.data('item-changed') || String($entry.find('.js-prequal-entry-name').val() || '').trim();
+            });
+            if (!entries.length || entries.some(function (element) { return !String($(element).find('.js-prequal-entry-name').val() || '').trim(); })) issues.push({ step: 'items', field: 'items', message: 'Добавьте предметы квалификации и укажите их названия' });
+            return issues;
+        },
+
+        showPublishIssues: function (issues, navigate) {
+            this.publishIssues = issues.length ? issues : null;
+            this.$root.find('.js-prequal-field-error').each(function () {
+                const $error = $(this);
+                const issue = issues.find(function (row) { return row.field === $error.data('field'); });
+                $error.text(issue ? issue.message : '').prop('hidden', !issue);
+            });
+            if (navigate && issues.length && this.steps.includes(issues[0].step)) {
+                this.showStep(issues[0].step, true);
+            } else {
+                this.showStep(this.currentStep, false);
+            }
+        },
+
+        appendStepData: function (data) {
+            const $root = this.$root;
+            const $conditions = $root.find('.js-prequal-panel[data-step="conditions"]');
+            const $contacts = $root.find('.js-prequal-panel[data-step="contacts"]');
+            const $items = $root.find('.js-prequal-items-step');
+            const $invitation = $root.find('.tender-form-step--invitation');
+            const fields = {
+                requires_audit: '[data-target="audit-info"]',
+                audit_info: '#prequal-audit-details',
+                requires_samples: '[data-target="samples-info"]',
+                samples_info: '#prequal-samples-details',
+                validity_months: '#prequal-validity',
+                additional_info: '#prequal-additional-info'
+            };
+            Object.keys(fields).forEach(function (field) {
+                const $input = $conditions.find(fields[field]);
+                if (!$input.data('prequal-changed')) return;
+                data.set('data[' + field + ']', $input.is(':checkbox') ? ($input.prop('checked') ? '1' : '0') : $input.val());
+            });
+            const dateFields = [
+                ['accept_end_datetime', '#prequal-end-date', '#prequal-end-time'],
+                ['results_planned_datatime', '#prequal-result-date', null]
+            ];
+            dateFields.forEach(function (field) {
+                const $date = $conditions.find(field[1]);
+                const $time = field[2] ? $conditions.find(field[2]) : $();
+                if (!$date.data('prequal-changed') && !$time.data('prequal-changed')) return;
+                const match = String($date.val() || '').match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+                const time = $time.length ? String($time.val() || '') : '00:00';
+                if (match && time) data.set('data[' + field[0] + ']', match[3] + '-' + match[2] + '-' + match[1] + ' ' + time + ':00');
+                else if (!$date.val() && !$time.val()) data.set('data[' + field[0] + ']', '');
+            });
+            const $delivery = $contacts.find('#prequal-delivery-info');
+            if ($delivery.data('prequal-changed')) data.set('data[delivery_terms]', $delivery.val());
+            const $address = $contacts.find('#prequal-address');
+            if ($address.data('prequal-changed')) data.set('data[delivery_address]', $address.val());
+            const contacts = $contacts.find('.js-prequal-contact').map(function () { return $(this).val(); }).get().filter(Boolean);
+            if (!contacts.length) data.set('data[contact_ids]', '');
+            contacts.forEach(function (id) { data.append('data[contact_ids][]', id); });
+            data.set('data[info_messages_consent]', $contacts.find('.tender-form-consent input').prop('checked') ? '1' : '0');
+            const $entries = $items.find('.js-prequal-entry[data-kind="items"]');
+            let itemIndex = 0;
+            $entries.each(function () {
+                const $entry = $(this);
+                const name = $entry.find('.js-prequal-entry-name').val();
+                const qty = $entry.find('.js-prequal-entry-quantity').val();
+                const comment = $entry.find('.js-prequal-entry-description').val();
+                const input = $entry.find('.js-prequal-entry-file')[0];
+                if (!$entry.data('item-id') && !$entry.data('item-changed') && !String(name).trim() && !String(qty).trim() && !String(comment).trim() && !$entry.data('file-link-id') && !input.files.length) return;
+                const key = 'data[items][' + itemIndex + ']';
+                $entry.data('item-sort', itemIndex++);
+                data.set(key + '[id]', $entry.data('item-id') || 0);
+                data.set(key + '[name]', name);
+                data.set(key + '[qty]', qty);
+                data.set(key + '[unit]', $entry.find('.js-prequal-entry-unit').val() || '');
+                data.set(key + '[comment]', comment);
+                data.set(key + '[file_link_id]', $entry.data('file-link-id') || '');
+            });
+            if (!itemIndex) data.set('data[items]', '');
+            const documentIndices = Array.from(data.keys()).map(function (key) { return key.match(/^data\[documents\]\[(\d+)\]\[kind\]$/); }).filter(Boolean).map(function (match) { return Number(match[1]); });
+            let documentIndex = documentIndices.length ? Math.max.apply(null, documentIndices) + 1 : 0;
+            let documentSort = documentIndices.length;
+            $items.find('.js-prequal-entry[data-kind="requirements"]').each(function () {
+                const $entry = $(this);
+                const name = $entry.find('.js-prequal-entry-name').val().trim();
+                if (!name) return;
+                data.delete('data[documents]');
+                const key = 'data[documents][' + documentIndex + ']';
+                $entry.data('document-sort', documentSort++);
+                documentIndex++;
+                data.set(key + '[id]', $entry.data('document-id') || 0);
+                data.set(key + '[kind]', 'requirement');
+                data.set(key + '[name]', name);
+                data.set(key + '[description]', $entry.find('.js-prequal-entry-description').val());
+                data.set(key + '[is_required]', $entry.find('.js-prequal-entry-required').prop('checked') ? '1' : '0');
+                data.set(key + '[file_link_id]', $entry.data('file-link-id') || '');
+            });
+            data.set('data[invitation_send_type]', $invitation.find('.js-prequal-inv-send-type-radio:checked').val() || 'manual');
+            data.set('data[invitation_message]', $invitation.find('.js-prequal-inv-msg-textarea').val());
+            const recipients = this.invitationRecipients || [];
+            const companies = recipients.filter(function (row) { return !row.email; });
+            const emails = recipients.filter(function (row) { return row.email; });
+            if (!companies.length) data.set('data[invitation_company_ids]', '');
+            if (!emails.length) data.set('data[invitation_emails]', '');
+            companies.forEach(function (row) { data.append('data[invitation_company_ids][]', row.id); });
+            emails.forEach(function (row) { data.append('data[invitation_emails][]', row.id); });
+        },
+
+        save: async function (publish) {
+            if (this.busy) return;
+
+            if (publish) {
+                const issues = this.getPublishIssues();
+                this.showPublishIssues(issues, true);
+                if (issues.length) return;
+            }
+
+            const $root = this.$root;
+            const root = $root[0];
+            const invalidFile = $root.find('.js-prequal-entry[data-kind="requirements"]').toArray().some(function (element) {
+                const $entry = $(element);
+                return $entry.find('.js-prequal-entry-file')[0].files.length && !$entry.find('.js-prequal-entry-name').val().trim();
+            });
+            if (invalidFile) {
+                this.showMessage('Укажите название документа для загрузки файла шаблона.', true);
+                return;
+            }
+            const id = Number(this.$form.find('[name="id"]').val()) || 0;
+            const data = new FormData(this.$form[0]);
+            this.appendStepData(data);
+            ['invitations', 'category_ids'].forEach(function (field) {
+                if (!data.has('data[' + field + '][]')) data.set('data[' + field + ']', '');
+            });
+            if (!Array.from(data.keys()).some(function (key) { return key.startsWith('data[documents]['); })) data.set('data[documents]', '');
+            this.busy = true;
+            const $controls = $root.find('button, input, textarea, select').filter(':enabled');
+            $controls.prop('disabled', true);
+            $root.attr('aria-busy', 'true');
+
+            let reply = await $.fRequest({
+                url: id ? '/api/buyer/prequal/save/' : '/api/buyer/prequal/create/',
+                data: data,
+                showMessages: false
+            });
+
+            if (document.contains(root) && this.$root[0] === root && !reply.error && Number(reply.item?.id) > 0) {
+                this.syncDocumentIds(reply.documents);
+                $root.find('.js-prequal-entry[data-kind="items"]').each(function () {
+                    const $entry = $(this);
+                    const saved = (reply.items || []).find(function (row) { return Number(row.sort) === $entry.data('item-sort'); });
+                    if (saved) $entry.data('item-id', Number(saved.id));
+                });
+                $root.find('.js-prequal-entry[data-kind="requirements"]').each(function () {
+                    const $entry = $(this);
+                    const saved = (reply.documents || []).find(function (row) { return row.kind === 'requirement' && Number(row.sort) === $entry.data('document-sort'); });
+                    if (saved) $entry.data('document-id', Number(saved.id));
+                });
+                const savedId = Number(reply.item.id);
+                this.$form.find('[name="id"]').val(savedId);
+                $root.find('.js-prequal-title').text('Редактирование предварительной квалификации');
+                $root.find('.js-prequal-save').text('Сохранить изменения');
+                window.history.replaceState(window.history.state, '', '/cabinet/buyer/prequal/' + savedId + '/edit/');
+                const pendingRequirements = $root.find('.js-prequal-entry[data-kind="requirements"], .js-prequal-entry[data-kind="items"]').toArray().some(function (element) {
+                    return $(element).find('.js-prequal-entry-file')[0].files.length > 0;
+                });
+                if (this.documents.some(function (file) { return !!file.file; }) || pendingRequirements) {
+                    const uploaded = await this.uploadFiles(savedId, root);
+                    if (uploaded.error) reply = uploaded;
+                    else {
+                        data.set('id', savedId);
+                        data.delete('data[documents]');
+                        Array.from(data.keys()).filter(function (key) { return key.startsWith('data[documents]['); }).forEach(function (key) { data.delete(key); });
+                        this.documents.forEach(function (file, index) {
+                            ['id', 'kind', 'name', 'description', 'is_required', 'file_link_id'].forEach(function (field) {
+                                data.set('data[documents][' + index + '][' + field + ']', file[field] || (field === 'id' || field === 'is_required' ? 0 : ''));
+                            });
+                        });
+                        Array.from(data.keys()).filter(function (key) { return key.startsWith('data[addresses]') || key.startsWith('data[contact_ids]') || key.startsWith('data[items]') || key.startsWith('data[invitation_company_ids]') || key.startsWith('data[invitation_emails]') || key.startsWith('item_files[') || key.startsWith('document_files['); }).forEach(function (key) { data.delete(key); });
+                        this.appendStepData(data);
+                        reply = await $.fRequest({ url: '/api/buyer/prequal/save/', data: data, showMessages: false });
+                    }
+                }
+            }
+
+            if (!reply.error && reply.item && Number(reply.item.id) > 0 && publish && document.contains(root) && this.$root[0] === root) {
+                reply = await $.fRequest({ url: '/api/buyer/prequal/publish/', data: { id: Number(reply.item.id) }, showMessages: false });
+            }
+
+            if (this.$root[0] === root) this.busy = false;
+            $controls.prop('disabled', false);
+            $root.removeAttr('aria-busy');
+            if (!document.contains(root) || this.$root[0] !== root) return;
+
+            if (!reply.error) this.syncDocumentIds(reply.documents);
+            this.renderDocuments();
+            if (reply.error || !reply.item || !(Number(reply.item.id) > 0)) {
+                const issues = Array.isArray(reply.issues) ? reply.issues : [];
+                if (issues.length) {
+                    this.showPublishIssues(issues, true);
+                } else {
+                    this.showMessage(reply.message || 'Не удалось сохранить черновик. Повторите попытку.', true);
+                    $root.find('.js-prequal-message').trigger('focus');
+                }
+                return;
+            }
+
+            if (publish) {
+                window.location.href = '/cabinet/buyer/tenders/';
+                return;
+            }
+            this.showMessage('Черновик сохранён. Адреса, дополнительные контакты и рассылка пока не сохраняются.', false);
         }
     });
 })(jQuery);

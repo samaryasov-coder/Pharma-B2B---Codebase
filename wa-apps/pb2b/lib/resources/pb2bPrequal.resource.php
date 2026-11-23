@@ -24,7 +24,7 @@ class pb2bPrequalResource extends pb2bBaseJsonResource
         foreach (array('is_private', 'requires_audit', 'requires_samples') as $field) {
             $result[$field] = (int) ($row[$field] ?? 0);
         }
-        foreach (array('accept_start_datetime', 'accept_end_datetime', 'results_planned_datatime', 'audit_info', 'samples_info', 'additional_info', 'delivery_terms', 'description', 'create_datetime', 'update_datetime') as $field) {
+        foreach (array('accept_start_datetime', 'accept_end_datetime', 'results_planned_datatime', 'audit_info', 'samples_info', 'additional_info', 'delivery_address', 'delivery_terms', 'description', 'create_datetime', 'update_datetime') as $field) {
             $result[$field] = isset($row[$field]) ? (string) $row[$field] : null;
         }
 

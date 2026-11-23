@@ -10,9 +10,7 @@ class pb2bCompanyService
     public function createCompany(pb2bCompanyDto $company_dto, int $contact_id): pb2bCompany
     {
         $contact = new waContact($contact_id);
-        if (!$contact->exists()) {
-            throw new waException('Пользователь не найден, необходима авторизация', pb2bHttpStatus::BAD_REQUEST);
-        }
+        if (!$contact->exists()) throw new waException('Пользователь не найден, необходима авторизация', pb2bHttpStatus::BAD_REQUEST);
 
         $company = new pb2bCompany();
         $data = $company_dto->toArray();

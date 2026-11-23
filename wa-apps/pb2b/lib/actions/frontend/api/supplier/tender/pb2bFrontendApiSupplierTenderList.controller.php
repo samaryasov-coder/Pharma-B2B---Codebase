@@ -9,7 +9,10 @@ class pb2bFrontendApiSupplierTenderListController extends pb2bFrontendCabinetCon
         $this->assertSupplierCompanySelected();
 
         $this->response = $this->ok(array(
-            'items' => $this->applicationService()->listForSupplier($this->supplierCompanyId()),
+            'items' => array_merge(
+                $this->applicationService()->listForSupplier($this->supplierCompanyId()),
+                (new pb2bPrequalService())->listFromSupplier($this->context->company())
+            ),
         ));
     }
 }

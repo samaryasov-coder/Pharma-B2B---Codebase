@@ -1,0 +1,62 @@
+<div class="tender-form-step tender-form-step--lots js-prequal-items-step">
+    <div class="js-prequal-items-edit">
+        <div class="creation-card tender-lots-card tender-form-card tender-form-card--sectioned">
+            <div class="tender-lots-card__head">
+                <div class="tender-lots-card__title-row"><h2 class="tender-lots-card__title" tabindex="-1">Предметы и документы</h2></div>
+                <div class="js-prequal-items-tabs">
+                    {include file="html/cabinet/partials/tabs.html" tabs=[['id'=>'items', 'label'=>'Позиции', 'active'=>true], ['id'=>'requirements', 'label'=>'Запрашиваемые документы']] tabs_aria="Предметы и документы" tabs_with_panels=false}
+                </div>
+            </div>
+            <div class="tender-lots-body prequal-items-body">
+                <div class="tender-lots-col tender-lots-col--list">
+                    <button type="button" class="button secondary js-prequal-entry-add"><svg aria-hidden="true"><use href="#icon-plus"></use></svg><span>Добавить позицию</span></button>
+                    <div class="prequal-field-error js-prequal-field-error" data-field="items" role="alert" hidden></div>
+                    <div class="tender-lots-list js-prequal-entry-list"></div>
+                </div>
+                <div class="tender-lots-col tender-lots-col--editor">
+                    <div class="tender-lots-editor-card">
+                        <div class="tender-lots-editor-empty js-prequal-entry-empty">Добавьте позицию</div>
+                        <div class="js-prequal-entry-editors"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="creation-manage-buttons tender-lots-footer">
+                <a class="button large outline" href="/cabinet/buyer/tenders/" hx-get="/cabinet/buyer/tenders/" hx-target=".js-main-content" hx-push-url="true">Отменить</a>
+                <div class="manage-buttons-right"><button type="button" class="button large secondary js-prequal-back">Назад</button><button type="button" class="button large primary js-prequal-items-preview">Предварительный просмотр</button></div>
+            </div>
+        </div>
+    </div>
+    <div class="tender-lots-preview js-prequal-items-preview-view" hidden>
+        <div class="tender-lots-preview__head"><div class="tender-lots-preview__title tender-form-card__title">Предварительный просмотр</div><div class="tender-lots-preview__hint tender-form-card__hint">Проверьте перечень предметов и документов</div></div>
+        <div class="tender-lots-preview__section"><div class="tender-lots-preview__section-head"><span class="tender-lots-preview__section-title">Позиции</span></div><div class="js-prequal-preview-items"></div></div>
+        <div class="tender-lots-preview__section tender-lots-preview__section--docs"><div class="tender-lots-preview__section-head"><span class="tender-lots-preview__section-title">Запрашиваемые документы</span></div><div class="js-prequal-preview-requirements"></div></div>
+        <div class="creation-manage-buttons tender-lots-preview-footer"><button type="button" class="button large outline js-prequal-items-edit-return">Вернуться к редактированию</button><div class="manage-buttons-right"><button type="button" class="button large primary js-prequal-next">Перейти к рассылке</button></div></div>
+    </div>
+    <div class="js-prequal-items-data" hidden>
+        {foreach $prequal_items as $item}
+            <div class="js-prequal-saved-item" data-id="{$item.id|escape}" data-name="{$item.name|default:''|escape}" data-qty="{$item.qty|default:''|escape}" data-unit="{$item.unit|default:''|escape}" data-comment="{$item.comment|default:''|escape}" data-file-link-id="{$item.file_link_id|default:''|escape}" data-filename="{$item.filename|default:''|escape}"></div>
+        {/foreach}
+    </div>
+    <template class="js-prequal-item-template">
+        <div class="tender-lots-editor js-prequal-entry" data-kind="items" hidden>
+            <div class="tender-lots-editor__head"><div class="tender-lots-editor__head-inner"><div class="tender-lots-editor__title js-prequal-entry-title">Позиция</div><button type="button" class="button secondary small icon-only js-prequal-entry-copy" aria-label="Дублировать позицию"><svg aria-hidden="true"><use href="#icon-position-copy"></use></svg></button><button type="button" class="button secondary small icon-only js-prequal-entry-delete" aria-label="Удалить позицию"><svg aria-hidden="true"><use href="#icon-trash"></use></svg></button></div></div>
+            <div class="tender-lots-editor__body"><div class="tender-lots-editor__body-inner">
+                <label class="tender-lots-field"><span class="tender-lots-field__label">Наименование позиции</span><span class="tender-lots-input"><span class="tender-lots-input__border"></span><span class="tender-lots-input__inner"><input type="text" class="js-prequal-entry-name" placeholder="Введите наименование позиции"></span></span></label>
+                <div class="tender-lots-field-row"><label class="tender-lots-field"><span class="tender-lots-field__label">Количество</span><span class="tender-lots-input"><span class="tender-lots-input__border"></span><span class="tender-lots-input__inner"><input type="number" min="0" step="any" class="js-prequal-entry-quantity" placeholder="0"></span></span></label><label class="tender-lots-field"><span class="tender-lots-field__label">Ед. измерения</span><span class="tender-lots-input"><span class="tender-lots-input__border"></span><span class="tender-lots-input__inner"><select class="js-prequal-entry-unit" aria-label="Единица измерения"><option value="">Выберите</option><option>шт.</option><option>кг</option><option>м</option><option>л</option><option>компл.</option><option>уп.</option></select><svg class="tender-lots-input__chevron" aria-hidden="true"><use href="#icon-chevron-up-down"></use></svg></span></span></label></div>
+                <div class="tender-lots-field"><div class="tender-lots-field__section">Файл позиции</div><div class="tender-lots-upload"><div class="tender-lots-upload__zone js-prequal-entry-upload" role="button" tabindex="0" aria-label="Выбрать файл"><span class="tender-lots-upload__inner"><span class="tender-lots-upload__icon"><svg aria-hidden="true"><use href="#icon-file-upload"></use></svg></span><span class="tender-lots-upload__text"><span class="tender-lots-upload__link">Нажмите сюда</span> или перетащите файл для загрузки</span><span class="tender-lots-upload__hints"><span>Поддерживаемый формат: DOC, DOCX, PDF</span><span>Макс. размер файла: 10 МБ</span></span></span></div><div class="js-prequal-entry-files"></div><input type="file" class="js-prequal-entry-file" accept=".doc,.docx,.pdf"></div></div>
+                <label class="tender-lots-field"><span class="tender-lots-field__section">Комментарий</span><span class="tender-lots-textarea"><span class="tender-lots-textarea__border"></span><span class="tender-lots-textarea__inner"><textarea class="js-prequal-entry-description" rows="3" maxlength="200" placeholder="Введите комментарий"></textarea><span class="tender-lots-textarea__counter js-prequal-entry-counter">0/200</span></span></span></label>
+            </div></div>
+        </div>
+    </template>
+    <template class="js-prequal-requirement-template">
+        <div class="tender-lots-editor js-prequal-entry" data-kind="requirements" hidden>
+            <div class="tender-lots-editor__head"><div class="tender-lots-editor__head-inner"><div class="tender-lots-editor__title js-prequal-entry-title">Документ</div><button type="button" class="button secondary small icon-only js-prequal-entry-delete" aria-label="Удалить документ"><svg aria-hidden="true"><use href="#icon-trash"></use></svg></button></div></div>
+            <div class="tender-lots-editor__body"><div class="tender-lots-editor__body-inner tender-lots-editor__body-inner--doc">
+                <label class="tender-lots-field"><span class="tender-lots-field__label">Название документа</span><span class="tender-lots-input"><span class="tender-lots-input__border"></span><span class="tender-lots-input__inner"><input type="text" class="js-prequal-entry-name" placeholder="Введите название документа"></span></span></label>
+                <label class="tender-lots-field"><span class="tender-lots-field__section">Описание</span><span class="tender-lots-textarea"><span class="tender-lots-textarea__border"></span><span class="tender-lots-textarea__inner"><textarea class="js-prequal-entry-description" rows="3" maxlength="200" placeholder="Опишите, что должен представить поставщик"></textarea><span class="tender-lots-textarea__counter js-prequal-entry-counter">0/200</span></span></span></label>
+                <div class="tender-lots-field"><div class="tender-lots-field__section">Файл шаблона</div><div class="tender-lots-upload"><div class="tender-lots-upload__zone js-prequal-entry-upload" role="button" tabindex="0" aria-label="Выбрать файл"><span class="tender-lots-upload__inner"><span class="tender-lots-upload__icon"><svg aria-hidden="true"><use href="#icon-file-upload"></use></svg></span><span class="tender-lots-upload__text"><span class="tender-lots-upload__link">Нажмите сюда</span> или перетащите файл для загрузки</span><span class="tender-lots-upload__hints"><span>Поддерживаемый формат: DOC, DOCX, PDF</span><span>Макс. размер файла: 10 МБ</span></span></span></div><div class="js-prequal-entry-files"></div><input type="file" class="js-prequal-entry-file" accept=".doc,.docx,.pdf"></div></div>
+                <label class="checkbox tender-form-control"><input type="checkbox" class="js-prequal-entry-required"><span class="checkmark" aria-hidden="true"></span><span class="tender-form-control__copy"><span class="input-label">Отметить обязательным</span></span></label>
+            </div></div>
+        </div>
+    </template>
+</div>

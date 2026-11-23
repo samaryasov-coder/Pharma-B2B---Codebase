@@ -1,0 +1,253 @@
+{assign var=prequal_data value=$prequal.data}
+<div class="cabinet-container js-cabinet-page" data-page="prequal-participation">
+    <div class="supplier-participation">
+        <div class="supplier-participation__header">
+            {include file="html/cabinet/partials/page-header.html"
+                page_header_title="Подача заявки на предварительную квалификацию"
+                page_header_back_url=$notice_url
+                page_header_back_label="К извещению"}
+        </div>
+
+        {if $can_apply}
+            <form class="supplier-participation js-prequal-application-form" method="post" enctype="multipart/form-data" hx-boost="false"
+                  action="/api/supplier/prequal/{$prequal.id|escape}/submit/" data-notice-url="{$notice_url|escape}">
+                {$wa->csrf()}
+                <section class="detail-section">
+                    <h2 class="supplier-participation__panel-title">Предварительная квалификация</h2>
+                    <div class="supplier-participation__panel">
+                        <div class="detail-field detail-field--muted">
+                            <div class="detail-field__label">Наименование извещения</div>
+                            <div class="detail-field__value">{$prequal_data.title|escape}</div>
+                        </div>
+                        {if $categories}
+                            <div class="divider"></div>
+                            <div class="detail-field detail-field--muted">
+                                <div class="detail-field__label">Категория</div>
+                                <div class="detail-field__value detail-tags detail-tags--spaced">
+                                    {foreach $categories as $category}
+                                        {include file="html/cabinet/partials/badge.html" badge_text=$category badge_size="medium" badge_variant="tag"}
+                                    {/foreach}
+                                </div>
+                            </div>
+                        {/if}
+                        {if $technical_documents}
+                            <div class="divider"></div>
+                            <div class="detail-field detail-field--muted">
+                                <div class="supplier-participation__panel-head">
+                                    <div class="detail-field__label">Файлы технического задания</div>
+                                    <a class="button secondary small" href="/api/supplier/prequal/{$prequal.id|intval}/documents/download/" hx-boost="false">
+                                        <img src="{$wa_theme_url}img/icons/documents/download-all.svg" alt="">
+                                        Скачать все документы
+                                    </a>
+                                </div>
+                                <div class="file-list document-files-list" hx-boost="false">
+                                    {foreach $technical_documents as $document}
+                                        {if $document.file_link_id}
+                                            {assign var=file_url value="/api/supplier/prequal/{$prequal.id|intval}/file/{$document.file_link_id|intval}/"}
+                                            {assign var=file_name value=$document.filename|default:$document.name}
+                                            <div class="file-item">
+                                                <div class="file-left">
+                                                    <img src="{$wa_theme_url}img/icons/documents/document.svg" alt="">
+                                                    <div class="file-info">
+                                                        <a class="file-name" href="{$file_url|escape}">{$file_name|escape}</a>
+                                                        {if $document.size|default:0}
+                                                            <span class="file-size">{$document.size|wa_format_file_size:'%0.1f':'б,кб,мб,гб'|escape}</span>
+                                                        {/if}
+                                                    </div>
+                                                </div>
+                                                <a class="button ghost small icon-only" href="{$file_url|escape}" aria-label="Скачать {$file_name|escape}">
+                                                    <img src="{$wa_theme_url}img/icons/documents/download.svg" alt="">
+                                                </a>
+                                            </div>
+                                        {/if}
+                                    {/foreach}
+                                </div>
+                            </div>
+                        {/if}
+                    </div>
+                </section>
+
+                <section class="detail-section">
+                    <h2 class="supplier-participation__panel-title">Параметры квалификации</h2>
+                    <div class="supplier-participation__panel">
+                        {if $prequal_data.requires_audit}
+                            <div class="detail-field detail-field--muted">
+                                <div class="detail-field__label">Требуется прохождение предварительного аудита</div>
+                                {if $prequal_data.audit_info}
+                                    <div class="prequal-parameter__description">{$prequal_data.audit_info|escape|nl2br}</div>
+                                {/if}
+                                <label class="checkbox prequal-parameter__checkbox">
+                                    <input type="checkbox" name="audit_consent" value="1" required>
+                                    <span class="checkmark" aria-hidden="true"></span>
+                                    <span class="input-label">Согласен <span class="prequal-parameter__required" aria-hidden="true">*</span></span>
+                                </label>
+                            </div>
+                            <div class="divider"></div>
+                        {/if}
+                        {if $prequal_data.requires_samples}
+                            <div class="detail-field detail-field--muted">
+                                <div class="detail-field__label">Требуется отправка тестовых образцов</div>
+                                {if $prequal_data.samples_info}
+                                    <div class="prequal-parameter__description">{$prequal_data.samples_info|escape|nl2br}</div>
+                                {/if}
+                                <label class="checkbox prequal-parameter__checkbox">
+                                    <input type="checkbox" name="samples_consent" value="1" required>
+                                    <span class="checkmark" aria-hidden="true"></span>
+                                    <span class="input-label">Согласен <span class="prequal-parameter__required" aria-hidden="true">*</span></span>
+                                </label>
+                            </div>
+                            <div class="divider"></div>
+                        {/if}
+                        <div class="detail-field detail-field--muted">
+                            <div class="detail-field__label">Окончание приёма заявок</div>
+                            <div class="detail-tags">
+                                {if $prequal_data.accept_end_datetime|default:''}
+                                    <span class="detail-tag">{$prequal_data.accept_end_datetime|date_format:'%d.%m.%Y'|escape}</span>
+                                    <span class="detail-tag">{$prequal_data.accept_end_datetime|date_format:'%H:%M'|escape}</span>
+                                {else}
+                                    <span class="detail-tag">—</span>
+                                {/if}
+                            </div>
+                        </div>
+                        <div class="divider"></div>
+                        <div class="detail-field detail-field--muted">
+                            <div class="detail-field__label">Плановое подведение итогов</div>
+                            <div class="detail-tags">
+                                {if $prequal_data.results_planned_datatime|default:''}
+                                    <span class="detail-tag">{$prequal_data.results_planned_datatime|date_format:'%d.%m.%Y'|escape}</span>
+                                    <span class="detail-tag">{$prequal_data.results_planned_datatime|date_format:'%H:%M'|escape}</span>
+                                {else}
+                                    <span class="detail-tag">—</span>
+                                {/if}
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {if $documents}
+                    <section class="detail-section">
+                        <h2 class="supplier-participation__panel-title">Критерии квалификации</h2>
+                        <div class="supplier-participation__panel">
+                            <div class="form-item-list">
+                                {foreach $documents as $document}
+                                    <div class="form-item">
+                                        <div class="detail-field__label" id="prequal-document-label-{$document.id|escape}">
+                                            {$document.name|escape}{if $document.is_required} <span class="prequal-parameter__required" aria-hidden="true">*</span>{/if}
+                                        </div>
+                                        {if $document.description|default:''}
+                                            <p class="des form-item__description">{$document.description|escape|nl2br}</p>
+                                        {/if}
+                                        <div class="form-item__file">
+                                            <label class="button secondary prequal-document-upload">
+                                                <svg aria-hidden="true"><use href="#icon-file-upload"></use></svg>
+                                                Загрузить файл
+                                                <input type="file" class="js-prequal-document-file" name="documents[{$document.id|escape}]"
+                                                    aria-labelledby="prequal-document-label-{$document.id|escape}" accept=".pdf,.doc,.docx"{if $document.is_required} required{/if}>
+                                            </label>
+                                            <span class="js-prequal-document-filename" aria-live="polite"></span>
+                                            {if $document.file_link_id}
+                                                <a class="button outline small" href="/api/supplier/prequal/{$prequal.id|escape}/file/{$document.file_link_id|escape}/" hx-boost="false">Скачать шаблон</a>
+                                            {/if}
+                                        </div>
+                                    </div>
+                                {/foreach}
+                            </div>
+                        </div>
+                    </section>
+                {/if}
+
+                <section class="detail-section">
+                    <h2 class="supplier-participation__panel-title">Предметы квалификации</h2>
+                    <div class="supplier-participation__panel">
+                        <div class="form-item-list">
+                            {foreach $items as $item}
+                                <div class="form-item">
+                                    <div class="detail-field__label">{$item.name|default:'Без названия'|escape}</div>
+                                    <div class="detail-field detail-field--muted">
+                                        <div class="detail-field__label">Количество</div>
+                                        <div class="detail-field__value">{if isset($item.qty) && $item.qty !== ''}{$item.qty|escape}{if $item.unit|default:''} {$item.unit|escape}{/if}{else}—{/if}</div>
+                                    </div>
+                                    <div class="detail-field detail-field--muted">
+                                        <div class="detail-field__label">Комментарий</div>
+                                        <div class="detail-field__value">{$item.comment|default:'—'|escape|nl2br}</div>
+                                    </div>
+                                    <div class="detail-field detail-field--muted">
+                                        <div class="detail-field__label">Файл позиции</div>
+                                        <div class="detail-field__value">
+                                            {if $item.file_link_id|default:0 && $item.filename|default:''}
+                                                <a href="/api/supplier/prequal/{$prequal.id|intval}/file/{$item.file_link_id|intval}/" hx-boost="false">{$item.filename|escape}</a>
+                                            {else}—{/if}
+                                        </div>
+                                    </div>
+                                </div>
+                            {foreachelse}
+                                <div class="detail-field__value">Предметы квалификации не указаны.</div>
+                            {/foreach}
+                        </div>
+                    </div>
+                </section>
+
+                <section class="detail-section">
+                    <h2 class="supplier-participation__panel-title">Условия доставки товара</h2>
+                    <div class="supplier-participation__panel">
+                        <div class="detail-field detail-field--muted">
+                            <div class="detail-field__label">Адрес поставки</div>
+                            <div class="detail-field__value">
+                                {include file="html/cabinet/partials/detail-copy-value.html" detail_copy_value=$prequal_data.delivery_address|default:'' detail_copy_label="Скопировать адрес"}
+                            </div>
+                        </div>
+                        <div class="divider"></div>
+                        <div class="detail-field detail-field--muted">
+                            <div class="detail-field__label">Дополнительные условия поставки</div>
+                            <div class="detail-field__value">{$prequal_data.delivery_terms|default:'—'|escape|nl2br}</div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="detail-section">
+                    <h2 class="supplier-participation__panel-title">Контакты</h2>
+                    <div class="supplier-participation__panel">
+                        <div class="detail-field detail-field--muted">
+                            <div class="detail-field__label">Организатор</div>
+                            <div class="detail-field__value">{$organizer->getFullName()|escape}</div>
+                        </div>
+                        <div class="divider"></div>
+                        <div class="detail-field detail-field--muted">
+                            <div class="detail-field__label">Контактное лицо</div>
+                            <div class="detail-field__value">{$organizer.data.contact_person|default:'—'|escape}</div>
+                        </div>
+                        <div class="divider"></div>
+                        <div class="detail-field detail-field--muted">
+                            <div class="detail-field__label">E-mail</div>
+                            <div class="detail-field__value">{$organizer.data.registry_email|default:'—'|escape}</div>
+                        </div>
+                        <div class="divider"></div>
+                        <div class="detail-field detail-field--muted">
+                            <div class="detail-field__label">Номер телефона</div>
+                            <div class="detail-field__value">{$organizer.data.phone|default:'—'|escape}</div>
+                        </div>
+                    </div>
+                </section>
+
+
+
+
+
+                <div class="input-wrap large required">
+                    <label class="checkbox prequal-parameter__checkbox">
+                        <input type="checkbox" name="info_consent" value="1" required>
+                        <span class="checkmark" aria-hidden="true"></span>
+                        <span class="input-label">Я даю согласие на получение информационных сообщений</span>
+                    </label>
+                </div>
+
+                <footer class="supplier-participation__footer">
+                    <a class="button secondary" href="{$notice_url|escape}" hx-boost="false">Отменить</a>
+                    <button class="button primary" type="submit">Подать заявку</button>
+                </footer>
+            </form>
+        {else}
+            <p>Приём заявок закрыт.</p>
+        {/if}
+    </div>
+</div>

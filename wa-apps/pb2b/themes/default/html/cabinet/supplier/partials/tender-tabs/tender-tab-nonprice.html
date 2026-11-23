@@ -1,0 +1,76 @@
+<div class="tab-content tender-page__panel tender-page__panel--nonPrice{if $app_status_code != 'submitted'} tender-page__panel--with-aside{/if}" role="tabpanel" data-tab="nonPrice" hidden>
+    <div class="tender-page__main">
+        <div class="tender-nonprice">
+            {if $criteria|default:[]}
+                <p class="tender-nonprice__notice" role="note">Ответы увидит только организатор.</p>
+                <div class="tender-nonprice__list">
+                    {foreach $criteria as $criterion}
+                        <section class="detail-field tender-nonprice__criterion">
+                            <div class="detail-field">
+                                {include file="html/cabinet/partials/page-header.html"
+                                    page_header_title=$criterion.name|default:'Критерий'
+                                    page_header_level='h3'
+                                    page_header_size='h4'
+                                    page_header_actions=''
+                                    page_header_back_url=''
+                                    page_header_title_class=''}
+                                {if $criterion.description|default:''}
+                                    <p class="detail-field__value">{$criterion.description|escape|nl2br}</p>
+                                {/if}
+                                {if $criterion.is_mandatory|default:0}
+                                    <div>{include file="html/cabinet/partials/badge.html" badge_text='Обязательный' badge_size='small' badge_tone='error' badge_class='' badge_leading='' badge_variant='' badge_outline=false}</div>
+                                {/if}
+                            </div>
+                            <div class="tender-nonprice__answer">
+                                {if $criterion.type|default:'text' == 'confirmation'}
+                                    <label class="checkbox">
+                                        <input type="checkbox" disabled>
+                                        <span class="checkmark" aria-hidden="true"></span>
+                                        <span class="input-label">{$criterion.confirmation_text|default:'Подтверждаю'|escape}</span>
+                                    </label>
+                                {elseif $criterion.type|default:'text' == 'file'}
+                                    <button type="button" class="button secondary" disabled>Загрузить файл...</button>
+                                {elseif $criterion.type|default:'text' == 'date'}
+                                    <div class="input-box">
+                                        <input type="date" aria-label="{$criterion.name|default:'Дата'|escape}" disabled>
+                                    </div>
+                                {else}
+                                    <div class="textarea-box">
+                                        <textarea rows="3" placeholder="Введите ответ" aria-label="{$criterion.name|default:'Ответ на критерий'|escape}" disabled></textarea>
+                                    </div>
+                                {/if}
+                            </div>
+                        </section>
+                    {/foreach}
+                </div>
+            {else}
+                <div class="empty-container">
+                    <span class="title">Нет критериев</span>
+                    <span class="des">В этом тендере организатор не добавил неценовые критерии.</span>
+                </div>
+            {/if}
+        </div>
+    </div>
+    {if $app_status_code != 'submitted'}
+        <aside class="tender-page__aside" aria-label="Участие и заявки тендера">
+            <div class="tender-page__aside-content tender-side-panel">
+                {if $can_show_participation_actions}
+                    <div class="tender-side-panel__actions">
+                        <button type="button" class="button secondary js-supplier-ask-question" data-tab="questions">Задать вопрос</button>
+                        {if !$participation.closed}
+                            <a class="button primary js-supplier-tender-participate" href="{$participation.url|escape}" hx-boost="false">{if $app_status_code == 'draft'}Продолжить оформление{else}Участвовать{/if}</a>
+                        {/if}
+                    </div>
+                {/if}
+                {if $app_status_code == 'withdrawn' || $is_canceled || $participation.closed}
+                    <section class="tender-side-card">
+                        <div class="tender-side-card__head">
+                            <h3 class="tender-side-card__title">{if $app_status_code == 'withdrawn'}Заявка отозвана{elseif $is_canceled}Процедура завершена{else}Приём заявок завершён{/if}</h3>
+                        </div>
+                        <p class="tender-side-card__empty">{if $app_status_code == 'withdrawn'}Срок подачи заявок завершён.{elseif $is_canceled}В этой процедуре нельзя подать новое предложение.{else}Срок подачи предложений истёк. Новую заявку подать нельзя.{/if}</p>
+                    </section>
+                {/if}
+            </div>
+        </aside>
+    {/if}
+</div>

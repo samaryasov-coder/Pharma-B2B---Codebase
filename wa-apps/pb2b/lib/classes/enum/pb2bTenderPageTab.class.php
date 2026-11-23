@@ -76,6 +76,16 @@ enum pb2bTenderPageTab: string
         );
     }
 
+    public static function buyerPrequal(): array
+    {
+        return array(
+            self::OVERVIEW->toArray(true),
+            self::QUESTIONS->toArray(),
+            self::PARTICIPANTS->toArray(),
+            self::RESULTS->toArray(),
+        );
+    }
+
     public static function buyerApplication(): array
     {
         return array(

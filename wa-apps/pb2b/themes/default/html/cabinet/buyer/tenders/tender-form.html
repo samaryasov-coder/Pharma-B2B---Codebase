@@ -19,6 +19,7 @@
             </button>
             <button type="button" class="button secondary js-tender-apply-template">Применить шаблон</button>
         {/capture}
+
         {include file="html/cabinet/partials/page-header.html"
             page_header_title=$form_title
             page_header_title_class="js-creation-title"
@@ -27,10 +28,9 @@
 
         <div class="creation-steps js-tender-steps">
             {foreach from=$form_steps item=step name=form_step}
-                <div
-                    class="creation-step{if !$smarty.foreach.form_step.first} next{/if}"
-                    data-step="{$step.key|escape}"
-                >{$step.label|escape}</div>
+                <div class="creation-step{if !$smarty.foreach.form_step.first} next{/if}" data-step="{$step.key|escape}">
+                    {$step.label|escape}
+                </div>
             {/foreach}
         </div>
     </div>

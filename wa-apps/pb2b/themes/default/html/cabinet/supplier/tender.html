@@ -2,6 +2,9 @@
 {* Карточка извещения для поставщика. Участие — только /participation/. *}
 {assign var=published value=$tender_data.published_at|default:''}
 {assign var=app_status_code value=$application.status|default:''}
+{assign var=is_canceled value=in_array($participation.tender_status_code, ['cancelled', 'unsuccessful'])}
+{assign var=can_show_participation_actions value=(!$is_canceled && $app_status_code != 'withdrawn')}
+{assign var=can_open_participation value=($can_show_participation_actions && !$participation.closed)}
 {assign var=tender_header_title value=$tender_type.name|default:'Запрос цен'}
 {if $tender_data.number}
     {assign var=tender_header_title value=$tender_header_title|cat:' №'|cat:$tender_data.number}
@@ -15,7 +18,9 @@
     data-participation-url="{$participation.url|escape}"
 >
     <div class="tender-page">
+        <!-- верхний блок -->
         <div class="tender-page__header">
+            <!-- заголовок -->
             {capture assign="tender_header_actions"}
                 {if $application}
                     <a class="button outline" href="/cabinet/supplier/tender/{$tender.id|escape}/application/">Моя заявка</a>
@@ -30,6 +35,7 @@
                 page_header_actions=$tender_header_actions
                 page_header_back_url=""}
 
+            <!-- верхний блок -->
             <section class="supplier-tender-info" aria-label="Сводка извещения">
                 <div class="supplier-tender-info__main">
                     <div class="supplier-tender-info__meta">
@@ -100,13 +106,15 @@
                 </div>
             </section>
 
-            {if $app_status_code == 'submitted'}
+            <!-- пока не надо это краткая инфа по заявке надо переделаить или вообще убрать -->
+            {*if $app_status_code == 'submitted'}
                 {include file="html/cabinet/supplier/partials/tender-participation-hero.html"}
-            {/if}
-
+            {/if*}
         </div>
 
+        <!-- основной блок -->
         <div class="tender-page__body js-tender-tabs">
+            <!-- табы -->
             <div class="tender-page__tabs">
                 {include
                     file="html/cabinet/partials/tabs.html"
@@ -116,42 +124,14 @@
                     tabs_with_panels=false
                 }
             </div>
-
+            <!-- вкладки -->
             <div class="tender-page__panels tabs-content">
-                <div class="tab-content tender-page__panel tender-page__panel--notice{if $app_status_code != 'submitted'} tender-page__panel--with-aside{/if} is-active" role="tabpanel" data-tab="notice">
-                    <div class="tender-page__main">
-                        {include file="html/cabinet/partials/tender-tab-notice.html" notice=$tender_data}
-                    </div>
-                    {include file="html/cabinet/supplier/partials/tender-aside-participate.html" supplier_aside_tab='notice'}
-                </div>
-                <div class="tab-content tender-page__panel tender-page__panel--procurementDocs{if $app_status_code != 'submitted'} tender-page__panel--with-aside{/if}" role="tabpanel" data-tab="procurementDocs" hidden>
-                    <div class="tender-page__main">
-                        {include file="html/cabinet/partials/document-files.html" document_files=$procurement_documents document_download_url="/api/supplier/tender/{$tender.id}/documents/download/"}
-                    </div>
-                    {include file="html/cabinet/supplier/partials/tender-aside-participate.html" supplier_aside_tab='procurementDocs'}
-                </div>
-                <div class="tab-content tender-page__panel tender-page__panel--positions" role="tabpanel" data-tab="positions" hidden>
-                    <div class="tender-page__main">
-                        {include file="html/cabinet/supplier/partials/tender-tab-positions.html"}
-                    </div>
-                </div>
-                <div class="tab-content tender-page__panel tender-page__panel--documents" role="tabpanel" data-tab="documents" hidden>
-                    <div class="tender-page__main">
-                        {include file="html/cabinet/supplier/partials/tender-tab-documents.html"}
-                    </div>
-                </div>
-                <div class="tab-content tender-page__panel tender-page__panel--questions{if $app_status_code != 'submitted'} tender-page__panel--with-aside{/if}" role="tabpanel" data-tab="questions" hidden>
-                    <div class="tender-page__main">
-                        {include file="html/cabinet/supplier/partials/tender-tab-questions.html"}
-                    </div>
-                    {include file="html/cabinet/supplier/partials/tender-aside-participate.html" supplier_aside_tab='questions'}
-                </div>
-                <div class="tab-content tender-page__panel tender-page__panel--nonPrice{if $app_status_code != 'submitted'} tender-page__panel--with-aside{/if}" role="tabpanel" data-tab="nonPrice" hidden>
-                    <div class="tender-page__main">
-                        {include file="html/cabinet/supplier/partials/tender-tab-nonprice.html"}
-                    </div>
-                    {include file="html/cabinet/supplier/partials/tender-aside-participate.html" supplier_aside_tab='nonPrice'}
-                </div>
+                {include file="html/cabinet/supplier/partials/tender-tabs/tender-tab-notice.html"}
+                {include file="html/cabinet/supplier/partials/tender-tabs/tender-tab-procurement-docs.html"}
+                {include file="html/cabinet/supplier/partials/tender-tabs/tender-tab-positions.html"}
+                {include file="html/cabinet/supplier/partials/tender-tabs/tender-tab-documents.html"}
+                {include file="html/cabinet/supplier/partials/tender-tabs/tender-tab-questions.html"}
+                {include file="html/cabinet/supplier/partials/tender-tabs/tender-tab-nonprice.html"}
             </div>
         </div>
     </div>

@@ -99,7 +99,8 @@
 
 .tender-form-field__label {
     font: var(--text-font-p3);
-    color: var(--gray-500);
+    font-weight: var(--font-weight-regular);
+    color: var(--gray-600);
 }
 
 .tender-form-field__help {

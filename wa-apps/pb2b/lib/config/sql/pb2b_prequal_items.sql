@@ -1,0 +1,3 @@
+ALTER TABLE `pb2b_prequal_item`
+    ADD COLUMN `unit` VARCHAR(32) NULL DEFAULT NULL,
+    ADD COLUMN `file_link_id` INT NULL DEFAULT NULL;

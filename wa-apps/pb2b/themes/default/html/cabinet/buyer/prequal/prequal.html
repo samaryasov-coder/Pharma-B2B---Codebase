@@ -1,0 +1,134 @@
+{assign var=prequal_data value=$prequal.data}
+{assign var=prequal_heading value='Предварительная квалификация'}
+{if $prequal_data.procedure_code|default:''}
+    {assign var=prequal_heading value=$prequal_heading|cat:' №'|cat:$prequal_data.procedure_code}
+{/if}
+
+{capture assign=prequal_actions}
+    {if $can_edit}
+        <a href="/cabinet/buyer/prequal/{$prequal.id|intval}/edit/" class="button secondary">Редактировать</a>
+    {/if}
+{/capture}
+<div class="cabinet-container js-cabinet-page" data-page="prequal">
+    <div class="tender-page">
+        <div class="tender-page__header">
+            {include file="html/cabinet/partials/page-header.html" page_header_title=$prequal_heading page_header_actions=$prequal_actions page_header_back_url='/cabinet/buyer/tenders/'}
+            <article class="buyer-tender-card buyer-tender-card--detail" aria-label="Сводка предварительной квалификации">
+                <div class="buyer-tender-card__main">
+                    <div class="buyer-tender-card__title-row">
+                        <h2 class="buyer-tender-card__title">{$prequal_data.title|default:'Без названия'|escape}</h2>
+                        {include file="html/cabinet/partials/badge.html" badge_text=$prequal_status.name|default:'—' badge_tone=$prequal_status.tone|default:'info'}
+                    </div>
+                    <div class="buyer-tender-card__meta">
+                        <span>Дата создания: {if $prequal_data.create_datetime|default:''}{$prequal_data.create_datetime|date_format:'%d.%m.%Y'|escape}{else}—{/if}</span>
+                        <span class="buyer-tender-card__dot" aria-hidden="true"></span>
+                        <span>{$prequal_heading|escape}</span>
+                        <span class="buyer-tender-card__dot" aria-hidden="true"></span>
+                        <span>{if $prequal_data.is_private|default:0}Закрытая{else}Открытая{/if}</span>
+                    </div>
+                </div>
+                <div class="buyer-tender-card__metric">
+                    <span class="buyer-tender-card__metric-label">Приглашено</span>
+                    <span class="buyer-tender-card__metric-value">{$counts.invited|default:0|escape}</span>
+                </div>
+                <div class="buyer-tender-card__metric">
+                    <span class="buyer-tender-card__metric-label">Участники</span>
+                    <span class="buyer-tender-card__metric-value">{$counts.participants|default:0|escape}</span>
+                </div>
+                <div class="buyer-tender-card__metric">
+                    <span class="buyer-tender-card__metric-label">Заявки</span>
+                    <span class="buyer-tender-card__metric-value">{$counts.applications|default:0|escape}</span>
+                </div>
+                <div class="buyer-tender-card__deadline">
+                    <span class="buyer-tender-card__metric-label">Окончание приёма заявок</span>
+                    <div class="buyer-tender-card__deadline-row">
+                        <span class="buyer-tender-card__metric-value{if $deadline.expired} is-expired{/if}">{if $prequal_data.accept_end_datetime|default:''}{$prequal_data.accept_end_datetime|date_format:'%d.%m.%Y в %H:%M'|escape}{else}—{/if}</span>
+                        {if $deadline.label}
+                            {assign var=deadline_badge_tone value='neutral'}
+                            {if $deadline.expired}{assign var=deadline_badge_tone value='disabled'}{/if}
+                            {include file="html/cabinet/partials/badge.html" badge_text=$deadline.label badge_size='small' badge_variant='tag' badge_outline=true badge_tone=$deadline_badge_tone}
+                        {/if}
+                    </div>
+                </div>
+            </article>
+        </div>
+        <div class="tender-page__body js-prequal-tabs">
+            <div class="tender-page__tabs">
+                {include file="html/cabinet/partials/tabs.html" tabs=$tabs tabs_aria="Разделы предварительной квалификации" tabs_size="large" tabs_with_panels=false}
+            </div>
+            <div class="tender-page__panels tabs-content">
+            <div class="tab-content tender-page__panel tender-page__panel--overview tender-page__panel--with-aside is-active" data-tab="overview" role="tabpanel">
+                <div class="tender-page__main">
+                    <div class="tender-notice">
+                        {include file="html/cabinet/buyer/prequal/prequal-overview.html"}
+                    </div>
+                </div>
+                <aside class="tender-page__aside" aria-label="Информация о заявках">
+                    <div class="tender-page__aside-content tender-side-panel">
+                        <section class="tender-side-card">
+                            <div class="tender-side-card__head">
+                                <h3 class="tender-side-card__title">Последние поступившие заявки</h3>
+                            </div>
+                            <div class="tender-side-card__applications">
+                                {foreach $recent_applications as $application}
+                                    <article class="tender-side-card__entry">
+                                        <time class="tender-side-card__date">{if $application.submitted_at|default:''}{$application.submitted_at|date_format:'%d.%m.%Y, %H:%M:%S'|escape}{else}—{/if}</time>
+                                        <span class="tender-side-card__name">Заявка №{$application.id|intval}</span>
+                                    </article>
+                                {foreachelse}
+                                    <p class="tender-side-card__empty">Заявки пока не поступили.</p>
+                                {/foreach}
+                            </div>
+                        </section>
+                    </div>
+                </aside>
+            </div>
+            <div class="tab-content tender-page__main" data-tab="questions" role="tabpanel" hidden>
+                <section class="detail-section"><h3 class="detail-section__title">Вопросы</h3><p>Раздел вопросов пока не реализован.</p></section>
+            </div>
+            <div class="tab-content tender-page__panel" data-tab="participants" role="tabpanel" hidden>
+                <div class="tender-page__main tender-participants">
+                    <div class="tender-participants-toolbar">
+                        <div class="tender-participants-toolbar__search">
+                            <span class="tender-participants-toolbar__search-icon" aria-hidden="true"><svg><use href="#icon-search"></use></svg></span>
+                            <input type="search" class="tender-participants-toolbar__search-input js-prequal-participants-search" placeholder="Поиск" aria-label="Поиск участников" autocomplete="off">
+                        </div>
+                    </div>
+                    {if $applications}
+                        <div class="tender-participants__empty js-prequal-search-empty" hidden><p class="tender-participants__empty-title">Ничего не найдено</p><p class="des">Попробуйте изменить поисковый запрос.</p></div>
+                        <ul class="tender-participants__list js-prequal-participants-list">
+                            {foreach $applications as $application}
+                                {assign var=company_id value=$application.supplier_company_id|intval}
+                                {assign var=company value=$application_companies[$company_id]|default:[]}
+                                {assign var=status_id value=$application.status|intval}
+                                <li class="js-prequal-participant" data-search="{$company.name|default:''|escape} {$company.inn|default:''|escape}">
+                                    <article class="tender-participant-card" style="cursor: default">
+                                        <div class="tender-participant-card__main">
+                                            <div class="tender-participant-card__head"><span class="tender-participant-card__title">{$company.name|default:"Поставщик #`$company_id`"|escape}</span></div>
+                                            <div class="tender-participant-card__meta">
+                                                {if $company.inn|default:''}<span>ИНН {$company.inn|escape}</span>{/if}
+                                                {if $company.jur_address|default:''}<span>{$company.jur_address|escape}</span>{/if}
+                                                {if $company.phone|default:''}<span>{$company.phone|escape}</span>{/if}
+                                                {if $application.submitted_at|default:''}<span>Подана: {$application.submitted_at|date_format:'%d.%m.%Y, %H:%M'|escape}</span>{/if}
+                                            </div>
+                                        </div>
+                                        <div class="tender-participant-card__side"><span class="tender-participant-card__status-wrap">
+                                            <span class="tender-participant-card__status">{$application_statuses[$status_id].name|default:'—'|escape}</span>
+                                            {if isset($application_decisions[$application.id])}{foreach $application_decisions[$application.id] as $decision_id => $present}<span class="tender-participant-card__status">{$decision_types[$decision_id].name|default:'—'|escape}</span>{/foreach}{/if}
+                                        </span></div>
+                                    </article>
+                                </li>
+                            {/foreach}
+                        </ul>
+                    {else}
+                        <div class="tender-participants__empty"><p class="tender-participants__empty-title">Заявок пока нет</p><p class="des">Здесь появятся поставщики, подавшие заявки на предквалификацию.</p></div>
+                    {/if}
+                </div>
+            </div>
+            <div class="tab-content tender-page__main" data-tab="results" role="tabpanel" hidden>
+                <section class="detail-section"><h3 class="detail-section__title">Результаты</h3><p>Раздел результатов пока не реализован.</p></section>
+            </div>
+            </div>
+        </div>
+    </div>
+</div>

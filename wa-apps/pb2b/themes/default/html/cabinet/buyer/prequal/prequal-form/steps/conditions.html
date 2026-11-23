@@ -1,0 +1,98 @@
+<div class="tender-form-step">
+    <section class="tender-form-card">
+        <div class="tender-form-card__head">
+            <h2 class="tender-form-card__title" tabindex="-1">Условия квалификации</h2>
+            <p class="tender-form-card__hint">Укажите условия проверки поставщиков</p>
+        </div>
+        <div class="tender-form-fields">
+            <div class="tender-form-fields">
+                <label class="checkbox tender-form-control">
+                    <input type="checkbox" class="js-prequal-condition-toggle" data-target="audit-info" aria-controls="prequal-audit-info" aria-expanded="false">
+                    <span class="checkmark" aria-hidden="true"></span>
+                    <span class="tender-form-control__copy">
+                        <span class="input-label">Требуется прохождение предварительного аудита</span>
+                        <span class="input-hint">Укажите, если для квалификации требуется проведение аудита</span>
+                    </span>
+                </label>
+                <div id="prequal-audit-info" class="tender-form-field" hidden>
+                    <label class="input-title" for="prequal-audit-details">Информация по аудиту</label>
+                    <div class="textarea-box"><textarea id="prequal-audit-details" rows="3" placeholder="Напишите, как будет проходить аудит"></textarea></div>
+                </div>
+            </div>
+            <div class="tender-form-fields">
+                <label class="checkbox tender-form-control">
+                    <input type="checkbox" class="js-prequal-condition-toggle" data-target="samples-info" aria-controls="prequal-samples-info" aria-expanded="false">
+                    <span class="checkmark" aria-hidden="true"></span>
+                    <span class="tender-form-control__copy">
+                        <span class="input-label">Требуется отправка тестовых образцов</span>
+                        <span class="input-hint">Укажите, если для квалификации требуется отправка образцов</span>
+                    </span>
+                </label>
+                <div id="prequal-samples-info" class="tender-form-field" hidden>
+                    <label class="input-title" for="prequal-samples-details">Требования к предоставляемым образцам</label>
+                    <div class="textarea-box"><textarea id="prequal-samples-details" rows="3" placeholder="Опишите требования к образцам"></textarea></div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="tender-form-card">
+        <div class="tender-form-card__head">
+            <h2 class="tender-form-card__title">Даты и время</h2>
+            <p class="tender-form-card__hint">Укажите сроки приёма заявок и плановую дату итогов квалификации</p>
+        </div>
+        <div class="tender-form-date-list">
+            <div class="tender-form-date-item">
+                <div class="tender-form-date-item__head"><h3 class="tender-form-section__title">Конечный срок подачи заявок</h3></div>
+                <div class="tender-form-date-fields">
+                    <div class="tender-form-date-field">
+                        <label class="tender-form-field__label" for="prequal-end-date">Дата</label>
+                        <div class="date-picker"><input type="text" id="prequal-end-date" class="date-select filter-date js-prequal-date" placeholder="ДД.ММ.ГГГГ" readonly><svg aria-hidden="true"><use href="#icon-calendar"></use></svg></div>
+                    </div>
+                    <div class="tender-form-date-field">
+                        <label class="tender-form-field__label" for="prequal-end-time">Время</label>
+                        <div class="date-picker time"><input type="text" id="prequal-end-time" class="time js-prequal-time" placeholder="00:00" readonly><svg aria-hidden="true"><use href="#icon-clock"></use></svg></div>
+                    </div>
+                </div>
+                <div class="tender-form-field__help">Россия, Москва (UTC +3:00)</div>
+                <div class="prequal-field-error js-prequal-field-error" data-field="accept_end_datetime" role="alert" hidden></div>
+            </div>
+            <div class="tender-form-date-item">
+                <div class="tender-form-date-item__head">
+                    <h3 class="tender-form-section__title">Плановая дата подведения итогов</h3>
+                    <p class="tender-form-card__hint">Укажите предполагаемую дату итогов квалификации</p>
+                </div>
+                <div class="tender-form-date-fields">
+                    <div class="tender-form-date-field">
+                        <label class="tender-form-field__label" for="prequal-result-date">Дата</label>
+                        <div class="date-picker"><input type="text" id="prequal-result-date" class="date-select filter-date js-prequal-date" placeholder="ДД.ММ.ГГГГ" readonly><svg aria-hidden="true"><use href="#icon-calendar"></use></svg></div>
+                    </div>
+                </div>
+            </div>
+            <div class="tender-form-date-item">
+                <h3 class="tender-form-section__title">Срок действия квалификации</h3>
+                <div class="tender-form-date-field">
+                    <label class="tender-form-field__label" for="prequal-validity">Количество месяцев</label>
+                    <div class="input-box"><input type="number" id="prequal-validity" min="1" step="1" placeholder="Укажите срок"></div>
+                    <div class="prequal-field-error js-prequal-field-error" data-field="validity_months" role="alert" hidden></div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="tender-form-card">
+        <div class="tender-form-card__head">
+            <h2 class="tender-form-card__title">Дополнительная информация</h2>
+            <p class="tender-form-card__hint">Укажите дополнительные сведения для участников</p>
+        </div>
+        <div class="tender-form-field">
+            <label class="input-title" for="prequal-additional-info">Дополнительная информация</label>
+            <div class="textarea-box"><textarea id="prequal-additional-info" rows="3" placeholder="Введите информацию для участников предквалификации"></textarea></div>
+        </div>
+    </section>
+    <div class="creation-manage-buttons">
+        <a class="button large outline" href="/cabinet/buyer/tenders/" hx-get="/cabinet/buyer/tenders/" hx-target=".js-main-content" hx-push-url="true">Отменить</a>
+        <div class="manage-buttons-right">
+            <button type="button" class="button large secondary js-prequal-back">Назад</button>
+            <button type="button" class="button large primary js-prequal-next">Продолжить</button>
+        </div>
+    </div>
+</div>

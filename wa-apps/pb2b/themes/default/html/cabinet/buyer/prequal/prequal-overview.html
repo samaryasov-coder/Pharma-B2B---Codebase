@@ -1,0 +1,102 @@
+<section class="detail-section">
+    <h3 class="detail-section__title">Основная информация</h3>
+    <div class="detail-fields">
+        <div class="detail-field">
+            <div class="detail-field__label">Описание процедуры</div>
+            <div class="detail-field__value">{if $prequal_data.description|default:''}{$prequal_data.description|escape|nl2br}{else}—{/if}</div>
+        </div>
+        <div class="detail-field">
+            <div class="detail-field__label">Категории</div>
+            <div class="detail-tags">
+                {assign var=has_categories value=false}
+                {foreach $classifiers as $classifier}
+                    {if $classifier.category_name|default:''}<span class="detail-tag">{$classifier.category_name|escape}</span>{assign var=has_categories value=true}{/if}
+                {/foreach}
+                {if !$has_categories}—{/if}
+            </div>
+        </div>
+        <div class="detail-field">
+            <div class="detail-field__label">Доступ к процедуре</div>
+            <div class="detail-field__value">{if $prequal_data.is_private|default:0}Закрытая: участвуют выбранные компании{else}Открытая: участвовать могут зарегистрированные поставщики{/if}</div>
+        </div>
+        {if $prequal_data.is_private|default:0}
+            <div class="detail-field">
+                <div class="detail-field__label">Компании, допущенные к процедуре</div>
+                <div class="detail-field__value">
+                    {foreach $invitations as $invitation}
+                        <div>{$invitation.supplier_name|default:'Наименование не указано'|escape}</div>
+                    {foreachelse}Не указаны{/foreach}
+                </div>
+            </div>
+        {/if}
+    </div>
+</section>
+<section class="detail-section">
+    <h3 class="detail-section__title">Условия квалификации</h3>
+    <div class="detail-fields">
+        <div class="detail-row"><p class="detail-row__text">Предварительный аудит: <strong class="detail-row__value">{if $prequal_data.requires_audit|default:0}Требуется{else}Не требуется{/if}</strong></p></div>
+        {if $prequal_data.requires_audit|default:0}<div class="detail-field"><div class="detail-field__label">Информация по аудиту</div><div class="detail-field__value">{$prequal_data.audit_info|default:'—'|escape|nl2br}</div></div>{/if}
+        <div class="detail-row"><p class="detail-row__text">Предоставление образцов: <strong class="detail-row__value">{if $prequal_data.requires_samples|default:0}Требуется{else}Не требуется{/if}</strong></p></div>
+        {if $prequal_data.requires_samples|default:0}<div class="detail-field"><div class="detail-field__label">Требования к образцам</div><div class="detail-field__value">{$prequal_data.samples_info|default:'—'|escape|nl2br}</div></div>{/if}
+        <div class="detail-field"><div class="detail-field__label">Условия предоставления образцов или материалов</div><div class="detail-field__value">{$prequal_data.delivery_terms|default:'—'|escape|nl2br}</div></div>
+    </div>
+</section>
+<section class="detail-section">
+    <h3 class="detail-section__title">Сроки</h3>
+    <div class="detail-fields">
+        <div class="detail-field"><div class="detail-field__label">Начало приёма заявок</div><div class="detail-field__value">{if $prequal_data.accept_start_datetime|default:''}{$prequal_data.accept_start_datetime|date_format:'%d.%m.%Y в %H:%M'|escape}{else}—{/if}</div></div>
+        <div class="detail-field"><div class="detail-field__label">Окончание приёма заявок</div><div class="detail-field__value">{if $prequal_data.accept_end_datetime|default:''}{$prequal_data.accept_end_datetime|date_format:'%d.%m.%Y в %H:%M'|escape}{else}—{/if}</div></div>
+        <div class="detail-field"><div class="detail-field__label">Плановая дата подведения итогов</div><div class="detail-field__value">{if $prequal_data.results_planned_datatime|default:''}{$prequal_data.results_planned_datatime|date_format:'%d.%m.%Y'|escape}{else}—{/if}</div></div>
+        <div class="detail-field"><div class="detail-field__label">Срок действия квалификации</div><div class="detail-field__value">{if $prequal_data.validity_months|default:0}{$prequal_data.validity_months|escape} мес.{else}—{/if}</div></div>
+    </div>
+</section>
+<section class="detail-section">
+    <h3 class="detail-section__title">Предметы квалификации</h3>
+    <div class="detail-fields">
+        {foreach $items as $item}
+            <div class="detail-field">
+                <div class="detail-field__label">{$item.name|default:'Без названия'|escape}</div>
+                <div class="detail-field__value">
+                    {if isset($item.qty) && $item.qty !== ''}Количество: {$item.qty|escape}{if $item.unit|default:''} {$item.unit|escape}{/if}<br>{/if}
+                    {if $item.comment|default:''}{$item.comment|escape|nl2br}<br>{/if}
+                    {if $item.file_link_id|default:0 && $item.filename|default:''}<a href="/api/buyer/prequal/{$prequal.id|intval}/file/{$item.file_link_id|intval}/" hx-boost="false">{$item.filename|escape}</a>{/if}
+                </div>
+            </div>
+        {foreachelse}<p class="detail-field__value">Предметы квалификации не указаны.</p>{/foreach}
+    </div>
+</section>
+{foreach [$tech_spec_kind => 'Документация процедуры', $requirement_kind => 'Запрашиваемые документы'] as $document_kind => $document_heading}
+<section class="detail-section">
+    <h3 class="detail-section__title">{$document_heading|escape}</h3>
+    <div class="detail-fields">
+        {assign var=has_documents value=false}
+        {foreach $documents as $document}
+            {if $document.kind == $document_kind}
+                {assign var=has_documents value=true}
+                <div class="detail-field">
+                    <div class="detail-field__label">{$document.name|default:$document.filename|default:'Документ'|escape}</div>
+                    <div class="detail-field__value">
+                        {if $document_kind == $requirement_kind}{if $document.is_required}Обязательный{else}Необязательный{/if}<br>{/if}
+                        {if $document.description|default:''}{$document.description|escape|nl2br}<br>{/if}
+                        {if $document.file_link_id|default:0 && $document.filename|default:''}<a href="/api/buyer/prequal/{$prequal.id|intval}/file/{$document.file_link_id|intval}/" hx-boost="false">{$document.filename|escape}</a>{/if}
+                    </div>
+                </div>
+            {/if}
+        {/foreach}
+        {if !$has_documents}<p class="detail-field__value">Документы не указаны.</p>{/if}
+    </div>
+</section>
+{/foreach}
+<section class="detail-section">
+    <h3 class="detail-section__title">Дополнительная информация</h3>
+    <div class="detail-fields"><div class="detail-field__value">{$prequal_data.additional_info|default:'—'|escape|nl2br}</div></div>
+</section>
+<section class="detail-section">
+    <h3 class="detail-section__title">Контактная информация</h3>
+    <div class="detail-fields">
+        <div class="detail-field"><div class="detail-field__label">Организатор</div><div class="detail-field__value">{$organizer->getFullName()|escape}</div></div>
+        <div class="detail-field"><div class="detail-field__label">Контактное лицо организации</div><div class="detail-field__value">{$organizer.data.contact_person|default:'—'|escape}</div></div>
+        <div class="detail-field"><div class="detail-field__label">E-mail</div><div class="detail-field__value">{$organizer.data.registry_email|default:'—'|escape}</div></div>
+        <div class="detail-field"><div class="detail-field__label">Номер телефона</div><div class="detail-field__value">{$organizer.data.phone|default:'—'|escape}</div></div>
+    </div>
+</section>
